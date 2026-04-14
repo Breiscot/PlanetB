@@ -351,5 +351,40 @@
 </head>
 <body>
     
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-globe">⚪</div>
+        <div class="loading-text">Loading the globe...</div>
+        <div class="loading-bar">
+            <div class="loading-bar-fill"></div>
+        </div>
+    </div>
+
+    <div id="cesiumContainer"></div>
+
+    <!-- Control Panel -->
+    <div class="control-panel" id="controlPanel">
+        <button class="toggle-panel" onclick="togglePanel()">☰</button>
+        <h2>Earth Exsplorer</h2>
+
+        <!-- Search -->
+        <input type="text" class="search-box" id="searchInput" placeholder="Search a place..." onkeypress="handleSearch(event)">
+        
+        <!-- View modes -->
+        <div class="section-title">View Mode</div>
+        <div class="btn-group">
+            <button class="btn btn-view active" id="btn3d" onclick="setViewMode('3d')">🌐 Globe 3D</button>
+            <button class="btn btn-view" id="btn2d" onclick="setViewMode('2d')">🗺️ Map 2D</button>
+            <button class="btn btn-view" id="btnColumbus" onclick="setViewMode('columbus')">📐 View Columbus</button>
+        </div>
+
+        <!-- Layer options -->
+        <div class="section-title">Levels</div>
+        <div class="btn-group">
+            <button class="btn btn-view" id="btnNight" onclick="toggleNight()">🌙 Night View</button>
+            <button class="btn btn-view" id="btnAtmosphere" onclick="toggleAtmosphere()">💨 Atmosphere</button>
+            <button class="btn btn-view" id="btnGrid" onclick="toggleGrid()">📏 Grid</button>
+        </div>
+    </div>
 </body>
 </html>
