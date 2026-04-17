@@ -417,9 +417,52 @@
                 <span class="emoji"></span> Madrid
             </button>
             <button class="place-btn" onclick="flyTo(55.7558, 37.6173, 2000, 'Moscow, Russia')">
-                <span class="emoji"></span> Mosca
+                <span class="emoji"></span> Moscow
+            </button>
+            <button class="place-btn" onclick="flyTo(-13.1631, -72.5450, 2000, 'Machu Picchu')">
+                <span class="emoji"></span> Machu Picchu
+            </button>
+            <button class="place-btn" onclick="flyTo(51.5007, -0.1246, 800, 'Big Ben, London')">
+                <span class="emoji"></span> London
             </button>
         </div>
+
+        <!-- Actions -->
+        <div class="btn-group">
+            <button class="btn btn-fly" onclick="resetView()">Initial View</button>
+            <button class="btn btn-fly" onclick="startAutoRotate()" style="background: linear-gradient(135deg, #6a1b9a, #ab47bc);">Auto-Rotation</button>
+        </div>
     </div>
+
+    <!-- Zoom Controls -->
+     <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+        <div class="zoom-divider"></div>
+        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">-</button>
+        <div class="zoom-divider"></div>
+        <button class="zoom-btn" onclick="resetView()" title="Reset" style="font-size: 14px;">RESET</button>
+        <div class="zoom-divider"></div>
+        <button class="zoom-btn" onclick="toggleFullscreen()" title="Fullscreen" style="font-size: 14px;">FULLSCREEN</button>
+     </div>
+
+     <!-- Info Bar -->
+      <div class="info-bar" id="infoBar">
+        <div class="info-item">
+            <span class="label">Lat:</span>
+            <span class="value" id="latValue">0.000</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Lon:</span>
+            <span class="value" id="lonValue">0.000</span>
+        </div>
+        <div class="info-item">
+            <span class="label">Location: </span>
+            <span class="value" id="locationName">-</span>
+        </div>
+      </div>
+
+      <script>
+        
+      </script>
 </body>
 </html>
