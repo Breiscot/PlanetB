@@ -524,7 +524,133 @@
                 scene.globe.showGroundAtmosphere = true;
 
                 // Initial Position - View from Europe/Italy
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(12.4964, 41.9028, 15000000),
+                    orientation: {
+                        heading: Cesium.Math.toRadians(0),
+                        pitch: Cesium.Math.toRadians(-90),
+                        roll: 0
+                    },
+                    duration: 3
+                });
+
+                // Add markers to famous places
+                addFamousPlaceMarkers();
+
+                // Mouse tracking for coordinate
+                setupMouseTracking();
+
+                // Hide loading screen
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').classList.add('hidden');
+                }, 2500);
+
+            } catch (error) {
+                console.error('Error Cesium Ion, used layer OpenStreet', error);
+                initFallbackGlobe();
             }
+        }
+
+        // Fallback without token Cesium Ion
+        function initFallbackGlobe() {
+            viewer = new Cesium.Viewer('cesiumContainer', {
+                animation: false,
+                baseLayerPicker: false,
+                fullscreenButton: false,
+                vrButton: false,
+                geocoder: false,
+                homeButton: false,
+                infoBox: true,
+                sceneModePicker: false,
+                selectionIndicator: true,
+                timeline: false,
+                navigationHelpButton: false,
+
+                baseLayer: new Cesium.ImageryLayer(
+                    new Cesium.OpenStreetMapImageryProvider({
+                        url: 'https://tile.openstreetmap.org/'
+                    })
+                ),
+            });
+
+            const scene = viewer.scene;
+            scene.globe.enableLighting = true;
+            scene.globe.showGroundAtmosphere = true;
+
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(12.4964, 41.9028, 15000000),
+                orientation: {
+                    heading: 0,
+                    pitch: Cesium.Math.toRadians(-90),
+                    roll: 0
+                },
+                duration: 3
+            });
+
+            addFamousPlaceMarkers();
+            setupMouseTracking();
+
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+            }, 2500);
+        }
+
+        // Markers in famous places
+
+        function addFamousPlaceMarkers() {
+            const places = [
+                { name: 'Colosseum', lat: 41.8902, lon: 12.4922, emoji: '🏛️' },
+                { name: 'Tour Eiffel', lat: 48.8584, lon: 2.2945, emoji: '🗼' },
+                { name: 'Statue of Liberty', lat: 40.6892, lon: -74.0445, emoji: '🗽' },
+                { name: 'Taj Mahal', lat: 27.1751, lon: 78.0421, emoji: '🕌' },
+                { name: 'Tokyo Tower', lat: 35.6586, lon: 139.7454, emoji: '🗾' },
+                { name: 'Cristo Redentore', lat: -22.9519, lon: -43.2105, emoji: '✝️' },
+                { name: 'Pyramid Giza', lat: 29.9792, lon: 31.1342, emoji: '' },
+                { name: 'Sydney Opera House ', lat: -33.8568, lon: 151.2153, emoji: '' },
+                { name: 'Machu Picchu', lat: -13.1631, lon: -72.5450, emoji: '' },
+                { name: 'Big Ben', lat: 51.5007, lon: -0.1246, emoji: '' },
+            ];
+
+            places.forEach(place => {
+                viewer.entities.add({
+                    name: place.name,
+                    position: Cesium.Cartesian3.fromDegrees(place.lon, place.lat, 0),
+                    point: {
+                        pixelSize: 10,
+                        color: Cesium.Color.fromCssColorString('#4fc3f7'),
+                        outlineColor: Cesium.Color.WHITE,
+                        outlineWidth: 2,
+                        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                        scaleByDistance: new Cesium.NearFarScalar(1.5e2, 2.0, 1.5e7, 0.5),
+                    },
+                    label: {
+                        text: `${place.emoji} $[place.name]`,
+                        font: '14px sans-serif',
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                        outlineWidth: 2,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        pixelOffset: new Cesium.Cartesian2(0, -15),
+                        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                        scaleByDistance: new Cesium.NearFarScalar(1.5e2, 1.0, 1.5e7, 0.3),
+                        translucencyByDistance: new Cesium.NearFarScalar(1.5e5, 1.0, 5.0e6, 0.0),
+                    },
+                    description: `
+                        <div style="font-family: sans-serif; padding: 10px;">
+                            <h2>${place.emoji} ${place.name}</h2>
+                            <p><strong>Coordinate:</strong> ${place.lat.toFixed(4)}°, ${place.lon.toFixed(4)}°</p>
+                        </div>
+                    `
+                });
+            });
+        }
+
+        function setupMouseTracking() {
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+
+            handler.setInputAction(function (movement) {
+                const cartesian = viewer.camera.pickEllipsoid(movement.endPositive, viewer.scene.globe.ellipsoid);
+                
+            })
         }
 
       </script>
