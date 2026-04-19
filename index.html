@@ -644,13 +644,225 @@
             });
         }
 
+        // Mouse Tracking
+
         function setupMouseTracking() {
             const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 
             handler.setInputAction(function (movement) {
                 const cartesian = viewer.camera.pickEllipsoid(movement.endPositive, viewer.scene.globe.ellipsoid);
-                
-            })
+                if (cartesian) {
+                    const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                    const lat = Cesium.Math.toDegrees(cartographic.latitude);
+                    const lon = Cesium.Math.toDegrees(cartographic.longitude);
+
+                    document.getElementById('latValue').textContent = lat.toFixed(3) + '°';
+                    document.getElementById('lonValue').textContent = lon.toFixed(3) + '°';
+                }
+
+                const cameraHeight = viewer.camera.positionCartographic.height;
+                if(cameraHeight > 1000000) {
+                    document.getElementById('altValue').textContent = (cameraHeight / 1000).toFixed(0) + ' km';
+                } else if (cameraHeight > 1000) {
+                    document.getElementById('altValue').textContent = (cameraHeight / 1000).toFixed(1) + ' km';
+                } else {
+                    document.getElementById('altValue').textContent = cameraHeight.toFixed(0) + ' m';
+                }
+            }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+        }
+
+        // Navigation - flyTo
+
+        function flyTo(lat, lon, height, name) {
+            stopAutoRotate();
+
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(lon, lat, height || 1000),
+                orientation: {
+                    heading: Cesium.Math.toRadians(0),
+                    pitch: Cesium.Math.toRadians(-45),
+                    roll: 0
+                },
+                duration: 3
+            });
+
+            if (name) {
+                document.getElementById('locationName').textContent = name;
+            }
+        }
+
+        function resetView() {
+            stopAutoRotate();
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(12.4964, 41.9028, 15000000),
+                orientation: {
+                    heading: 0,
+                    pitch: Cesium.Math.toRadians(-90),
+                    roll: 0
+                },
+                duration: 2
+            });
+            document.getElementById('locationName').textContent = '-';
+        }
+
+        // Zoom
+
+        function zoomIn() {
+            viewer.camera.zoomIn(viewer.camera.positionCartographic.height * 0.3);
+        }
+
+        function zoomOut() {
+            viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.5);
+        }
+
+        // ViewMode
+
+        function setViewMode(mode) {
+            document.querySelectorAll('.btn-view').forEach(b => b.classList.remove('active'));
+
+            switch (mode) {
+                case '3d':
+                    viewer.scene.mode = Cesium.SceneMode.SCENE3D;
+                    document.getElementById('btn3d').classList.add('active');
+                    break;
+                case '2d':
+                    viewer.scene.mode = Cesium.SceneMode.SCENE2D;
+                    document.getElementById('btn2d').classList.add('active');
+                    break;
+                case 'columbus':
+                    viewer.scene.mode = Cesium.SceneMode.COLUMBUS_VIEW;
+                    document.getElementById('btnColumbus').classList.add('active');
+                    break;
+            }
+        }
+
+        // Toggle Features
+
+        function toggleNight() {
+            nightMode = !nightMode;
+            viewer.scene.globe.enableLighting = nightMode;
+
+            const btn = document.getElementById('btnNight');
+            btn.classList.toggle('active');
+
+            if (nightMode) {
+                // Simulate night view
+                viewer.clock.currentTime = Cesium.JulianDate.fromDate(new Date('2024-01-15T22:00:00Z'));
+                viewer.clock.shouldAnimate = false;
+            } else {
+                viewer.clock.currentTime = Cesium.JulianDate.now();
+            }
+        }
+
+        function toggleAtmosphere() {
+            const scene = viewer.scene;
+            scene.skyAtmosphere.show = !scene.skyAtmosphere.show;
+            scene.globe.showGroundAtmosphere = !scene.globe.showGroundAtmosphere;
+            document.getElementById('btnAtmosphere').classList.toggle('active');
+        }
+
+        function toggleGrid() {
+            gridEnabled = !gridEnabled;
+            document.getElementById('btnGrid').classList.toggle('active');
+
+            if (gridEnabled) {
+                viewer.scene.imageryLayer;
+                if (layers.length > 1) {
+                    layers.remove(layers.get(layers.length -1));
+                }
+            }
+        }
+
+        // AutoRotate
+
+        function startAutoRotate() {
+            if (autoRotateEnabled) {
+                stopAutoRotate();
+                return;
+            }
+
+            autoRotateEnabled = true;
+
+            viewer.clock.onTick.addEventListener(autoRotateTick);
+
+            // Set view from top
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(
+                    Cesium.Math.toDegrees(viewer.camera.positionCartographic.longitude),
+                    0,
+                    20000000
+                ),
+                orientation: {
+                    heading: 0,
+                    pitch: Cesium.Math.toRadians(-90),
+                    roll: 0
+                },
+                duration: 2
+            });
+        }
+
+        function autoRotateTick(clock) {
+            if (!autoRotateEnabled) return;
+            viewer.camera.rotate(Cesium.Cartesian3.UNIT_Z, -0.002);
+        }
+
+        function stopAutoRotate() {
+            autoRotateEnabled = false;
+            viewer.clock.onTick.removeEventListener(autoRotateTick);
+        }
+
+        // Search
+
+        async function handleSearch(event) {
+            if (event.key !== 'Enter') return;
+
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`
+                );
+                const data = await response.json();
+
+                if (data && data.length > 0) {
+                    const result = data[0];
+                    const lat = parseFloat(result.lat);
+                    const lon = parseFloat(result.lon);
+
+                    flyTo(lat, lon, 5000, result.display_name.split(',')[0]);
+
+                    // Add marker
+                    viewer.entities.add({
+                        name: result.display_name.split(',')[0],
+                        position: Cesium.Cartesian3.fromDegrees(lon, lat),
+                        billboard: {
+                            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                        },
+                        point: {
+                            pixelSize: 12,
+                            color: Cesium.Color.RED,
+                            outlineColor: Cesium.Color.WHITE,
+                            outlineWidth: 2,
+                            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                        },
+                        label: {
+                            text: '- ' + result.display_name.split(',')[0],
+                            font: '14px sans-serif',
+                            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                            outlineWidth: 2,
+                            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                            pixelOffset: new Cesium.Cartesian2(0, -20),
+                            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                        },
+                        description: `
+                            
+                        `
+                    })
+                }
+            }
+            
         }
 
       </script>
