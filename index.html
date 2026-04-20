@@ -624,7 +624,7 @@
                         scaleByDistance: new Cesium.NearFarScalar(1.5e2, 2.0, 1.5e7, 0.5),
                     },
                     label: {
-                        text: `${place.emoji} $[place.name]`,
+                        text: `${place.emoji} ${place.name}`,
                         font: '14px sans-serif',
                         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                         outlineWidth: 2,
@@ -857,14 +857,49 @@
                             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
                         },
                         description: `
-                            
+                            <div style="font-family: sans-serif; padding: 10px;">
+                                <h2>- ${result.display_name.split(',')[0]}</h2>
+                                <p>${result.display_name}</p>
+                                <p><strong>Coordinate:</strong> ${lat.toFixed(4)}°, ${lon.toFixed(4)}°</p>
+                            </div>
                         `
-                    })
+                    });
+                } else {
+                    alert('Place not founded. Try with another name.');
                 }
+            } catch (error) {
+                console.error('Error research: ', error);
+                alert('Error in the research. Check your internet connection.');
             }
-            
         }
 
+        // UI Help
+
+        function togglePanel() {
+            document.getElementById('controlPanel').classList.toggle('collapsed');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Initialization
+
+        initGlobe();
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'r': startAutoRotate(); break;
+                case 'h': resetView(); break;
+                case 'f': toggleFullscreen(); break;
+                case 'Escape': stopAutoRotate(); break;
+            }
+        });
       </script>
 </body>
 </html>
