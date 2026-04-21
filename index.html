@@ -470,9 +470,12 @@
         let autoRotateHandler = null;
         let nightMode = false;
         let gridEnabled = false;
+        let gridLayer = null;
         let markers = [];
+        let currentBaseLayer = 'satellite';
 
         // Initializing
+
         async function initGlobe() {
             try {
                 viewer = new Cesium.Viewer('cesiumContainer', {
@@ -503,18 +506,17 @@
                             positiveX: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_px.jpg',
                             negativeX: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mx.jpg',
                             positiveY: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_py.jpg',
-                            negativeY: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_py.jpg',
-                            positiveZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mz.jpg',
+                            negativeY: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_my.jpg',
+                            positiveZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_pz.jpg',
                             negativeZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mz.jpg'    
                         }
                     }),
                     skyAtmosphere: new Cesium.SkyAtmosphere(),
-
-                    // Imagery
-                    baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-                        Cesium.IonImageryProvider.fromAssetId(3)
-                    ),
                 });
+
+                // Layer Satellitale of Default
+
+                await setImageryLayer('satellite');
 
                 // Config Scene
                 const scene = viewer.scene;
@@ -522,6 +524,11 @@
                 scene.globe.depthTestAgainstTerrain = true;
                 scene.fog.enabled = true;
                 scene.globe.showGroundAtmosphere = true;
+
+                // Anti-aliasing
+                if (Cesium.PostProcessStageLibrary.createFXAAStage) {
+                    viewer.scene.postProcessStages.fxaa.enabled = true;
+                }
 
                 // Initial Position - View from Europe/Italy
                 viewer.camera.flyTo({
@@ -565,12 +572,6 @@
                 selectionIndicator: true,
                 timeline: false,
                 navigationHelpButton: false,
-
-                baseLayer: new Cesium.ImageryLayer(
-                    new Cesium.OpenStreetMapImageryProvider({
-                        url: 'https://tile.openstreetmap.org/'
-                    })
-                ),
             });
 
             const scene = viewer.scene;
