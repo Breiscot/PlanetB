@@ -503,9 +503,9 @@
                             positiveX: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_px.jpg',
                             negativeX: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mx.jpg',
                             positiveY: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_py.jpg',
-                            negativeY: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_pz.jpg',
-                            positiveZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_my.jpg',
-                            negativeZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_my.jpg'    
+                            negativeY: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_py.jpg',
+                            positiveZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mz.jpg',
+                            negativeZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mz.jpg'    
                         }
                     }),
                     skyAtmosphere: new Cesium.SkyAtmosphere(),
@@ -650,7 +650,7 @@
             const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 
             handler.setInputAction(function (movement) {
-                const cartesian = viewer.camera.pickEllipsoid(movement.endPositive, viewer.scene.globe.ellipsoid);
+                const cartesian = viewer.camera.pickEllipsoid(movement.endPosition, viewer.scene.globe.ellipsoid);
                 if (cartesian) {
                     const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
                     const lat = Cesium.Math.toDegrees(cartographic.latitude);
@@ -766,9 +766,19 @@
             document.getElementById('btnGrid').classList.toggle('active');
 
             if (gridEnabled) {
-                viewer.scene.imageryLayer;
-                if (layers.length > 1) {
-                    layers.remove(layers.get(layers.length -1));
+                const gridProvider = new Cesium.GridImageryProvider({
+                    cells: 4,
+                    color: Cesium.Color.fromCssColorString('rgba(255, 255, 255, 0.3)'),
+                    glowColor: Cesium.Color.fromCssColorString('rgba(79, 195, 247, 0.2)'),
+                    glowWidth: 2
+                });
+                gridLayer = viewer.imageryLayers.addImageryProvider(gridProvider);
+                gridLayer.alpha = 0.6;
+            } else {
+                // Remove grid layer
+                if (gridLayer) {
+                    viewer.imageryLayers.remove(gridLayer);
+                    gridLayer = null;
                 }
             }
         }
