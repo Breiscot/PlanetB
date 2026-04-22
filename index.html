@@ -386,6 +386,19 @@
             <button class="btn btn-view" id="btnGrid" onclick="toggleGrid()">📏 Grid</button>
         </div>
 
+        <div class="section-title">Type of Map</div>
+        <div class="places-grid">
+            <button class="place-btn map-btn active" id="btn_satellite" onclick="setImageryLayer('satellite')">
+                <span class="emoji">🛰️</span> Satellite
+            </button>
+            <button class="place-btn map-btn" id="btn_osm" onclick="setImageryLayer('osm')">
+                <span class="emoji">🗺️</span> Roads
+            </button>
+            <button class="place-btn map-btn" id="btn_terrain" onclick="setImageryLayer('terrain')">
+                <span class="emoji">⛰️</span> Terrain
+            </button>
+        </div>
+
         <!-- Famous places -->
         <div class="section-title">Famous Places</div>
         <div class="places-grid">
@@ -629,15 +642,58 @@
             switch (type) {
                 case 'satellite':
                     try {
-                        provider = await Cesium.IonImageryProvider
+                        provider = await Cesium.IonImageryProvider.fromAssetId(2);
+                    } catch (e) {
+                        provider = new Cesium.ArcGisMapServerImageryProvider({
+                            url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+                        });
                     }
-                    
+                    break;
+
+                case 'osm':
+                    provider = new Cesium.OpenStreetMapImageryProvider({
+                        url: 'https://tile.openstreetmap.org/'
+                    });
+                    break;
+
+                case 'terrain':
+                    provider = new Cesium.UrlTemplateImageryProvider({
+                        url: 'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png',
+                        credit: 'Studia Maps / Stamen Design'
+                    });
                     break;
             
+                case 'dark':
+                    provider = new Cesium.UrlTemplateImageryProvider({
+                        url: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                        credit: 'CartoDB'
+                    });
+                    break;
+
+                case 'watercolor':
+                    provider = new Cesium.UrlTemplateImageryProvider({
+                        url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
+                        credit: 'Stadia Maps / Stamen Design'
+                    });
+                    break;
+
                 default:
-                    break;
+                    provider = new Cesium.OpenStreetMapImageryProvider({
+                        url: 'https://tile.openstreetmap.org/'
+                    });
             }
-            
+
+            if (gridLayer) {
+                layers.addImageryProvider(provider, 0);
+            } else {
+                layers.addImageryProvider(provider);
+            }
+
+            currentBaseLayer = type;
+
+            document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById('btn_' + type);
+            if (activeBtn) activeBtn.classList.add('active');
         }
 
         // Markers in famous places
@@ -695,7 +751,11 @@
             const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 
             handler.setInputAction(function (movement) {
-                const cartesian = viewer.camera.pickEllipsoid(movement.endPosition, viewer.scene.globe.ellipsoid);
+                const cartesian = viewer.camera.pickEllipsoid(
+                    movement.endPosition,
+                    viewer.scene.globe.ellipsoid
+                );
+
                 if (cartesian) {
                     const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
                     const lat = Cesium.Math.toDegrees(cartographic.latitude);
