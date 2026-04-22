@@ -574,6 +574,14 @@
                 navigationHelpButton: false,
             });
 
+            // Remove the layer default and add OpenStreetMap
+            viewer.imageryLayers.removeAll();
+            viewer.imageryLayers.addImageryProvider(
+                new Cesium.OpenStreetMapImageryProvider({
+                    url: 'https://tile.openstreetmap.org/'
+                })
+            );
+
             const scene = viewer.scene;
             scene.globe.enableLighting = true;
             scene.globe.showGroundAtmosphere = true;
@@ -594,6 +602,42 @@
             setTimeout(() => {
                 document.getElementById('loadingScreen').classList.add('hidden');
             }, 2500);
+        }
+
+        // Manage layer imagery (Satellite, Osm ..)
+
+        async function setImageryLayer(type) {
+            const layers = viewer.imageryLayers;
+
+            // Remove only base layer
+            if (layers.length > 0) {
+                if (gridLayer) {
+                    while (layers.length > 1) {
+                        if (layers.get(0) !== gridLayer) {
+                            layers.remove(layers.get(0));
+                        } else if (layers.length > 1) {
+                            layers.remove(layers.get(1));
+                        }
+                    }
+                } else {
+                    layers.removeAll();
+                }
+            }
+
+            let provider;
+
+            switch (type) {
+                case 'satellite':
+                    try {
+                        provider = await Cesium.IonImageryProvider
+                    }
+                    
+                    break;
+            
+                default:
+                    break;
+            }
+            
         }
 
         // Markers in famous places
