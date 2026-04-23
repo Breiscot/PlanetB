@@ -397,6 +397,12 @@
             <button class="place-btn map-btn" id="btn_terrain" onclick="setImageryLayer('terrain')">
                 <span class="emoji">⛰️</span> Terrain
             </button>
+            <button class="place-btn map-btn" id="btn_dark" onclick="setImageryLayer('dark')">
+                <span class="emoji">🌑</span> Dark
+            </button>
+            <button class="place-btn map-btn" id="btn_watercolor" onclick="setImageryLayer('watercolor')">
+                <span class="emoji">🎨</span> Watercolor
+            </button>
         </div>
 
         <!-- Famous places -->
@@ -623,65 +629,92 @@
             const layers = viewer.imageryLayers;
 
             // Remove only base layer
-            if (layers.length > 0) {
-                if (gridLayer) {
-                    while (layers.length > 1) {
-                        if (layers.get(0) !== gridLayer) {
-                            layers.remove(layers.get(0));
-                        } else if (layers.length > 1) {
-                            layers.remove(layers.get(1));
-                        }
-                    }
-                } else {
-                    layers.removeAll();
+            const layersToRemove = [];
+            for (let i = 0; i < layers.length; i++) {
+                if (layers.get(i) !== gridLayer) {
+                    layersToRemove.push(layers.get(i));
                 }
             }
+            layersToRemove.forEach(l => layers.remove(1));
 
-            let provider;
+            let imageryLayer = null;
 
-            switch (type) {
-                case 'satellite':
-                    try {
-                        provider = await Cesium.IonImageryProvider.fromAssetId(2);
-                    } catch (e) {
-                        provider = new Cesium.ArcGisMapServerImageryProvider({
-                            url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+            try {
+                switch (type) {
+                    case 'satellite':
+                        const esriProvider = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+                            'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+                        );
+                        imageryLayer = layers.addImageryProvider(esriProvider, 0);
+                        break;
+
+                    case 'osm':
+                        const osmProvider = new Cesium.OpenStreetMapImageryProvider({
+                            url: 'https://tile.openstreetmap.org/'
                         });
-                    }
-                    break;
+                        imageryLayer = layers.addImageryProvider(osmProvider, 0);
+                        break;
 
-                case 'osm':
-                    provider = new Cesium.OpenStreetMapImageryProvider({
-                        url: 'https://tile.openstreetmap.org/'
-                    });
-                    break;
+                    case 'terrain':
+                        const terrainProvider = new Cesium.UrlTemplateImageryProvider({
+                            url: 'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png',
+                            credit: new Cesium.Credit('Stadia Maps / Stamen Design'),
+                            maximumLevel: 14
+                        });
+                        imageryLayer = layers.addImageryProvider(terrainProvider, 0);
+                        break;
+                
+                    case 'dark':
+                        const darkProvider = new Cesium.UrlTemplateImageryProvider({
+                            url: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                            credit: new Cesium.Credit('CartoDB'),
+                            maximumLevel: 18
+                        });
+                        imageryLayer = layers.addImageryProvider(darkProvider, 0);
+                        break;
 
-                case 'terrain':
-                    provider = new Cesium.UrlTemplateImageryProvider({
-                        url: 'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png',
-                        credit: 'Studia Maps / Stamen Design'
-                    });
-                    break;
-            
-                case 'dark':
-                    provider = new Cesium.UrlTemplateImageryProvider({
-                        url: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-                        credit: 'CartoDB'
-                    });
-                    break;
+                    case 'watercolor':
+                        const watercolorProvider = new Cesium.UrlTemplateImageryProvider({
+                            url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
+                            credit: new Cesium.Credit('Stadia Maps / Stamen Design'),
+                            maximumLevel: 16
+                        });
+                        imageryLayer = layers.addImageryProvider(watercolorProvider, 0);
+                        break;
 
-                case 'watercolor':
-                    provider = new Cesium.UrlTemplateImageryProvider({
-                        url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
-                        credit: 'Stadia Maps / Stamen Design'
-                    });
-                    break;
+                    case 'satellite_labels':
+                        const setProvider2 = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+                            'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+                        );
+                        imageryLayer = layers.addImageryProvider(satProvider2, 0);
 
-                default:
-                    provider = new Cesium.OpenStreetMapImageryProvider({
-                        url: 'https://tile.openstreetmap.org/'
-                    });
+                        const labelsProvider = new Cesium.UrlTemplateImageryProvider({
+                            url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+                            credit: new Cesium.Credit('ESRI'),
+                            maximumLevel: 18
+                        });
+                        const labelsLayer = layers.addImageryProvider(labelsProvider);
+                        labelsLayer.alpha = 0.8;
+                        break;
+
+                    default:
+                        const defaultProvider = new Cesium.OpenStreetMapImageryProvider({
+                            url: 'https://tile.openstreetmap.org/'
+                        });
+                        imageryLayer = layers.addImageryProvider(defaultProvider, 0);
+                }
+            } catch (error) {
+                console.error('Error loading layer ' + type + ':', error);
+
+                // fallback
+                const fallbackProvider = new Cesium.OpenStreetMapImageryProvider({
+                    url: 'https://tile.openstreetmap.org/'
+                });
+                imageryLayer = layers.addImageryProvider(fallbackProvider, 0);
+                type = 'osm';
             }
+
+            currentBaseLayer = type;
 
             if (gridLayer) {
                 layers.addImageryProvider(provider, 0);
