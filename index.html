@@ -391,6 +391,9 @@
             <button class="place-btn map-btn active" id="btn_satellite" onclick="setImageryLayer('satellite')">
                 <span class="emoji">🛰️</span> Satellite
             </button>
+            <button class="place-btn map-btn" id="btn-satellite_labels" onclick="setImageryLayer('satellite_labels')">
+                <span class="emoji">🏷️</span> Sat + Label
+            </button>
             <button class="place-btn map-btn" id="btn_osm" onclick="setImageryLayer('osm')">
                 <span class="emoji">🗺️</span> Roads
             </button>
@@ -530,11 +533,10 @@
                             negativeZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mz.jpg'    
                         }
                     }),
-                    skyAtmosphere: new Cesium.SkyAtmosphere(),
+                    skyAtmosphere: new Cesium.SkyAtmosphere()
                 });
 
-                // Layer Satellitale of Default
-
+                viewer.imageryLayers.removeAll();
                 await setImageryLayer('satellite');
 
                 // Config Scene
@@ -543,11 +545,6 @@
                 scene.globe.depthTestAgainstTerrain = true;
                 scene.fog.enabled = true;
                 scene.globe.showGroundAtmosphere = true;
-
-                // Anti-aliasing
-                if (Cesium.PostProcessStageLibrary.createFXAAStage) {
-                    viewer.scene.postProcessStages.fxaa.enabled = true;
-                }
 
                 // Initial Position - View from Europe/Italy
                 viewer.camera.flyTo({
@@ -635,7 +632,7 @@
                     layersToRemove.push(layers.get(i));
                 }
             }
-            layersToRemove.forEach(l => layers.remove(1));
+            layersToRemove.forEach(l => layers.remove(l));
 
             let imageryLayer = null;
 
@@ -686,7 +683,7 @@
                         const setProvider2 = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
                             'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
                         );
-                        imageryLayer = layers.addImageryProvider(satProvider2, 0);
+                        imageryLayer = layers.addImageryProvider(setProvider2, 0);
 
                         const labelsProvider = new Cesium.UrlTemplateImageryProvider({
                             url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
@@ -716,13 +713,9 @@
 
             currentBaseLayer = type;
 
-            if (gridLayer) {
-                layers.addImageryProvider(provider, 0);
-            } else {
-                layers.addImageryProvider(provider);
+            if (gridLayer && layers.contains(gridLayer)) {
+                layers.raiseToTop(gridLayer);
             }
-
-            currentBaseLayer = type;
 
             document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
             const activeBtn = document.getElementById('btn_' + type);
