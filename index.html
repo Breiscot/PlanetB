@@ -623,103 +623,112 @@
         // Manage layer imagery (Satellite, Osm ..)
 
         async function setImageryLayer(type) {
+            if (!viewer) return;
+
             const layers = viewer.imageryLayers;
 
-            // Remove only base layer
-            const layersToRemove = [];
-            for (let i = 0; i < layers.length; i++) {
-                if (layers.get(i) !== gridLayer) {
-                    layersToRemove.push(layers.get(i));
-                }
-            }
-            layersToRemove.forEach(l => layers.remove(l));
-
-            let imageryLayer = null;
+            layers.removeAll();
+            gridLayer = null;
 
             try {
+                let provider;
+
                 switch (type) {
                     case 'satellite':
-                        const esriProvider = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+                        provider = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
                             'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
                         );
-                        imageryLayer = layers.addImageryProvider(esriProvider, 0);
+                        layers.addImageryProvider(provider, 0);
                         break;
 
                     case 'osm':
-                        const osmProvider = new Cesium.OpenStreetMapImageryProvider({
+                        provider = new Cesium.OpenStreetMapImageryProvider({
                             url: 'https://tile.openstreetmap.org/'
                         });
-                        imageryLayer = layers.addImageryProvider(osmProvider, 0);
+                        layers.addImageryProvider(provider, 0);
                         break;
 
                     case 'terrain':
-                        const terrainProvider = new Cesium.UrlTemplateImageryProvider({
+                        provider = new Cesium.UrlTemplateImageryProvider({
                             url: 'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png',
                             credit: new Cesium.Credit('Stadia Maps / Stamen Design'),
                             maximumLevel: 14
                         });
-                        imageryLayer = layers.addImageryProvider(terrainProvider, 0);
+                        layers.addImageryProvider(provider, 0);
                         break;
                 
                     case 'dark':
-                        const darkProvider = new Cesium.UrlTemplateImageryProvider({
+                        provider = new Cesium.UrlTemplateImageryProvider({
                             url: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
                             credit: new Cesium.Credit('CartoDB'),
                             maximumLevel: 18
                         });
-                        imageryLayer = layers.addImageryProvider(darkProvider, 0);
+                        layers.addImageryProvider(provider, 0);
                         break;
 
                     case 'watercolor':
-                        const watercolorProvider = new Cesium.UrlTemplateImageryProvider({
+                        provider = new Cesium.UrlTemplateImageryProvider({
                             url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
                             credit: new Cesium.Credit('Stadia Maps / Stamen Design'),
                             maximumLevel: 16
                         });
-                        imageryLayer = layers.addImageryProvider(watercolorProvider, 0);
+                        layers.addImageryProvider(provider, 0);
                         break;
 
                     case 'satellite_labels':
-                        const setProvider2 = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+                        provider = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
                             'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
                         );
-                        imageryLayer = layers.addImageryProvider(setProvider2, 0);
+                        layers.addImageryProvider(provider, 0);
 
-                        const labelsProvider = new Cesium.UrlTemplateImageryProvider({
-                            url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-                            credit: new Cesium.Credit('ESRI'),
-                            maximumLevel: 18
-                        });
+                        const labelsProvider = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+                            'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
+                        );
+
                         const labelsLayer = layers.addImageryProvider(labelsProvider);
                         labelsLayer.alpha = 0.8;
                         break;
 
                     default:
-                        const defaultProvider = new Cesium.OpenStreetMapImageryProvider({
+                        provider = new Cesium.OpenStreetMapImageryProvider({
                             url: 'https://tile.openstreetmap.org/'
                         });
-                        imageryLayer = layers.addImageryProvider(defaultProvider, 0);
+                        layers.addImageryProvider(provider, 0);
+                        type = 'osm';
+                        break;
                 }
+            
+                if (gridEnabled) {
+                    addGridLayer();
+                }
+
+                currentBaseLayer = type;
+
+                document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
+                const activeBtn = document.getElementById('btn_' + type);
+                if (activeBtn) activeBtn.classList.add('active');
+                    
             } catch (error) {
                 console.error('Error loading layer ' + type + ':', error);
 
-                // fallback
-                const fallbackProvider = new Cesium.OpenStreetMapImageryProvider({
-                    url: 'https://tile.openstreetmap.org/'
-                });
-                imageryLayer = layers.addImageryProvider(fallbackProvider, 0);
-                type = 'osm';
+                layers.removeAll();
+                layers.addImageryProvider(
+                    new Cesium.OpenStreetMapImageryProvider({
+                        url: 'https://tile.openstreetmap.org/'
+                    }),
+                    0
+                );
+
+                if (gridEnabled) {
+                    addGridLayer();
+                }
+
+                currentBaseLayer = 'osm';
+
+                document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
+                const activeBtn = document.getElementById('btn_osm');
+                if (activeBtn) activeBtn.classList.add('active');
             }
-
-            currentBaseLayer = type;
-
-            if (gridLayer && layers.contains(gridLayer)) {
-                layers.raiseToTop(gridLayer);
-            }
-
-            document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
-            const activeBtn = document.getElementById('btn_' + type);
-            if (activeBtn) activeBtn.classList.add('active');
         }
 
         // Markers in famous places
@@ -892,19 +901,31 @@
             document.getElementById('btnAtmosphere').classList.toggle('active');
         }
 
+        function addGridLayer() {
+            if (!viewer) return;
+
+            if (gridLayer) {
+                viewer.imageryLayers.remove(gridLayer);
+                gridLayer = null;
+            }
+
+            const gridProvider = new Cesium.GridImageryProvider({
+                cells: 4,
+                color: Cesium.Color.fromCssColorString('rgba(255, 255, 255, 0.3)'),
+                glowColor: Cesium.Color.fromCssColorString('rgba(79, 195, 247, 0.2)'),
+                glowWidth: 2
+            });
+
+            gridLayer = viewer.imageryLayers.addImageryProvider(gridProvider);
+            gridLayer.alpha = 0.6;
+        }
+
         function toggleGrid() {
             gridEnabled = !gridEnabled;
             document.getElementById('btnGrid').classList.toggle('active');
 
             if (gridEnabled) {
-                const gridProvider = new Cesium.GridImageryProvider({
-                    cells: 4,
-                    color: Cesium.Color.fromCssColorString('rgba(255, 255, 255, 0.3)'),
-                    glowColor: Cesium.Color.fromCssColorString('rgba(79, 195, 247, 0.2)'),
-                    glowWidth: 2
-                });
-                gridLayer = viewer.imageryLayers.addImageryProvider(gridProvider);
-                gridLayer.alpha = 0.6;
+                addGridLayer();
             } else {
                 // Remove grid layer
                 if (gridLayer) {
