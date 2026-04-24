@@ -347,6 +347,116 @@
                 padding: 8px 15px;
             }
         }
+
+        .planets-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .planet-btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .planet-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .planet-btn:hover::after {
+            left: 100%;
+        }
+
+        .planet-btn.active {
+            background: rgba(79, 195, 247, 0.3) !important;
+            border-color: #4fc3f7 !important;
+            box-shadow: 0 0 15px rgba(79, 195, 247, 0.2);
+        }
+
+        .planet-info {
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.1), rgba(171, 71, 188, 0.1));
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+
+        .planet-info-name {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .planet-info-details {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.5;
+        }
+
+        .planet-transition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.98) 100%);
+            z-index: 8000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+
+        .planet-transition.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .planet-transition .travel-emoji {
+            font-size: 80px;
+            animation: planetApproach 2s ease-in-out;
+        }
+
+        .planet-transition .travel-text {
+            color: white;
+            font-size: 20px;
+            margin-top: 15px;
+            font-weight: 300;
+        }
+
+        .planet-transition .travel-subtext {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        @keyframes planetApproach {
+            0% { transform: scale(0.3) rotate(0deg); opacity: 0; }
+            50% { transform: scale(1.3) rotate(180deg); opacity: 1; }
+            100% { transform: scale(1) rotate(360deg); opacity: 1; }
+        }
+
+        .earth-only {
+            transition: opacity 0.3s, max-height 0.3s;
+            overflow: hidden;
+        }
+
+        .earth-only.hidden-section {
+            opacity: 0.3;
+            max-height: 0;
+            padding: 0;
+            margin: 0;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -358,6 +468,12 @@
         <div class="loading-bar">
             <div class="loading-bar-fill"></div>
         </div>
+    </div>
+
+    <div class="planet-transition" id="planetTransition">
+        <div class="travel-emoji" id="travelEmoji">🔘</div>
+        <div class="travel-text" id="travelText">Travel to...</div>
+        <div class="travel-subtext" id="travelSubtext">Distance: ...</div>
     </div>
 
     <div id="cesiumContainer"></div>
@@ -379,76 +495,125 @@
         </div>
 
         <!-- Layer options -->
-        <div class="section-title">Levels</div>
-        <div class="btn-group">
-            <button class="btn btn-view" id="btnNight" onclick="toggleNight()">🌙 Night View</button>
-            <button class="btn btn-view" id="btnAtmosphere" onclick="toggleAtmosphere()">💨 Atmosphere</button>
-            <button class="btn btn-view" id="btnGrid" onclick="toggleGrid()">📏 Grid</button>
+        <div class="earth-only" id="earthOnlyLayers">
+            <div class="section-title">Levels</div>
+            <div class="btn-group">
+                <button class="btn btn-view" id="btnNight" onclick="toggleNight()">🌙 Night View</button>
+                <button class="btn btn-view" id="btnAtmosphere" onclick="toggleAtmosphere()">💨 Atmosphere</button>
+                <button class="btn btn-view" id="btnGrid" onclick="toggleGrid()">📏 Grid</button>
+            </div>
         </div>
 
-        <div class="section-title">Type of Map</div>
-        <div class="places-grid">
-            <button class="place-btn map-btn active" id="btn_satellite" onclick="setImageryLayer('satellite')">
-                <span class="emoji">🛰️</span> Satellite
+        <!-- Type of Map -->
+        <div class="earth-only" id="earthOnlyMaps">
+            <div class="section-title">Type of Map</div>
+            <div class="places-grid">
+                <button class="place-btn map-btn active" id="btn_satellite" onclick="setImageryLayer('satellite')">
+                    <span class="emoji">🛰️</span> Satellite
+                </button>
+                <button class="place-btn map-btn" id="btn-satellite_labels" onclick="setImageryLayer('satellite_labels')">
+                    <span class="emoji">🏷️</span> Sat + Label
+                </button>
+                <button class="place-btn map-btn" id="btn_osm" onclick="setImageryLayer('osm')">
+                    <span class="emoji">🗺️</span> Roads
+                </button>
+                <button class="place-btn map-btn" id="btn_terrain" onclick="setImageryLayer('terrain')">
+                    <span class="emoji">⛰️</span> Terrain
+                </button>
+                <button class="place-btn map-btn" id="btn_dark" onclick="setImageryLayer('dark')">
+                    <span class="emoji">🌑</span> Dark
+                </button>
+                <button class="place-btn map-btn" id="btn_watercolor" onclick="setImageryLayer('watercolor')">
+                    <span class="emoji">🎨</span> Watercolor
+                </button>
+            </div>
+        </div>
+
+        <!-- Planets Selection -->
+        <div class="section-title">⚪ Planets</div>
+        <div class="places-grid planets-grid">
+            <button class="place-btn planet-btn active" id="planet-earth" onclick="switchPlanet('earth')">
+                <span class="emoji">🌍</span> Earth
             </button>
-            <button class="place-btn map-btn" id="btn-satellite_labels" onclick="setImageryLayer('satellite_labels')">
-                <span class="emoji">🏷️</span> Sat + Label
+            <button class="place-btn planet-btn active" id="planet-moon" onclick="switchPlanet('moon')">
+                <span class="emoji">🌕</span> Moon
             </button>
-            <button class="place-btn map-btn" id="btn_osm" onclick="setImageryLayer('osm')">
-                <span class="emoji">🗺️</span> Roads
+            <button class="place-btn planet-btn active" id="planet-mercury" onclick="switchPlanet('mercury')">
+                <span class="emoji">⚪</span> Mercury
             </button>
-            <button class="place-btn map-btn" id="btn_terrain" onclick="setImageryLayer('terrain')">
-                <span class="emoji">⛰️</span> Terrain
+            <button class="place-btn planet-btn active" id="planet-venus" onclick="switchPlanet('venus')">
+                <span class="emoji">🟠</span> Venus
             </button>
-            <button class="place-btn map-btn" id="btn_dark" onclick="setImageryLayer('dark')">
-                <span class="emoji">🌑</span> Dark
+            <button class="place-btn planet-btn active" id="planet-mars" onclick="switchPlanet('mars')">
+                <span class="emoji">🔴</span> Mars
             </button>
-            <button class="place-btn map-btn" id="btn_watercolor" onclick="setImageryLayer('watercolor')">
-                <span class="emoji">🎨</span> Watercolor
+            <button class="place-btn planet-btn active" id="planet-jupiter" onclick="switchPlanet('jupiter')">
+                <span class="emoji">🟠</span> Jupiter
+            </button>
+            <button class="place-btn planet-btn active" id="planet-saturn" onclick="switchPlanet('saturn')">
+                <span class="emoji">🪐</span> Saturn
+            </button>
+            <button class="place-btn planet-btn active" id="planet-uranus" onclick="switchPlanet('uranus')">
+                <span class="emoji">🔵</span> Uranus
+            </button>
+            <button class="place-btn planet-btn active" id="planet-neptune" onclick="switchPlanet('neptune')">
+                <span class="emoji">🔵</span> Neptune
+            </button>
+            <button class="place-btn planet-btn active" id="planet-pluto" onclick="switchPlanet('pluto')">
+                <span class="emoji">⚪</span> Pluto
             </button>
         </div>
 
-        <div class="section-title"></div>
+        <!-- Planet info banner -->
+        <div class="planet-info" id="planetInfo" style="display: none;">
+            <div class="planet-info-name" id="planetInfoName"></div>
+            <div class="planet-info-details" id="planetInfoDetails"></div>
+            <button class="btn btn-fly" onclick="switchPlanet('earth')" style="margin-top: 8px; font-size: 12px;">
+                🌍 Return to the Earth
+            </button>
+        </div>
 
         <!-- Famous places -->
-        <div class="section-title">Famous Places</div>
-        <div class="places-grid">
-            <button class="place-btn" onclick="flyTo(41.8902, 12.4922, 800, 'Colosseum, Rome')">
-                <span class="emoji"></span> Colosseum
-            </button>
-            <button class="place-btn" onclick="flyTo(48.8584, 2.2945, 800, 'Tour Eiffel, Paris')">
-                <span class="emoji"></span> Tour Eiffel
-            </button>
-            <button class="place-btn" onclick="flyTo(40.6892, -74.0445, 800, 'Statue of Liberty')">
-                <span class="emoji"></span> New York
-            </button>
-            <button class="place-btn" onclick="flyTo(27.1751, 78.0421, 800, 'Taj Mahal, India')">
-                <span class="emoji"></span> Taj Mahal
-            </button>
-            <button class="place-btn" onclick="flyTo(35.6762, 139.6503, 1500, 'Tokyo, Japan')">
-                <span class="emoji"></span> Tokyo
-            </button>
-            <button class="place-btn" onclick="flyTo(-22.9519, -43.2105, 1000, 'Cristo Redentore')">
-                <span class="emoji"></span> Rio
-            </button>
-            <button class="place-btn" onclick="flyTo(29.9792, 31.1342, 800, 'Pyramid Giza')">
-                <span class="emoji"></span> Pyramid
-            </button>
-            <button class="place-btn" onclick="flyTo(-33.8568, 151.2153, 1000, 'Sydney Opera House')">
-                <span class="emoji"></span> Sydney
-            </button>
-            <button class="place-btn" onclick="flyTo(40.4319, -3.6761, 1500, 'Madrid, Spain')">
-                <span class="emoji"></span> Madrid
-            </button>
-            <button class="place-btn" onclick="flyTo(55.7558, 37.6173, 2000, 'Moscow, Russia')">
-                <span class="emoji"></span> Moscow
-            </button>
-            <button class="place-btn" onclick="flyTo(-13.1631, -72.5450, 2000, 'Machu Picchu')">
-                <span class="emoji"></span> Machu Picchu
-            </button>
-            <button class="place-btn" onclick="flyTo(51.5007, -0.1246, 800, 'Big Ben, London')">
-                <span class="emoji"></span> London
-            </button>
+        <div class="earth-only" id="earthOnlyPlaces">
+            <div class="section-title">Famous Places</div>
+            <div class="places-grid">
+                <button class="place-btn" onclick="flyTo(41.8902, 12.4922, 800, 'Colosseum, Rome')">
+                    <span class="emoji"></span> Colosseum
+                </button>
+                <button class="place-btn" onclick="flyTo(48.8584, 2.2945, 800, 'Tour Eiffel, Paris')">
+                    <span class="emoji"></span> Tour Eiffel
+                </button>
+                <button class="place-btn" onclick="flyTo(40.6892, -74.0445, 800, 'Statue of Liberty')">
+                    <span class="emoji"></span> New York
+                </button>
+                <button class="place-btn" onclick="flyTo(27.1751, 78.0421, 800, 'Taj Mahal, India')">
+                    <span class="emoji"></span> Taj Mahal
+                </button>
+                <button class="place-btn" onclick="flyTo(35.6762, 139.6503, 1500, 'Tokyo, Japan')">
+                    <span class="emoji"></span> Tokyo
+                </button>
+                <button class="place-btn" onclick="flyTo(-22.9519, -43.2105, 1000, 'Cristo Redentore')">
+                    <span class="emoji"></span> Rio
+                </button>
+                <button class="place-btn" onclick="flyTo(29.9792, 31.1342, 800, 'Pyramid Giza')">
+                    <span class="emoji"></span> Pyramid
+                </button>
+                <button class="place-btn" onclick="flyTo(-33.8568, 151.2153, 1000, 'Sydney Opera House')">
+                    <span class="emoji"></span> Sydney
+                </button>
+                <button class="place-btn" onclick="flyTo(40.4319, -3.6761, 1500, 'Madrid, Spain')">
+                    <span class="emoji"></span> Madrid
+                </button>
+                <button class="place-btn" onclick="flyTo(55.7558, 37.6173, 2000, 'Moscow, Russia')">
+                    <span class="emoji"></span> Moscow
+                </button>
+                <button class="place-btn" onclick="flyTo(-13.1631, -72.5450, 2000, 'Machu Picchu')">
+                    <span class="emoji"></span> Machu Picchu
+                </button>
+                <button class="place-btn" onclick="flyTo(51.5007, -0.1246, 800, 'Big Ben, London')">
+                    <span class="emoji"></span> London
+                </button>
+            </div>
         </div>
 
         <!-- Actions -->
