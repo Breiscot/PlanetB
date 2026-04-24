@@ -408,6 +408,8 @@
             </button>
         </div>
 
+        <div class="section-title"></div>
+
         <!-- Famous places -->
         <div class="section-title">Famous Places</div>
         <div class="places-grid">
@@ -676,17 +678,20 @@
                         break;
 
                     case 'satellite_labels':
-                        provider = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+                        const satProvider = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
                             'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-                        );
-                        layers.addImageryProvider(provider, 0);
+                        )
+                        layers.addImageryProvider(satProvider);
 
-                        const labelsProvider = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
-                            'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
-                        );
-
+                        const labelsProvider = new Cesium.UrlTemplateImageryProvider({
+                            url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+                            credit: new Cesium.Credit('ESRI Labels'),
+                            maximumLevel: 18,
+                            tileWidth: 256,
+                            tileHeight: 256
+                        });
                         const labelsLayer = layers.addImageryProvider(labelsProvider);
-                        labelsLayer.alpha = 0.8;
+                        labelsLayer.alpha = 1.0;
                         break;
 
                     default:
