@@ -849,6 +849,54 @@
             }
         };
 
+        // Switch Planets
+
+        async function switchPlanet(planetId) {
+            if (planetId === currentPlanet) return;
+
+            const planet = PLANETS[planetId];
+            if (!planet) return;
+
+            // Show transition
+            showPlanetTransition(planet);
+
+            await sleep(2000);
+
+            try {
+                // Stop auto-rotate
+                stopAutoRotate();
+
+                // Destroy the current viewer
+                if (viewer) {
+                    viewer.destroy();
+                    viewer = null;
+                }
+
+                // Create new viewer for the planet
+                if (planetId === 'earth') {
+                    await createEarthViewer();
+                } else {
+                    await createPlanetViewer(planetId, planet);
+                }
+
+                currentPlanet = planetId;
+
+                // Update UI
+                updatePlanetUI(planetId, planet);
+
+            } catch (error) {
+                console.error('Error switching to planet:', planetId, error);
+                // Fallback: return to the Earth
+                if (planetId !== 'earth') {
+                    await createEarthViewer();
+                    currentPlanet = 'earth';
+                    updatePlanetUI('earth', PLANETS.earth);
+                }
+            }
+            // Hide transition
+            hidePlanetTransition();
+        }
+
         // Initializing
 
         async function initGlobe() {
