@@ -1110,9 +1110,116 @@
             planetPOIs.forEach(poi => {
                 viewer.entities.add({
                     name: poi.name,
-                    position: Cesium.Cartesian3.fromCssColorString(PLANETS[planetId].color),
-                })
-            })
+                    position: Cesium.Cartesian3.fromDegrees(poi.lon, poi.lat, 0),
+                    point: {
+                        pixelSize: 8,
+                        color: Cesium.Color.fromCssColorString(PLANETS[planetId].color),
+                        outlineWidth: 2,
+                        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                        scaleByDistance: new Cesium.NearFarScalar(1e4, 2.0, 1e8, 0.5),
+                    },
+                    label: {
+                        text: poi.name,
+                        font: '13px sans-serif',
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                        fillColor: Cesium.Color.WHITE,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        pixelOffset: new Cesium.Cartesian2(0, -12),
+                        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                        scaleByDistance: new Cesium.NearFarScalar(1e4, 1.0, 1e8, 0.3),
+                        translucencyByDistance: new Cesium.NearFarScalar(1e5, 1.0, 5e7, 0.0),
+                    },
+                    description: `
+                        <div style="font-family: sans-serif; padding: 10px;">
+                            <h2>${poi.name}</h2>
+                            <p>${poi.desc}</p>
+                            <p><strong>Lat:</strong> ${poi.lat}° <strong>Lon:</strong> ${poi.lon}°</p>
+                            <p><strong>Planet:</strong> ${PLANETS[planetId].emoji} ${PLANETS[planetId].name}</p>
+                        </div>
+                    `
+                });
+            });
+        }
+
+        // Planets Mouse Tracking
+        function setupPlanetMouseTracking(planetId, planet) {
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+
+            handler.setInputAction(function (movement) {
+                const cartesian = viewer.camera.pickEllipsoid(
+                    movement.endPosition,
+                    viewer.scene.globe.ellipsoid
+                );
+
+                if (cartesian) {
+                    const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                    const lat = Cesium.Math.toDegrees(cartographic.latitude);
+                    const lon = Cesium.Math.toDegrees(cartographic.longitude);
+                    document.getElementById('latValue').textContent = lat.toFixed(3) + '°';
+                    document.getElementById('lonValue').textContent = lon.toFixed(3) + '°';
+                }
+
+                const cameraHeight = viewer.camera.positionCartographic.height;
+                if (cameraHeight > 1000000) {
+                    document.getElementById('altValue').textContent = (cameraHeight / 1000).toFixed(0) + ' km';
+                } else if (cameraHeight > 1000) {
+                    document.getElementById('altValue').textContent = (cameraHeight / 1000).toFixed(1) + ' km';
+                } else {
+                    document.getElementById('altValue').textContent = cameraHeight.toFixed(0) + ' m';
+                }
+            }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+        }
+
+        // Planet Transition Animation
+        function showPlanetTransition(planet) {
+            const overlay = document.getElementById('planetTransition');
+            document.getElementById('travelEmoji').textContent = planet.emoji;
+            document.getElementById('travelText').textContent = `Travel to ${planet.name}...`;
+            document.getElementById('travelSubtext').textContent = `Distance from the Earth: ${planet.distance}`;
+            overlay.classList.add('active');
+        }
+
+        function hidePlanetTransition() {
+            setTimeout(() => {
+                document.getElementById('planetTransition').classList.remove('active');
+            }, 500);
+        }
+
+        // Update Planet UI
+        function updatePlanetUI(planetId, planet) {
+            document.querySelectorAll('.planet-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById('planet_' + planetId);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            const earthSections = document.querySelectorAll('.earth-only');
+            const planetInfo = document.getElementById('planetInfo');
+
+            if (planetId === 'earth') {
+                earthSections.forEach(s => s.classList.remove('hidden-section'));
+                planetInfo.style.display = 'none';
+                document.getElementById('locationName').textContent = '-';
+            } else {
+                earthSections.forEach(s => s.classList.add('hidden-section'));
+                planetInfo.style.display = 'block';
+                document.getElementById('planetInfoName').textContent = `${planet.emoji} ${planet.name}`;
+                document.getElementById('planetInfoDetails').innerHTML = `
+                    📏 Diameter: ${planet.diameter}<br>
+                    ⚖️ Gravity: ${planet.gravity}<br>
+                    🌡️ Temperature: ${planet.temperature}<br>
+                    🌙 Moons: ${planet.moons}<br>
+                    ☀️ Day: ${planet.dayLength}<br>
+                    📅 Year: ${planet.yearLength}<br>
+                    💨 Atmosphere: ${planet.atmosphere}
+                `;
+                document.getElementById('locationName').textContent = planet.name;
+            }
+        }
+
+        // Utility
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
         }
 
         // Initializing
