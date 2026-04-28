@@ -1070,6 +1070,51 @@
             viewer.imageryLayers.addImageryProvider(provider);
         }
 
+        function createSkyBox() {
+            return new Cesium.SkyBox({
+                sources: {
+                    positiveX: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_px.jpg',
+                    negativeX: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mx.jpg',
+                    positiveY: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_py.jpg',
+                    negativeY: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_my.jpg',
+                    positiveZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_pz.jpg',
+                    negativeZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mz.jpg'
+                }
+            });
+        }
+
+        function addPlanetPOIs(planetId) {
+            const pois = {
+                moon: [
+                    { name: 'Sea ​​of ​​tranquility', lat: 8.5, lon: 31.4, desc: 'Apollo 11 - First Moon Landing'},
+                    { name: 'Crater Tycho', lat: -43.3, lon: -11.2, desc: 'Crater'},
+                    { name: 'Crater Copernicus', lat: 9.6, lon: -20.1, desc: 'Crater'},
+                    { name: 'Apollo 17', lat: 20.2, lon: 30.8, desc: 'Last Human Moon Landing'},
+                    { name: 'Lunar South Pole', lat: -89.5, lon: 0, desc: 'Possible water ice'},
+                ],
+                mars: [
+                    { name: 'Olympus Mons', lat: 18.65, lon: -133.8, desc: 'Tallest volcano in the Solar System (21.9 Km)'},
+                    { name: 'North Pole', lat: 89.5, lon: 0, desc: 'Cap Polar Ice'},
+                ],
+                jupiter: [
+                    { name: 'Big chunky spot', lat: -22.0, lon: -10.0, desc: 'Large Storm 16.000 km'},
+                ],
+                saturn: [
+                    { name: 'Storm of the 2011', lat: 35.0, lon: 0, desc: 'Large White Storm'},
+                ]
+            };
+
+            const planetPOIs = pois[planetId];
+            if (!planetPOIs) return;
+
+            planetPOIs.forEach(poi => {
+                viewer.entities.add({
+                    name: poi.name,
+                    position: Cesium.Cartesian3.fromCssColorString(PLANETS[planetId].color),
+                })
+            })
+        }
+
         // Initializing
 
         async function initGlobe() {
