@@ -877,6 +877,84 @@
             });
         }
 
+        // Procedural Texture for planets
+
+        function createProceduralTexture(planet) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            const baseColor = Cesium.Color.fromCssColorString(planet.color);
+            const r = Math.floor(baseColor.red * 255);
+            const g = Math.floor(baseColor.green * 255);
+            const b = Math.floor(baseColor.blue * 255);
+
+            const bgGradient = ctx.createLinearGradient(0, 0, 0, 1024);
+            bgGradient.addColorStop(0, `rgb(${Math.min(255, r + 20)}, ${Math.min(255, g + 20)}, ${Math.min(255, b + 20)})`);
+            bgGradient.addColorStop(0.3, `rgb(${r}, ${g}, ${b})`);
+            bgGradient.addColorStop(0.5, `rgb(${Math.max(0, r - 10)}, ${Math.max(0, g - 10)}, ${Math.max(0, b - 10)})`);
+            bgGradient.addColorStop(0.7, `rgb(${r}, ${g}, ${b})`);
+            bgGradient.addColorStop(1, `rgb(${Math.min(255, r + 15)}, ${Math.min(255, g + 15)}, ${Math.min(255, b + 15)})`);
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, 2048, 1024);
+
+            const isGasGiant = ['jupiter', 'saturn', 'uranus', 'neptune'].includes(planet.name.toLowerCase()) || planet.color === '#c88b3a' || planet.color === '#e8d5a3' || planet.color === '#4fc1e9' || planet.color === '#3498db';
+            const isRocky = ['mercury', 'moon', 'pluto'].includes(planet.name.toLowerCase()) || planet.color === '#8c7e6d' || planet.color === '#aaaaaa' || planet.color === '#8e735b';
+
+            if (isGasGiant) {
+                // Horizontal bands for Gas Giant
+                for (let y = 0; y < 1024; y++) {
+                    const bandIntensity = Math.sin(y * 0.03) * 0.15 + Math.sin(y * 0.07) * 0.08 + Math.sin(y * 0.15) * 0.05;
+                    const noise = (Math.random() - 0.5) * 10;
+
+                    const br = Math.max(0, Math.min(255, r + bandIntensity * 255 + noise));
+                    const bg2 = Math.max(0, Math.min(255, g + bandIntensity * 200 + noise));
+                    const bb = Math.max(0, Math.min(255, b + bandIntensity * 150 + noise));
+
+                    ctx.fillStyle = `rgb(${br}, ${bg2}, ${bb})`;
+                    ctx.fillRect(0, y, 2048, 1);
+                }
+
+                // Turbulence
+                for (let i = 0; i < 200; i++) {
+                    const x = Math.random() * 2048;
+                    const y = Math.random() * 1024;
+                    const w = Math.random() * 100 + 20;
+                    const h = Math.random() * 5 + 1;
+                    const alpha = Math.random() * 0.1;
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.fillRect(x, y, w, h);
+                }
+
+                // Great Red Spot for Jupiter
+                if (planet.name === 'Jupiter') {
+                    ctx.beginPath();
+                    ctx.ellipse(1400, 580, 120, 60, 0, 0, Math.PI * 2);
+                    const spotGradient = ctx.createRadialGradient(1400, 580, 10, 1400, 580, 100);
+                    spotGradient.addColorStop(0, 'rgba(200, 80, 50, 0.6)');
+                    spotGradient.addColorStop(0.5, 'rgba(180, 60, 30, 0.4)');
+                    spotGradient.addColorStop(1, 'rgba(160, 50, 20, 0.1)');
+                    ctx.fillStyle = spotGradient;
+                    ctx.fill();
+                }
+
+            } else if (isRocky) {
+                for (let i = 0; i < 500; i++) {
+                    const cx = Math.random() * 2048;
+                    const cy = Math.random() * 1024;
+                    const cr = Math.random() * 15 + 2;
+                    const alpha = Math.random() * 0.3 + 0.05;
+
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+        }
+
         // Switch Planets
 
         async function switchPlanet(planetId) {
