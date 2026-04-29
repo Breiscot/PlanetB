@@ -1535,41 +1535,30 @@
                 stopAutoRotate();
                 return;
             }
-
             autoRotateEnabled = true;
-
             viewer.clock.onTick.addEventListener(autoRotateTick);
-
-            // Set view from top
-            viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(
-                    Cesium.Math.toDegrees(viewer.camera.positionCartographic.longitude),
-                    0,
-                    20000000
-                ),
-                orientation: {
-                    heading: 0,
-                    pitch: Cesium.Math.toRadians(-90),
-                    roll: 0
-                },
-                duration: 2
-            });
         }
 
-        function autoRotateTick(clock) {
+        function autoRotateTick() {
             if (!autoRotateEnabled) return;
             viewer.camera.rotate(Cesium.Cartesian3.UNIT_Z, -0.002);
         }
 
         function stopAutoRotate() {
             autoRotateEnabled = false;
-            viewer.clock.onTick.removeEventListener(autoRotateTick);
+            try {
+                viewer.clock.onTick.removeEventListener(autoRotateTick);
+            } catch (e) {}
         }
 
         // Search
 
         async function handleSearch(event) {
             if (event.key !== 'Enter') return;
+            if (currentPlanet !== 'earth') {
+                alert('The research is available only on Earth');
+                return;
+            }
 
             const query = document.getElementById('searchInput').value.trim();
             if (!query) return;
@@ -1584,17 +1573,14 @@
                     const result = data[0];
                     const lat = parseFloat(result.lat);
                     const lon = parseFloat(result.lon);
+                    const displayName = result.display_name.split(',')[0];
 
-                    flyTo(lat, lon, 5000, result.display_name.split(',')[0]);
+                    flyTo(lat, lon, 5000, displayName);
 
                     // Add marker
                     viewer.entities.add({
-                        name: result.display_name.split(',')[0],
+                        name: displayName,
                         position: Cesium.Cartesian3.fromDegrees(lon, lat),
-                        billboard: {
-                            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-                        },
                         point: {
                             pixelSize: 12,
                             color: Cesium.Color.RED,
@@ -1603,7 +1589,7 @@
                             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
                         },
                         label: {
-                            text: '- ' + result.display_name.split(',')[0],
+                            text: '- ' + displayName,
                             font: '14px sans-serif',
                             style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                             outlineWidth: 2,
@@ -1613,7 +1599,7 @@
                         },
                         description: `
                             <div style="font-family: sans-serif; padding: 10px;">
-                                <h2>- ${result.display_name.split(',')[0]}</h2>
+                                <h2>- ${displayName}</h2>
                                 <p>${result.display_name}</p>
                                 <p><strong>Coordinate:</strong> ${lat.toFixed(4)}°, ${lon.toFixed(4)}°</p>
                             </div>
@@ -1628,103 +1614,8 @@
             }
         }
 
-        // UI Help
+        // Fallback
 
-        function togglePanel() {
-            document.getElementById('controlPanel').classList.toggle('collapsed');
-        }
-
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        // Initialization
-
-        initGlobe();
-
-        // Initializing
-
-        async function initGlobe() {
-            try {
-                viewer = new Cesium.Viewer('cesiumContainer', {
-                    // Terrain 3D
-                    terrainProvider: await Cesium.createWorldTerrainAsync({
-                        requestWaterMask: true,
-                        requestVertexNormals: true
-                    }),
-
-                    // Settings UI
-                    animation: false,
-                    baseLayerPicker: false,
-                    fullscreenButton: false,
-                    vrButton: false,
-                    geocoder: false,
-                    homeButton: false,
-                    infoBox: true,
-                    sceneModePicker: false,
-                    selectionIndicator: true,
-                    timeline: false,
-                    navigationHelpButton: false,
-                    navigationInstructionsInitiallyVisible: false,
-                    scene3DOnly: false,
-
-                    // SkyBox e atmosphere
-                    skyBox: new Cesium.SkyBox({
-                        sources: {
-                            positiveX: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_px.jpg',
-                            negativeX: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mx.jpg',
-                            positiveY: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_py.jpg',
-                            negativeY: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_my.jpg',
-                            positiveZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_pz.jpg',
-                            negativeZ: 'https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mz.jpg'    
-                        }
-                    }),
-                    skyAtmosphere: new Cesium.SkyAtmosphere()
-                });
-
-                viewer.imageryLayers.removeAll();
-                await setImageryLayer('satellite');
-
-                // Config Scene
-                const scene = viewer.scene;
-                scene.globe.enableLighting = true;
-                scene.globe.depthTestAgainstTerrain = true;
-                scene.fog.enabled = true;
-                scene.globe.showGroundAtmosphere = true;
-
-                // Initial Position - View from Europe/Italy
-                viewer.camera.flyTo({
-                    destination: Cesium.Cartesian3.fromDegrees(12.4964, 41.9028, 15000000),
-                    orientation: {
-                        heading: Cesium.Math.toRadians(0),
-                        pitch: Cesium.Math.toRadians(-90),
-                        roll: 0
-                    },
-                    duration: 3
-                });
-
-                // Add markers to famous places
-                addFamousPlaceMarkers();
-
-                // Mouse tracking for coordinate
-                setupMouseTracking();
-
-                // Hide loading screen
-                setTimeout(() => {
-                    document.getElementById('loadingScreen').classList.add('hidden');
-                }, 2500);
-
-            } catch (error) {
-                console.error('Error Cesium Ion, used layer OpenStreet', error);
-                initFallbackGlobe();
-            }
-        }
-
-        // Fallback without token Cesium Ion
         function initFallbackGlobe() {
             viewer = new Cesium.Viewer('cesiumContainer', {
                 animation: false,
@@ -1743,22 +1634,15 @@
             // Remove the layer default and add OpenStreetMap
             viewer.imageryLayers.removeAll();
             viewer.imageryLayers.addImageryProvider(
-                new Cesium.OpenStreetMapImageryProvider({
-                    url: 'https://tile.openstreetmap.org/'
-                })
+                new Cesium.OpenStreetMapImageryProvider({ url: 'https://tile.openstreetmap.org/' })
             );
 
-            const scene = viewer.scene;
-            scene.globe.enableLighting = true;
-            scene.globe.showGroundAtmosphere = true;
+            viewer.scene.globe.enableLighting = true;
+            viewer.scene.globe.showGroundAtmosphere = true;
 
             viewer.camera.flyTo({
                 destination: Cesium.Cartesian3.fromDegrees(12.4964, 41.9028, 15000000),
-                orientation: {
-                    heading: 0,
-                    pitch: Cesium.Math.toRadians(-90),
-                    roll: 0
-                },
+                orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
                 duration: 3
             });
 
@@ -1770,14 +1654,44 @@
             }, 2500);
         }
 
+        // UI Help
 
+        function togglePanel() {
+            document.getElementById('controlPanel').classList.toggle('collapsed');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Initializing
+
+        async function initGlobe() {
+            try {
+                await createEarthViewer();
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').classList.add('hidden');
+                }, 2500);
+            } catch (error) {
+                console.error('Error init', error);
+                initFallbackGlobe();
+            }
+        }
+
+        initGlobe();
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
             switch (e.key) {
                 case 'r': startAutoRotate(); break;
                 case 'h': resetView(); break;
                 case 'f': toggleFullscreen(); break;
+                case 'g': toggleGrid(); break;
                 case 'Escape': stopAutoRotate(); break;
             }
         });
