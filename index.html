@@ -678,10 +678,11 @@
                 dayLength: '24 hours',
                 yearLength: '365.25 days',
                 atmosphere: 'N₂, O₂, Ar',
-                tileUrl: null, // use ESRI
+                textureUrl: null,
                 color: '#4fc3f7',
                 cameraHeight: 15000000,
-                ellipsoid: null // default
+                hasAtmosphere: true,
+                scale: 1.0
             },
             moon: {
                 name: 'Moon',
@@ -696,10 +697,11 @@
                 dayLength: '27.3 days',
                 yearLength: '27.3 days',
                 atmosphere: 'Null',
-                tileUrl: 'https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0/default/default028mm/{z}/{y}/{x}.jpg',
+                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Solarsystemscope_texture_2k_moon.jpg/1280px-Solarsystemscope_texture_2k_moon.jpg',
                 color: '#aaa',
-                cameraHeight: 5000000,
-                ellipsoid: [1737400, 1737400, 1737400]
+                cameraHeight: 8000000,
+                hasAtmosphere: false,
+                scale: 0.27
             },
             mercury: {
                 name: 'Mercury',
@@ -714,10 +716,11 @@
                 dayLength: '58.6 days',
                 yearLength: '88 days',
                 atmosphere: 'Almost null',
-                tileUrl: 'https://trek.nasa.gov/tiles/Mercury/EQ/Mercury_MESSENGER_MDIS_Basemap_BDR_Mosaic_Global_166m_v2/1.0.0/default/default028mm/{z}/{y}/{x}.jpg',
+                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Solarsystemscope_texture_2k_mercury.jpg/1280px-Solarsystemscope_texture_2k_mercury.jpg',
                 color: '#8c7e6d',
-                cameraHeight: 7000000,
-                ellipsoid: [2439700, 2439700, 2439700]
+                cameraHeight: 8000000,
+                hasAtmosphere: false,
+                scale: 0.38
             },
             venus: {
                 name: 'Venus',
@@ -732,10 +735,11 @@
                 dayLength: '243 days',
                 yearLength: '225 days',
                 atmosphere: 'CO² very dense',
-                tileUrl: 'https://trek.nasa.gov/tiles/Venus/EQ/Magellan_Colorized_Global_Mosaic_4641m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg',
+                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Solarsystemscope_texture_2k_venus_surface.jpg/1280px-Solarsystemscope_texture_2k_venus_surface.jpg',
                 color: '#e8a84c',
                 cameraHeight: 14000000,
-                ellipsoid: [6051800, 6051800, 6051800]
+                hasAtmosphere: true,
+                scale: 0.95
             },
             mars: {
                 name: 'Mars',
@@ -750,10 +754,10 @@
                 dayLength: '24.6 hours',
                 yearLength: '687 days',
                 atmosphere: 'CO² subtle',
-                tileUrl: 'https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg',
+                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Solarsystemscope_texture_2k_mars.jpg/1280px-Solarsystemscope_texture_2k_mars.jpg',
                 color: '#c1440e',
-                cameraHeight: 9000000,
-                ellipsoid: [3389500, 3389500, 3389500]
+                hasAtmosphere: false,
+                scale: 0.53
             },
             jupiter: {
                 name: 'Jupiter',
@@ -768,10 +772,11 @@
                 dayLength: '9.9 hours',
                 yearLength: '11.86 years',
                 atmosphere: 'H₂ He',
-                tileUrl: 'https://trek.nasa.gov/tiles/Jupiter/EQ/Jupiter_Cassini_Mosaic_Global_2000m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg',
+                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Solarsystemscope_texture_2k_jupiter.jpg/1280px-Solarsystemscope_texture_2k_jupiter.jpg',
                 color: '#c88b3a',
-                cameraHeight: 180000000,
-                ellipsoid: [69911000, 69911000, 66854000]
+                cameraHeight: 20000000,
+                hasAtmosphere: false,
+                scale: 10.97
             },
             saturn: {
                 name: 'Saturn',
@@ -786,10 +791,11 @@
                 dayLength: '10.7 hours',
                 yearLength: '29.46 years',
                 atmosphere: 'H₂ He',
-                tileUrl: 'https://trek.nasa.gov/tiles/Saturn/EQ/Saturn_Cassini_Mosaic_Global_10km/1.0.0/default/default028mm/{z}/{y}/{x}.jpg',
+                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Solarsystemscope_texture_2k_saturn.jpg/1280px-Solarsystemscope_texture_2k_saturn.jpg',
                 color: '#e8d5a3',
-                cameraHeight: 150000000,
-                ellipsoid: [58232000, 58232000, 54364000]
+                cameraHeight: 20000000,
+                hasAtmosphere: false,
+                scale: 9.14
             },
             uranus: {
                 name: 'Uranus',
@@ -804,11 +810,11 @@
                 dayLength: '17.2 hours',
                 yearLength: '84 years',
                 atmosphere: 'H₂ He, CH₄',
-                tileUrl: null,
-                textureColor: '#4fc1e9',
+                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Solarsystemscope_texture_2k_uranus.jpg/1280px-Solarsystemscope_texture_2k_uranus.jpg',
                 color: '#4fc1e9',
-                cameraHeight: 70000000,
-                ellipsoid: [25362000, 25362000, 24973000]
+                cameraHeight: 18000000,
+                hasAtmosphere: false,
+                scale: 3.98
             },
             neptune: {
                 name: 'Neptune',
@@ -823,11 +829,11 @@
                 dayLength: '16.1 hours',
                 yearLength: '164.8 years',
                 atmosphere: 'H₂ He, CH₄',
-                tileUrl: null,
-                textureColor: '#3498db',
+                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Solarsystemscope_texture_2k_neptune.jpg/1280px-Solarsystemscope_texture_2k_neptune.jpg',
                 color: '#3498db',
-                cameraHeight: 65000000,
-                ellipsoid: [24622000, 24622000, 24341000]
+                cameraHeight: 18000000,
+                hasAtmosphere: false,
+                scale: 3.86
             },
             pluto: {
                 name: 'Pluto',
@@ -842,12 +848,34 @@
                 dayLength: '6.4 days',
                 yearLength: '248 years',
                 atmosphere: 'N₂ very thin',
-                tileUrl: 'https://trek.nasa.gov/tiles/Pluto/EQ/Pluto_NewHorizons_Global_Mosaic_300m_Jul2017/1.0.0/default/default028mm/{z}/{y}/{x}.jpg',
+                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Solarsystemscope_texture_2k_pluto.jpg/1280px-Solarsystemscope_texture_2k_pluto.jpg',
                 color: '#8e735b',
-                cameraHeight: 3500000,
-                ellipsoid: [1188300, 1188300, 1188300]
+                cameraHeight: 8000000,
+                hasAtmosphere: false,
+                scale: 0.18
             }
         };
+
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+
+                img.onload = () => resolve(img);
+                img.onerror = (e) => reject(new Error('Image load failed: ' + url));
+
+                const timeout = setTimeout(() => {
+                    reject(new Error('Image load timeout: ' + url));
+                }, 10000);
+
+                img.onload = () => {
+                    clearTimeout(timeout);
+                    resolve(img);
+                };
+
+                img.src = url;
+            });
+        }
 
         // Switch Planets
 
@@ -954,17 +982,6 @@
         // Viewer Generic Planet
         
         async function createPlanetViewer(planetId, planet) {
-            const radii = planet.ellipsoid
-                ? new Cesium.Cartesian3(planet.ellipsoid[0], planet.ellipsoid[1], planet.ellipsoid[2])
-                : new Cesium.Cartesian3(planet.radius, planet.radius, planet.radius);
-
-            const planetEllipsoid = new Cesium.Ellipsoid(radii.x, radii.y, radii.z);
-
-            const globe = new Cesium.Globe(planetEllipsoid);
-            globe.showGroundAtmosphere = false;
-            globe.enableLighting = true;
-            globe.depthTestAgainstTerrain = false;
-
             viewer = new Cesium.Viewer('cesiumContainer', {
                 animation: false,
                 baseLayerPicker: false,
@@ -978,39 +995,56 @@
                 timeline: false,
                 navigationHelpButton: false,
                 scene3DOnly: true,
-                globe: globe,
                 skyBox: createSkyBox(),
-                skyAtmosphere: false
+                skyAtmosphere: false,
+                terrainProvider: undefined
             });
+
+            viewer.scene.globe.showGroundAtmosphere = false;
+            viewer.scene.globe.enableLighting = true;
+            viewer.scene.fog.enabled = false;
+            viewer.scene.backgroundColor = Cesium.Color.BLACK;
+
+            if (viewer.scene.skyAtmosphere) {
+                viewer.scene.skyAtmosphere.show = false;
+            }
 
             viewer.imageryLayers.removeAll();
 
-            if (planet.tileUrl) {
+            // Load texture of the planet
+            let textureLoaded = false;
+
+            if (planet.textureUrl) {
                 try {
-                    const planetProvider = new Cesium.UrlTemplateImageryProvider({
-                        url: planet.tileUrl,
-                        maximumLevel: 6,
-                        credit: new Cesium.Credit('NASA/Trek'),
-                        tileWidth: 256,
-                        tileHeight: 256,
-                        ellipsoid: planetEllipsoid
+                    const img = await loadImage(planet.textureUrl);
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    const provider = new Cesium.SingleTileImageryProvider({
+                        url: canvas.toDataURL('image/jpeg', 0.9),
+                        rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
                     });
-                    viewer.imageryLayers.addImageryProvider(planetProvider);
+
+                    viewer.imageryLayers.addImageryProvider(provider);
+                    textureLoaded = true;
+                    console.log(`Texture loaded for ${planet.name}`);
                 } catch (e) {
-                    console.warn('Could bit kiad okaber tiles, using color:', e);
-                    addSolidColorLayer(planet.textureColor || planet.color, planetEllipsoid);
+                    console.warn(`Could not load texture for ${planet.name}, using procedural:`, e);
                 }
-            } else {
-                addSolidColorLayer(planet.textureColor || planet.color, planetEllipsoid);
             }
 
-            viewer.scene.backgroundColor = Cesium.Color.BLACK;
-            viewer.scene.globe.enableLighting = true;
+            if (!textureLoaded) {
+                const proceduralProvider = createProceduralTexture(planet);
+                viewer.imageryLayers.addImageryProvider(proceduralProvider);
+                console.log(`Procedural texture for ${planet.name}`);
+            }
 
             viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromElements(
-                    planet.cameraHeight * 1.5, 0, 0
-                ),
+                destination: Cesium.Cartesian3.fromDegrees(0, 0, planet.cameraHeight),
                 orientation: {
                     heading: Cesium.Math.toRadians(0),
                     pitch: Cesium.Math.toRadians(-90),
