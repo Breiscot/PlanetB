@@ -697,7 +697,7 @@
                 dayLength: '27.3 days',
                 yearLength: '27.3 days',
                 atmosphere: 'Null',
-                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Solarsystemscope_texture_2k_moon.jpg/1280px-Solarsystemscope_texture_2k_moon.jpg',
+                textureUrl: 'https://www.solarsystemscope.com/textures/download/2k_moon.jpg',
                 color: '#aaa',
                 cameraHeight: 8000000,
                 hasAtmosphere: false,
@@ -716,7 +716,7 @@
                 dayLength: '58.6 days',
                 yearLength: '88 days',
                 atmosphere: 'Almost null',
-                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Solarsystemscope_texture_2k_mercury.jpg/1280px-Solarsystemscope_texture_2k_mercury.jpg',
+                textureUrl: 'https://www.solarsystemscope.com/textures/download/2k_mercury.jpg',
                 color: '#8c7e6d',
                 cameraHeight: 8000000,
                 hasAtmosphere: false,
@@ -735,7 +735,7 @@
                 dayLength: '243 days',
                 yearLength: '225 days',
                 atmosphere: 'CO² very dense',
-                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Solarsystemscope_texture_2k_venus_surface.jpg/1280px-Solarsystemscope_texture_2k_venus_surface.jpg',
+                textureUrl: 'https://www.solarsystemscope.com/textures/download/2k_venus_surface.jpg',
                 color: '#e8a84c',
                 cameraHeight: 14000000,
                 hasAtmosphere: true,
@@ -754,7 +754,7 @@
                 dayLength: '24.6 hours',
                 yearLength: '687 days',
                 atmosphere: 'CO² subtle',
-                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Solarsystemscope_texture_2k_mars.jpg/1280px-Solarsystemscope_texture_2k_mars.jpg',
+                textureUrl: 'https://www.solarsystemscope.com/textures/download/2k_mars.jpg',
                 color: '#c1440e',
                 cameraHeight: 10000000,
                 hasAtmosphere: false,
@@ -773,7 +773,7 @@
                 dayLength: '9.9 hours',
                 yearLength: '11.86 years',
                 atmosphere: 'H₂ He',
-                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Solarsystemscope_texture_2k_jupiter.jpg/1280px-Solarsystemscope_texture_2k_jupiter.jpg',
+                textureUrl: 'https://www.solarsystemscope.com/textures/download/2k_jupiter.jpg',
                 color: '#c88b3a',
                 cameraHeight: 20000000,
                 hasAtmosphere: false,
@@ -792,7 +792,7 @@
                 dayLength: '10.7 hours',
                 yearLength: '29.46 years',
                 atmosphere: 'H₂ He',
-                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Solarsystemscope_texture_2k_saturn.jpg/1280px-Solarsystemscope_texture_2k_saturn.jpg',
+                textureUrl: 'https://www.solarsystemscope.com/textures/download/2k_saturn.jpg',
                 color: '#e8d5a3',
                 cameraHeight: 20000000,
                 hasAtmosphere: false,
@@ -811,7 +811,7 @@
                 dayLength: '17.2 hours',
                 yearLength: '84 years',
                 atmosphere: 'H₂ He, CH₄',
-                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Solarsystemscope_texture_2k_uranus.jpg/1280px-Solarsystemscope_texture_2k_uranus.jpg',
+                textureUrl: 'https://www.solarsystemscope.com/textures/download/2k_uranus.jpg',
                 color: '#4fc1e9',
                 cameraHeight: 18000000,
                 hasAtmosphere: false,
@@ -830,7 +830,7 @@
                 dayLength: '16.1 hours',
                 yearLength: '164.8 years',
                 atmosphere: 'H₂ He, CH₄',
-                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Solarsystemscope_texture_2k_neptune.jpg/1280px-Solarsystemscope_texture_2k_neptune.jpg',
+                textureUrl: 'https://www.solarsystemscope.com/textures/download/2k_neptune.jpg',
                 color: '#3498db',
                 cameraHeight: 18000000,
                 hasAtmosphere: false,
@@ -849,7 +849,7 @@
                 dayLength: '6.4 days',
                 yearLength: '248 years',
                 atmosphere: 'N₂ very thin',
-                textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Solarsystemscope_texture_2k_pluto.jpg/1280px-Solarsystemscope_texture_2k_pluto.jpg',
+                textureUrl: 'https://www.solarsystemscope.com/textures/download/2k_eris_fictional.jpg',
                 color: '#8e735b',
                 cameraHeight: 8000000,
                 hasAtmosphere: false,
@@ -1113,7 +1113,7 @@
                 scene3DOnly: true,
                 skyBox: createSkyBox(),
                 skyAtmosphere: false,
-                terrainProvider: undefined
+                terrainProvider: new Cesium.EllipsoidTerrainProvider()
             });
 
             viewer.scene.globe.showGroundAtmosphere = false;
@@ -1128,41 +1128,36 @@
             viewer.imageryLayers.removeAll();
 
             // Load texture of the planet
-            let textureLoaded = false;
+            let loaded = false;
 
             if (planet.textureUrl) {
                 try {
-                    const img = await loadImage(planet.textureUrl);
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-
-                    const provider = new Cesium.SingleTileImageryProvider({
-                        url: canvas.toDataURL('image/jpeg', 0.9),
-                        rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
-                    });
-
+                    const provider = await Cesium.SingleTileImageryProvider.fromUrl(
+                        planet.textureUrl,
+                        {
+                            rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
+                        }
+                    );
                     viewer.imageryLayers.addImageryProvider(provider);
-                    textureLoaded = true;
-                    console.log(`Texture loaded for ${planet.name}`);
+                    loaded = true;
+                    console.log('Texture loaded:', planet.name);
                 } catch (e) {
-                    console.warn(`Could not load texture for ${planet.name}, using procedural:`, e);
+                    console.warn('Texture failed, using procedural:', planet.name, e.message);
                 }
             }
 
-            if (!textureLoaded) {
+            if (!loaded) {
                 const proceduralProvider = createProceduralTexture(planet);
-                viewer.imageryLayers.addImageryProvider(proceduralProvider);
-                console.log(`Procedural texture for ${planet.name}`);
+                if (proceduralProvider) {
+                    viewer.imageryLayers.addImageryProvider(proceduralProvider);
+                }
             }
 
+            // Camera
             viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(0, 0, planet.cameraHeight),
+                destination: Cesium.Cartesian3.fromDegrees(0, 0, planet.cameraHeight || 15000000),
                 orientation: {
-                    heading: Cesium.Math.toRadians(0),
+                    heading: 0,
                     pitch: Cesium.Math.toRadians(-90),
                     roll: 0
                 },
