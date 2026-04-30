@@ -1108,20 +1108,20 @@
         
         async function createPlanetViewer(planetId, planet) {
 
-            let textureCanvas = null;
+            let textureDataUrl = null;
 
             if (planet.textureUrl) {
                 try {
                     const img = await loadImage(planet.textureUrl);
-                    textureCanvas = document.createElement('canvas');
-                    textureCanvas.width = 2048;
-                    textureCanvas.height = 1024;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 1024;
+                    canvas.height = 512;
                     const ctx = textureCanvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, 2048, 1024);
-                    console.log('Applied ' + planet.name + ' texture ready');
+                    ctx.drawImage(img, 0, 0, 1024, 512);
+                    textureDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    console.log('Texture ready: ' + planet.name);
                 } catch (e) {
-                    console.warn('Failed ' + planet.name + ' texture failed:', e.message);
-                    textureCanvas = null;
+                    console.warn('Texture failed:  ' + planet.name, e.message);
                 }
             }
 
@@ -1145,69 +1145,83 @@
             });
 
             const scene = viewer.scene;
-            scene.globe.showGroundAtmosphere = false;
-            scene.globe.enableLighting = true;
-            scene.globe.depthTestAgainstTerrain = false;
+
+            // Hide the globe
+            scene.globe.show = false;
             scene.fog.enabled = false;
             scene.backgroundColor = Cesium.Color.BLACK;
-            scene.skyBox.show = false;
 
             if (scene.skyAtmosphere) {
                 scene.skyAtmosphere.show = false;
             }
 
-            viewer.imageryLayers.removeAll();
+            const DISPLAY_RADIUS = 6371000;
 
-            // Procedural Fallback
-            if (textureCanvas) {
-                try {
-                    const tileCache = await generateTileCache(textureCanvas, 3);
+            let sphereMaterial;
 
-                    const customProvider = createCachedTileProvider(tileCache, planet.name);
-                    viewer.imageryLayers.addImageryProvider(customProvider);
-                    
-                } catch (e) {
-                    console.warn('Tile cache failed:', e);
-                    // Direct Fallback with canvas reduced to 512x256
-                    const smallCanvas = document.createElement('canvas');
-                    smallCanvas.width = 512;
-                    smallCanvas.height = 256;
-                    const sCtx = smallCanvas.getContext('2d');
-                    sCtx.drawImage(textureCanvas, 0, 0, 512, 256);
-
-                    const provider = new Cesium.SingleTileImageryProvider({
-                        url: smallCanvas.toDataURL('image/jpeg', 0.85),
-                        rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90),
-                        tileWidth: 512,
-                        tileHeight: 256,
-                    });
-                    viewer.imageryLayers.addImageryProvider(provider);
-                }
+            if (textureDataUrl) {
+                sphereMaterial = new Cesium.ImageMaterialProperty({
+                    image: textureDataUrl,
+                    transparent: false,
+                    repeat: new Cesium.Cartesian2(1.0, 1.0)
+                });
             } else {
-                const fallback = createProceduralTexture(planet);
-                if (fallback) viewer.imageryLayers.addImageryProvider(fallback);
+                const proceduralCanvas = buildProceduralCanvas(planet);
+                sphereMaterial = new Cesium.ImageMaterialProperty({
+                    image: proceduralCanvas.toDataURL('image/jpeg', 0.9),
+                    transparent: false
+                });
             }
-
-            // Reactivate SkyBox
-            setTimeout(() => {
-                if (viewer && !viewer.isDestroyed()) {
-                    viewer.scene.skyBox.show = true;
+            
+            const planetEntity = viewer.entities.add({
+                name: planet.name,
+                position: Cesium.Cartesian3.ZERO,
+                ellipsoid: {
+                    radii: new Cesium.Cartesian3(DISPLAY_RADIUS, DISPLAY_RADIUS, DISPLAY_RADIUS),
+                    material: sphereMaterial,
+                    outline: false,
                 }
-            }, 1000)
-
-            // Camera
-            viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(0, 20, planet.cameraHeight || 15000000),
-                orientation: {
-                    heading: 0,
-                    pitch: Cesium.Math.toRadians(-90),
-                    roll: 0
-                },
-                duration: 2
             });
 
+            const cameraDistance = DISPLAY_RADIUS * 3.5;
+
+            // Camera
+            viewer.camera.setView({
+                destination: new Cesium.Cartesian3(0, -cameraDistance, DISPLAY_RADIUS * 0.3),
+                orientation: {
+                    direction: new Cesium.Cartesian3(0, 1, -0.1).normalize(),
+                    up: Cesium.Cartesian3.UNIT_Z
+                }
+            });
+
+            viewer.scene.screenSpaceCameraController.minimumZoomDistance = DISPLAY_RADIUS * 1.1;
+            viewer.scene.screenSpaceCameraController.maximumZoomDistance = DISPLAY_RADIUS * 15;
+
+            addPlanetPOIsOnSphere(planetId, DISPLAY_RADIUS);
             setupPlanetMouseTracking(planetId, planet);
-            addPlanetPOIs(planetId);
+        }
+
+        function buildProceduralCanvas(planet) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            const baseColor = Cesium.Color.fromCssColorString(planet.color);
+            const r = Math.floor(baseColor.red * 255);
+            const g = Math.floor(baseColor.green * 255);
+            const b = Math.floor(baseColor.blue * 255);
+
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(0, 0, 1024, 512);
+
+            const name = planet.name.toLowerCase();
+            const isGas = ['jupiter', 'saturn', 'uranus', 'neptune'].includes(name);
+            const isRocky = ['mercury', 'moon', 'pluto', 'mars'].includes(name);
+
+            if (isGas) {
+                
+            }
         }
 
         async function generateTileCache(sourceCanvas, maxLevel) {
