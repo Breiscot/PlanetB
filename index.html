@@ -756,6 +756,7 @@
                 atmosphere: 'CO² subtle',
                 textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Solarsystemscope_texture_2k_mars.jpg/1280px-Solarsystemscope_texture_2k_mars.jpg',
                 color: '#c1440e',
+                cameraHeight: 10000000,
                 hasAtmosphere: false,
                 scale: 0.53
             },
@@ -989,6 +990,7 @@
                 url: canvas.toDataURL('image/jpeg', 0.9),
                 rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
             });
+            return provider;
         }
 
         // Switch Planets
@@ -1600,7 +1602,7 @@
             }
 
             if (scene.skyAtmosphere) {
-                scene.skyAtmosphere.show = !show.skyAtmosphere.show;
+                scene.skyAtmosphere.show = !scene.skyAtmosphere.show;
             }
             scene.globe.showGroundAtmosphere = !scene.globe.showGroundAtmosphere;
             document.getElementById('btnAtmosphere').classList.toggle('active');
