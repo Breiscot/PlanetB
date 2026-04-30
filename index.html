@@ -946,13 +946,49 @@
                     const cr = Math.random() * 15 + 2;
                     const alpha = Math.random() * 0.3 + 0.05;
 
+                    // Border of the Crater
                     ctx.beginPath();
                     ctx.arc(cx, cy, cr, 0, Math.PI * 2);
                     ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
                     ctx.lineWidth = 1;
                     ctx.stroke();
+
+                    // Inside Shadow
+                    ctx.beginPath();
+                    ctx.arc(cx + 1, cy + 1, cr * 0.7, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.5})`;
+                    ctx.fill();
+                }
+
+                // Variable of Terrain
+                for (let i = 0; i < 15000; i++) {
+                    const x = Math.random() * 2048;
+                    const y = Math.random() * 1024;
+                    const size = Math.random() * 3 + 0.5;
+                    const bright = Math.random() > 0.5;
+                    const alpha = Math.random() * 0.1;
+                    ctx.fillStyle = bright ? `rgba(255, 255, 255, ${alpha})` : `rgba(0,0,0,${alpha})`;
+                    ctx.fillRect(x, y, size, size);
+                }
+
+            } else {
+                // Venus or other: surface with clouds/pattern
+                for (let i = 0; i < 5000; i++) {
+                    const x = Math.random() * 2048;
+                    const y = Math.random() * 1024;
+                    const w = Math.random() * 80 + 10;
+                    const h = Math.random() * 20 + 5;
+                    const alpha = Math.random() * 0.08;
+                    ctx.fillStyle = `rgba(255, 200, 100, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.ellipse(x, y, w, h, Math.random() * Math.PI, 0, Math.PI * 2);
+                    ctx.fill();
                 }
             }
+            const provider = new Cesium.SingleTileImageryProvider({
+                url: canvas.toDataURL('image/jpeg', 0.9),
+                rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
+            });
         }
 
         // Switch Planets
@@ -1134,52 +1170,6 @@
             setupPlanetMouseTracking(planetId, planet);
 
             addPlanetPOIs(planetId);
-        }
-
-        // Solid Color for Planets without Tiles
-        function addSolidColorLayer(color, ellipsoid) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-
-            const gradient = ctx.createRadialGradient(256, 256, 50, 256, 256, 256);
-            const baseColor = Cesium.Color.fromCssColorString(color);
-
-            const r = Math.floor(baseColor.red * 255);
-            const g = Math.floor(baseColor.green * 255);
-            const b = Math.floor(baseColor.blue * 255);
-            
-            gradient.addColorStop(0, `rgb(${Math.min(255, r + 40)}, ${Math.min(255, g + 40)}, ${Math.min(255, b + 40)})`);
-            gradient.addColorStop(0.5, `rgb(${r}, ${g}, ${b})`);
-            gradient.addColorStop(1, `rgb(${Math.max(0, r - 30)}, ${Math.max(0, g - 30)}, ${Math.max(0, b - 30)})`);
-
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 512, 512);
-
-            for (let i = 0; i < 8000; i++) {
-                const x = Math.random() * 512;
-                const y = Math.random() * 512;
-                const size = Math.random() * 3;
-                const alpha = Math.random() * 0.15;
-                ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-                ctx.fillRect(x, y, size, size);
-            }
-
-            if (color === '#c88b3a' || color === '#e8d5a3' || color === '#4fc1e9' || color === '#3498db') {
-                for (let y = 0; y < 512; y += 8) {
-                    const bandAlpha = Math.sin(y * 0.05) * 0.1 + 0.05;
-                    ctx.fillStyle = `rgba(255,255,255,${Math.abs(bandAlpha)})`;
-                    ctx.fillRect(0, y, 512, 4);
-                }
-            }
-
-            const provider = new Cesium.SingleTileImageryProvider({
-                url: canvas.toDataURL(),
-                ellipsoid: ellipsoid
-            });
-
-            viewer.imageryLayers.addImageryProvider(provider);
         }
 
         function createSkyBox() {
@@ -1603,6 +1593,12 @@
 
         function toggleAtmosphere() {
             const scene = viewer.scene;
+
+            if(currentPlanet !== 'earth') {
+                alert(`${PLANETS[currentPlanet].emoji} ${PLANETS[currentPlanet].name} - Atmosphere: ${PLANETS[currentPlanet].atmosphere}`);
+                return;
+            }
+
             if (scene.skyAtmosphere) {
                 scene.skyAtmosphere.show = !show.skyAtmosphere.show;
             }
