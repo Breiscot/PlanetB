@@ -646,6 +646,10 @@
             <span class="value" id="lonValue">0.000</span>
         </div>
         <div class="info-item">
+            <span class="label">Alt:</span>
+            <span class="value" id="altValue">0 km</span>
+        </div>
+        <div class="info-item">
             <span class="label">Location: </span>
             <span class="value" id="locationName">-</span>
         </div>
@@ -654,6 +658,20 @@
       <script>
         
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYzgxMDM4Mi0wOGZiLTQ3MTAtOGZhNS1lZWY3OTlkY2IzM2IiLCJpZCI6NDI2Mzg1LCJpc3MiOiJodHRwczovL2lvbi5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3Nzc3MTM1MTF9.3fyU4NS_gcjcKttom8X93wKqDvO8RGX21l-lY3AyQx8';
+
+        (function patchCesiumRangeError() {
+            const originalRender = Cesium.Scene.prototype.render;
+            Cesium.Scene.prototype.render = function() {
+                try {
+                    return originalRender.apply(this, arguments);
+                } catch (e) {
+                    if (e instanceof RangeError && e.message.includes('Invalid array length')) {
+                        return;
+                    }
+                    throw e;
+                }
+            };
+        })();
 
         let viewer;
         let autoRotateEnabled = false;
@@ -1009,7 +1027,7 @@
             if (planetId === currentPlanet) return;
 
             if (window._switchingPlanet) return;
-            window._switchingPlanet = true
+            window._switchingPlanet = true;
 
             const planet = PLANETS[planetId];
             if (!planet) {
@@ -1022,32 +1040,34 @@
             await sleep(2000);
 
             const previousPlanet = currentPlanet;
+            currentPlanet = planetId;
 
             try {
                 // Stop auto-rotate
                 stopAutoRotate();
 
-                // Destroy the current viewer
-                if (viewer && !viewer.isDestroyed()) {
-                    viewer.destroy();
-                    viewer = null;
-                }
-
                 // Create new viewer
                 if (planetId === 'earth') {
-                    currentPlanet = 'earth';
+                    if (viewer && !viewer.isDestroyed()) {
+                        viewer.destroy();
+                        viewer = null;
+                    }
                     await createEarthViewer();
-                } else {
-                    currentPlanet = planetId;
+                } else if (previousPlanet === 'earth') {
+                    if (viewer && !viewer.isDestroyed()) {
+                        viewer.destroy();
+                        viewer = null;
+                    }
                     await createPlanetViewer(planetId, planet);
+                } else {
+                    await switchPlanetInPlace(planetId, planet);
                 }
 
                 // Update UI
-                updatePlanetUI(currentPlanet, PLANETS[currentPlanet]);
+                updatePlanetUI(planetId, planet);
 
             } catch (error) {
                 console.error('Error switching to planet:', planetId, error);
-
                 currentPlanet = 'earth';
                 
                 // Fallback: return to the Earth
@@ -1058,14 +1078,75 @@
                     }
                     await createEarthViewer();
                     updatePlanetUI('earth', PLANETS.earth);
-                } catch (fallbackError) {
-                    console.error('Fallback also failed:', fallbackError);
+                } catch (e) {
+                    console.error('Fallback failed:', e);
                 }
             }
 
             // Hide transition
             hidePlanetTransition();
             window._switchingPlanet = false;
+        }
+
+        async function switchPlanetInPlace(planetId, planet) {
+            // Remove all entities
+            viewer.entities.removeAll();
+
+            let textureDataUrl = null
+            if (planet.textureUrl) {
+                try {
+                    const img = await loadImage(planet.textureUrl);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 1024;
+                    canvas.height = 512;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 1024, 512);
+                    textureDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                } catch (e) {
+                    console.warn('Texture failed:', planet.name, e.message);
+                }
+            }
+
+            const DISPLAY_RADIUS = 6371000;
+
+            let sphereMaterial;
+            if (textureDataUrl) {
+                sphereMaterial = new Cesium.ImageMaterialProperty({
+                    image: textureDataUrl,
+                    transparent: false,
+                    repeat: new Cesium.Cartesian2(1.0, 1.0)
+                });
+            } else {
+                const proceduralCanvas = buildProceduralCanvas(planet);
+                sphereMaterial = new Cesium.ImageMaterialProperty({
+                    image: proceduralCanvas.toDataURL('image/jpeg', 0.9),
+                    transparent: false
+                });
+            }
+
+            viewer.entities.add({
+                name: planet.name,
+                position: Cesium.Cartesian3.ZERO,
+                ellipsoid: {
+                    radii: new Cesium.Cartesian3(DISPLAY_RADIUS, DISPLAY_RADIUS, DISPLAY_RADIUS),
+                    material: sphereMaterial,
+                    outline: false,
+                }
+            });
+
+            const cameraDistance = DISPLAY_RADIUS * 3.5;
+            viewer.camera.setView({
+                destination: new Cesium.Cartesian3(0, -cameraDistance, DISPLAY_RADIUS * 0.3),
+                orientation: {
+                    direction: Cesium.Cartesian3.normalize(
+                        new Cesium.Cartesian3(0, 1, -0.05),
+                        new Cesium.Cartesian3()
+                    ),
+                    up: Cesium.Cartesian3.UNIT_Z
+                }
+            });
+
+            addPlanetPOIsOnSphere(planetId, DISPLAY_RADIUS);
         }
 
         // Earth Viewer
@@ -1156,15 +1237,12 @@
                 selectionIndicator: false,
                 timeline: false,
                 navigationHelpButton: false,
-                scene3DOnly: true,
+                scene3DOnly: false,
                 skyBox: createSkyBox(),
                 skyAtmosphere: false,
-                terrainProvider: new Cesium.EllipsoidTerrainProvider()
             });
 
             const scene = viewer.scene;
-
-            // Hide the globe
             scene.globe.show = false;
             scene.fog.enabled = false;
             scene.backgroundColor = Cesium.Color.BLACK;
@@ -1173,7 +1251,17 @@
                 scene.skyAtmosphere.show = false;
             }
 
+            viewer.imageryLayers.removeAll();
+
             const DISPLAY_RADIUS = 6371000;
+
+            viewer.scene.renderError.addEventListener(function(scene, error) {
+                if (error && error.message && error.message.includes('Invalid array length')) {
+                    console.warn('Cesium RangeError ignored (known bug)');
+                    viewer.scene.globe.show = false;
+                }
+            })
+
 
             let sphereMaterial;
 
