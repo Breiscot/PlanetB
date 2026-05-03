@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PlanetB 3D</title>
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
         * {
@@ -19,9 +21,20 @@
             background: #000;
         }
 
+        #threejsContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            z-index: 1;
+        }
+
         #cesiumContainer {
             width: 100vw;
             height: 100vh;
+            z-index: 1;
         }
 
         .control-panel {
@@ -478,11 +491,12 @@
     </div>
 
     <div id="cesiumContainer"></div>
+    <div id="threejsContainer"></div>
 
     <!-- Control Panel -->
     <div class="control-panel" id="controlPanel">
         <button class="toggle-panel" onclick="togglePanel()">☰</button>
-        <h2>Earth Exsplorer</h2>
+        <h2>Earth Explorer</h2>
 
         <!-- Search -->
         <input type="text" class="search-box" id="searchInput" placeholder="Search a place..." onkeypress="handleSearch(event)">
@@ -1021,11 +1035,18 @@
             return provider;
         }
 
+        // Variables Three.js for the Moon
+        let threeRenderer = null;
+        let threeScene = null;
+        let threeCamera = null;
+        let threeControls = null;
+        let threeAnimationId = null;
+        let isThreeJSActive = false;
+
         // Switch Planets
 
         async function switchPlanet(planetId) {
             if (planetId === currentPlanet) return;
-
             if (window._switchingPlanet) return;
             window._switchingPlanet = true;
 
@@ -1046,21 +1067,24 @@
                 // Stop auto-rotate
                 stopAutoRotate();
 
+                cleanupCurrentView(previousPlanet);
+
                 // Create new viewer
                 if (planetId === 'earth') {
-                    if (viewer && !viewer.isDestroyed()) {
-                        viewer.destroy();
-                        viewer = null;
-                    }
+                    hideThreeJS();
+                    showCesium();
                     await createEarthViewer();
-                } else if (previousPlanet === 'earth') {
-                    if (viewer && !viewer.isDestroyed()) {
-                        viewer.destroy();
-                        viewer = null;
-                    }
-                    await createPlanetViewer(planetId, planet);
+                } else if (previousPlanet === 'moon') {
+                    hideCesium();
+                    await createMoonThreeJS();
                 } else {
-                    await switchPlanetInPlace(planetId, planet);
+                    hideThreeJS();
+                    showCesium();
+                    if (previousPlanet === 'earth' || previousPlanet === 'moon') {
+                        await createPlanetViewer(planetId, planet);
+                    } else {
+                        await switchPlanetInPlace(planetId, planet);
+                    }
                 }
 
                 // Update UI
@@ -1069,13 +1093,10 @@
             } catch (error) {
                 console.error('Error switching to planet:', planetId, error);
                 currentPlanet = 'earth';
-                
-                // Fallback: return to the Earth
                 try {
-                    if (viewer && !viewer.isDestroyed()) {
-                        viewer.destroy();
-                        viewer = null;
-                    }
+                    hideThreeJS();
+                    showCesium();
+                    cleanupCurrentView(planetId);
                     await createEarthViewer();
                     updatePlanetUI('earth', PLANETS.earth);
                 } catch (e) {
@@ -1086,6 +1107,127 @@
             // Hide transition
             hidePlanetTransition();
             window._switchingPlanet = false;
+        }
+
+        function cleanupCurrentView(planetId) {
+            if (planetId === 'moon') {
+                destroyThreeJS();
+            } else {
+                if (viewer && !viewer.isDestroyed()) {
+                    viewer.destroy();
+                    viewer = null;
+                }
+            }
+        }
+
+        function showCesium() {
+            document.getElementById('cesiumContainer').style.display = 'block';
+        }
+
+        function hideCesium() {
+            if (viewer && !viewer.isDestroyed()) {
+                viewer.destroy();
+                viewer = null;
+            }
+            document.getElementById('cesiumContainer').style.display = 'none';
+        }
+
+        function hideThreeJS() {
+            document.getElementById('threejsContainer').style.display = 'none';
+            destroyThreeJS();
+        }
+
+        // Three.js - Moon
+        
+        async function createMoonThreeJS() {
+            const container = document.getElementById('threejsContainer');
+            container.style.display = 'block';
+            container.innerHTML = '';
+
+            threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+            threeRenderer.setSize(window.innerWidth, window.innerHeight);
+            threeRenderer.setPixelRatio(window.devicePixelRatio);
+            threeRenderer.setClearColor(0x000000);
+            container.appendChild(threeRenderer.domElement);
+
+            // Scene
+            threeScene = new THREE.Scene();
+
+            // Camera
+            threeCamera = new THREE.PerspectiveCamera(
+                45,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            threeCamera.position.set(0, 0, 3);
+
+            // Orbit Controls
+            threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+            threeControls.enableDamping = true;
+            threeControls.dampingFactor = 0.05;
+            threeControls.minDistance = 1.2;
+            threeControls.maxDistance = 10;
+            threeControls.rotateSpeed = 0.5;
+
+            // Skybox
+            createStarField();
+            
+            // Light
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            sunLight.position.set(5, 3, 5);
+            threeScene.add(sunLight);
+
+            const ambientLight = new THREE.AmbientLight(0x333333, 0.5);
+            threeScene.add(ambientLight);
+
+            const geometry = new THREE.SphereGeometry(1, 64, 64);
+
+            // Load texture
+            let material;
+            try {
+                const texture = await loadThreeTexture('textures/planets/moon.jpg')
+                material = new THREE.MeshPhongMaterial({
+                    map: texture,
+                    bumpMap: texture,
+                    bumpScale: 0.02,
+                });
+                console.log('Moon texture loaded (Three.js)');
+            } catch (e) {
+                console.warn('Moon texture failed');
+                material = new THREE.MeshPhongMaterial({
+                    color: 0xaaaaaa,
+                });
+            }
+
+            const moonMesh = new THREE.Mesh(geometry, material);
+            threeScene.add(moonMesh);
+
+            addMoonPOIsThreeJS();
+
+            isThreeJSActive = true;
+
+            // Loop of rendering
+            function animate() {
+                if (!isThreeJSActive) return;
+                threeAnimationId = requestAnimationFrame(animate);
+
+                moonMesh.rotation.y += 0.0005;
+
+                threeControls.update();
+                threeRenderer.render(threeScene, threeCamera);
+            }
+            animate();
+
+            window._threeResizeHandler = function() {
+                if (!isThreeJSActive) return;
+                threeCamera.aspect = window.innerWidth / window.innerHeight;
+                threeCamera.updateProjectionMatrix();
+                threeRenderer.setSize(window.innerWidth, window.innerHeight);
+            };
+            window.addEventListener('resize', window._threeResizeHandler);
+
+            setupMoonMouseTracking();
         }
 
         async function switchPlanetInPlace(planetId, planet) {
@@ -1255,16 +1397,7 @@
 
             const DISPLAY_RADIUS = 6371000;
 
-            viewer.scene.renderError.addEventListener(function(scene, error) {
-                if (error && error.message && error.message.includes('Invalid array length')) {
-                    console.warn('Cesium RangeError ignored (known bug)');
-                    viewer.scene.globe.show = false;
-                }
-            })
-
-
             let sphereMaterial;
-
             if (textureDataUrl) {
                 sphereMaterial = new Cesium.ImageMaterialProperty({
                     image: textureDataUrl,
@@ -1278,8 +1411,8 @@
                     transparent: false
                 });
             }
-            
-            const planetEntity = viewer.entities.add({
+
+            viewer.entities.add({
                 name: planet.name,
                 position: Cesium.Cartesian3.ZERO,
                 ellipsoid: {
@@ -1303,8 +1436,8 @@
                 }
             });
 
-            viewer.scene.screenSpaceCameraController.minimumZoomDistance = DISPLAY_RADIUS * 1.1;
-            viewer.scene.screenSpaceCameraController.maximumZoomDistance = DISPLAY_RADIUS * 15;
+            viewer.scene.screenSpaceCameraController.minimumZoomDistance = DISPLAY_RADIUS * 1.05;
+            viewer.scene.screenSpaceCameraController.maximumZoomDistance = DISPLAY_RADIUS * 20;
 
             addPlanetPOIsOnSphere(planetId, DISPLAY_RADIUS);
             setupPlanetMouseTracking(planetId, planet);
