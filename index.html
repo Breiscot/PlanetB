@@ -1230,6 +1230,143 @@
             setupMoonMouseTracking();
         }
 
+        function loadThreeTexture(url) {
+            return new Promise((resolve, reject) => {
+                const loader = new THREE.TextureLoader();
+                loader.load(
+                    url,
+                    (texture) => resolve(texture),
+                    undefined,
+                    (error) => reject(error)
+                );
+            });
+        }
+
+        function createStarField() {
+            const starsGeometry = new THREE.BufferGeometry();
+            const starPositions = [];
+
+            for (let i = 0; i < 5000; i++) {
+                const x = (Math.random() - 0.5) * 200;
+                const y = (Math.random() - 0.5) * 200;
+                const z = (Math.random() - 0.5) * 200;
+                starPositions.push(x, y, z);
+            }
+
+            starsGeometry.setAttribute('position',
+                new THREE.Float32BufferAttribute(starPositions, 3)
+            );
+
+            const starsMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.15,
+                sizeAttenuation: true
+            });
+
+            const stars = new THREE.Points(starsGeometry, starsMaterial);
+            threeScene.add(stars);
+        }
+
+        function addMoonPOIsThreeJS() {
+            const pois = [
+                { name: 'Sea ​​of ​​tranquility', lat: 8.5, lon: 31.4, desc: 'Apollo 11 - First Moon Landing'},
+                { name: 'Crater Tycho', lat: -43.3, lon: -11.2, desc: 'Crater'},
+                { name: 'Crater Copernicus', lat: 9.6, lon: -20.1, desc: 'Crater'},
+                { name: 'Apollo 17', lat: 20.2, lon: 30.8, desc: 'Last Human Moon Landing'},
+                { name: 'Lunar South Pole', lat: -89.5, lon: 0, desc: 'Possible water ice'},
+            ];
+
+            pois.forEach(poi => {
+                const latRad = THREE.MathUtils.degToRad(poi.lat);
+                const lonRad = THREE.MathUtils.degToRad(poi.lon);
+                const r = 1.02;
+
+                const x = r * Math.cos(latRad) * Math.cos(lonRad);
+                const y = r * Math.sin(latRad);
+                const z = -r * Math.cos(latRad) * Math.sin(lonRad);
+
+                const dotGeometry = new THREE.SphereGeometry(0.015, 8, 8);
+                const dotMaterial = new THREE.MeshBasicMaterial({ color: 0x4fc3f7 });
+                const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+                dot.position.set(x, y, z);
+                dot.userData = { name: poi.name, lat: poi.lat, lon: poi.lon };
+                threeScene.add(dot);
+
+                const label = createTextSprite(poi.name);
+                label.position.set(x, y + 0.05, z);
+                label.scale.set(0.3, 0.15, 1);
+                threeScene.add(label);
+            });
+        }
+
+        function createTextSprite(text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(0, 0, 256, 64);
+
+            ctx.font = 'bold 20px Arial';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 128, 32);
+
+            const texture = new THREE.canvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true
+            });
+            
+            return new THREE.Sprite(material);
+        }
+
+        function setupMoonMouseTracking() {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            threeRenderer.domElement.addEventListener('mousemove', function(event) {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, threeCamera);
+
+                const sphereCenter = new THREE.Vector3(0, 0, 0);
+                const sphereRadius = 1;
+                const ray = raycaster.ray;
+
+                const oc = new THREE.Vector3().subVectors(ray.origin, sphereCenter);
+                const a = ray.direction.dot(ray.direction);
+                const b = 2.0 * oc.dot(ray.direction);
+                const c = oc.dot(oc) - sphereRadius * sphereRadius;
+                const discriminant = b * b - 4 * a * c;
+
+                if (discriminant > 0) {
+                    const t = (-b - Math.sqrt(discriminant)) / (2 * a);
+                    if (t > 0) {
+                        const point = new THREE.Vector3();
+                        ray.at(t, point);
+
+                        const lat = THREE.MathUtils.radToDeg(Math.asin(point.y / sphereCenter));
+                        const lon = THREE.MathUtils.radToDeg(Math.atan2(-point.z, point.x));
+
+                        document.getElementById('latValue').textContent = lat.toFixed(3) + '°';
+                        document.getElementById('lonValue').textContent = lon.toFixed(3) + '°';
+                    }
+                }
+
+                const dist = threeCamera.position.length();
+                const altKm = ((dist - 1) * 1737.4).toFixed(0);
+                document.getElementById('altValue').textContent = altKm + ' km';
+            });
+        }
+
+        function destroyThreeJS() {
+            
+        }
+
         async function switchPlanetInPlace(planetId, planet) {
             // Remove all entities
             viewer.entities.removeAll();
