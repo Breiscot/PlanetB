@@ -1067,24 +1067,29 @@
                 // Stop auto-rotate
                 stopAutoRotate();
 
-                cleanupCurrentView(previousPlanet);
+                destroyThreeJS();
+                if (viewer && !viewer.isDestroyed()) {
+                    viewer.destroy();
+                    viewer = null;
+                }
+
+                //cleanupCurrentView(previousPlanet);
 
                 // Create new viewer
                 if (planetId === 'earth') {
-                    hideThreeJS();
-                    showCesium();
+                    document.getElementById('threejsContainer').style.display = 'none';
+                    document.getElementById('cesiumContainer').style.display = 'block';
                     await createEarthViewer();
-                } else if (previousPlanet === 'moon') {
-                    hideCesium();
+
+                } else if (planetId === 'moon') {
+                    document.getElementById('cesiumContainer').style.display = 'none';
+                    document.getElementById('threejsContainer').style.display = 'block';
                     await createMoonThreeJS();
+
                 } else {
-                    hideThreeJS();
-                    showCesium();
-                    if (previousPlanet === 'earth' || previousPlanet === 'moon') {
-                        await createPlanetViewer(planetId, planet);
-                    } else {
-                        await switchPlanetInPlace(planetId, planet);
-                    }
+                    document.getElementById('threejsContainer').style.display = 'none';
+                    document.getElementById('cesiumContainer').style.display = 'block';
+                    await createPlanetViewer(planetId, planet);
                 }
 
                 // Update UI
@@ -1092,11 +1097,16 @@
 
             } catch (error) {
                 console.error('Error switching to planet:', planetId, error);
+
                 currentPlanet = 'earth';
                 try {
-                    hideThreeJS();
-                    showCesium();
-                    cleanupCurrentView(planetId);
+                    destroyThreeJS();
+                    if (viewer && !viewer.isDestroyed()) {
+                        viewer.destroy();
+                        viewer = null;
+                    }
+                    document.getElementById('threejsContainer').style.display = 'none';
+                    document.getElementById('cesiumContainer').style.display = 'block';
                     await createEarthViewer();
                     updatePlanetUI('earth', PLANETS.earth);
                 } catch (e) {
@@ -1869,6 +1879,8 @@
             const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 
             handler.setInputAction(function (movement) {
+                if (!viewer || viewer.isDestroyed()) return;
+
                 const cartesian = viewer.camera.pickEllipsoid(
                     movement.endPosition,
                     viewer.scene.globe.ellipsoid
