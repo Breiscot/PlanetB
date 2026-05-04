@@ -7,6 +7,7 @@
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
         * {
@@ -51,6 +52,50 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             transition: transform 0.3s ease;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .control-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .control-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .control-panel::-webkit-scrollbar-thumb {
+            background: rgba(79, 195, 247, 0.3);
+            border-radius: 3px;
+        }
+
+        .control-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 195, 247, 0.5);
+        }
+
+        .control-panel {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(79, 195, 247, 0.3) rgba(255, 255, 255, 0.05);
+        }
+        
+        .lucide-icon {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .btn i[data-lucide],
+        .place-btn i[data-lucide],
+        .section-title i[data-lucide] {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 4px;
         }
 
         .control-panel.collapsed {
@@ -496,50 +541,65 @@
     <!-- Control Panel -->
     <div class="control-panel" id="controlPanel">
         <button class="toggle-panel" onclick="togglePanel()">☰</button>
-        <h2>Earth Explorer</h2>
+        <h2><i data-lucide="globe" style="width:22px;height:22px;"></i>Earth Explorer</h2>
 
         <!-- Search -->
-        <input type="text" class="search-box" id="searchInput" placeholder="Search a place..." onkeypress="handleSearch(event)">
+        <div style="position:relative;">
+            <i data-lucide="search" style="position:absolute;left:12px;top:11px;width:16;height:16px;color:rgba(255, 255, 255, 0.4);"></i>
+            <input type="text" class="search-box" id="searchInput" placeholder="Search a place..." onkeypress="handleSearch(event)" style="padding-left:36px;">
+        </div>
         
         <!-- View modes -->
-        <div class="section-title">View Mode</div>
+        <div class="section-title"><i data-lucide="eye" style="width:14px;height:14px;"></i> View Mode</div>
         <div class="btn-group">
-            <button class="btn btn-view active" id="btn3d" onclick="setViewMode('3d')">🌐 Globe 3D</button>
-            <button class="btn btn-view" id="btn2d" onclick="setViewMode('2d')">🗺️ Map 2D</button>
-            <button class="btn btn-view" id="btnColumbus" onclick="setViewMode('columbus')">📐 View Columbus</button>
+            <button class="btn btn-view active" id="btn3d" onclick="setViewMode('3d')">
+                <i data-lucide="globe-2"></i> Globe 3D
+            </button>
+            <button class="btn btn-view" id="btn2d" onclick="setViewMode('2d')">
+                <i data-lucide="map"></i> Map 2D
+            </button>
+            <button class="btn btn-view" id="btnColumbus" onclick="setViewMode('columbus')">
+                <i data-lucide="box"></i> View Columbus
+            </button>
         </div>
 
         <!-- Layer options -->
         <div class="earth-only" id="earthOnlyLayers">
-            <div class="section-title">Levels</div>
+            <div class="section-title"><i data-lucide="layers" style="width:14px;height:14px;"></i> Levels</div>
             <div class="btn-group">
-                <button class="btn btn-view" id="btnNight" onclick="toggleNight()">🌙 Night View</button>
-                <button class="btn btn-view" id="btnAtmosphere" onclick="toggleAtmosphere()">💨 Atmosphere</button>
-                <button class="btn btn-view" id="btnGrid" onclick="toggleGrid()">📏 Grid</button>
+                <button class="btn btn-view" id="btnNight" onclick="toggleNight()">
+                    <i data-lucide="moon"></i> Night View
+                </button>
+                <button class="btn btn-view" id="btnAtmosphere" onclick="toggleAtmosphere()">
+                    <i data-lucide="cloud"></i> Atmosphere
+                </button>
+                <button class="btn btn-view" id="btnGrid" onclick="toggleGrid()">
+                    <i data-lucide="grid-3x3"></i> Grid
+                </button>
             </div>
         </div>
 
         <!-- Type of Map -->
         <div class="earth-only" id="earthOnlyMaps">
-            <div class="section-title">Type of Map</div>
+            <div class="section-title"><i data-lucide="map-pin" style="width:14px;height:14px;"></i> Type of Map</div>
             <div class="places-grid">
                 <button class="place-btn map-btn active" id="btn_satellite" onclick="setImageryLayer('satellite')">
-                    <span class="emoji">🛰️</span> Satellite
+                    <i data-lucide="satellite" style="width:14px;height:14px;"></i> Satellite
                 </button>
                 <button class="place-btn map-btn" id="btn-satellite_labels" onclick="setImageryLayer('satellite_labels')">
-                    <span class="emoji">🏷️</span> Sat + Label
+                    <i data-lucide="tag" style="width:14px;height:14px;"></i> Sat + Label
                 </button>
                 <button class="place-btn map-btn" id="btn_osm" onclick="setImageryLayer('osm')">
-                    <span class="emoji">🗺️</span> Roads
+                    <i data-lucide="route" style="width:14px;height:14px;"></i> Roads
                 </button>
                 <button class="place-btn map-btn" id="btn_terrain" onclick="setImageryLayer('terrain')">
-                    <span class="emoji">⛰️</span> Terrain
+                    <i data-lucide="mountain" style="width:14px;height:14px;"></i> Terrain
                 </button>
                 <button class="place-btn map-btn" id="btn_dark" onclick="setImageryLayer('dark')">
-                    <span class="emoji">🌑</span> Dark
+                    <i data-lucide="moon" style="width:14px;height:14px;"></i> Dark
                 </button>
                 <button class="place-btn map-btn" id="btn_watercolor" onclick="setImageryLayer('watercolor')">
-                    <span class="emoji">🎨</span> Watercolor
+                    <i data-lucide="palette" style="width:14px;height:14px;"></i> Watercolor
                 </button>
             </div>
         </div>
@@ -584,86 +644,102 @@
             <div class="planet-info-name" id="planetInfoName"></div>
             <div class="planet-info-details" id="planetInfoDetails"></div>
             <button class="btn btn-fly" onclick="switchPlanet('earth')" style="margin-top: 8px; font-size: 12px;">
-                🌍 Return to the Earth
+                <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Return to Earth
             </button>
         </div>
 
         <!-- Famous places -->
         <div class="earth-only" id="earthOnlyPlaces">
-            <div class="section-title">Famous Places</div>
+            <div class="section-title"><i data-lucide="landmark" style="width:14px;height:14px;"></i> Famous Places</div>
             <div class="places-grid">
                 <button class="place-btn" onclick="flyTo(41.8902, 12.4922, 800, 'Colosseum, Rome')">
-                    <span class="emoji"></span> Colosseum
+                    <i data-lucide="building" style="width:14px;height:14px;"></i> Colosseum
                 </button>
                 <button class="place-btn" onclick="flyTo(48.8584, 2.2945, 800, 'Tour Eiffel, Paris')">
-                    <span class="emoji"></span> Tour Eiffel
+                    <i data-lucide="tower-control" style="width:14px;height:14px;"></i> Tour Eiffel
                 </button>
                 <button class="place-btn" onclick="flyTo(40.6892, -74.0445, 800, 'Statue of Liberty')">
-                    <span class="emoji"></span> New York
+                    <i data-lucide="building-2" style="width:14px;height:14px;"></i> New York
                 </button>
                 <button class="place-btn" onclick="flyTo(27.1751, 78.0421, 800, 'Taj Mahal, India')">
-                    <span class="emoji"></span> Taj Mahal
+                    <i data-lucide="church" style="width:14px;height:14px;"></i> Taj Mahal
                 </button>
                 <button class="place-btn" onclick="flyTo(35.6762, 139.6503, 1500, 'Tokyo, Japan')">
-                    <span class="emoji"></span> Tokyo
+                    <i data-lucide="train-front" style="width:14px;height:14px;"></i> Tokyo
                 </button>
                 <button class="place-btn" onclick="flyTo(-22.9519, -43.2105, 1000, 'Cristo Redentore')">
-                    <span class="emoji"></span> Rio
+                    <i data-lucide="cross" style="width:14px;height:14px;"></i> Rio
                 </button>
                 <button class="place-btn" onclick="flyTo(29.9792, 31.1342, 800, 'Pyramid Giza')">
-                    <span class="emoji"></span> Pyramid
+                    <i data-lucide="triangle" style="width:14px;height:14px;"></i> Pyramid
                 </button>
                 <button class="place-btn" onclick="flyTo(-33.8568, 151.2153, 1000, 'Sydney Opera House')">
-                    <span class="emoji"></span> Sydney
+                    <i data-lucide="music" style="width:14px;height:14px;"></i> Sydney
                 </button>
                 <button class="place-btn" onclick="flyTo(40.4319, -3.6761, 1500, 'Madrid, Spain')">
-                    <span class="emoji"></span> Madrid
+                    <i data-lucide="sun" style="width:14px;height:14px;"></i> Madrid
                 </button>
                 <button class="place-btn" onclick="flyTo(55.7558, 37.6173, 2000, 'Moscow, Russia')">
-                    <span class="emoji"></span> Moscow
+                    <i data-lucide="snowflake" style="width:14px;height:14px;"></i> Moscow
                 </button>
                 <button class="place-btn" onclick="flyTo(-13.1631, -72.5450, 2000, 'Machu Picchu')">
-                    <span class="emoji"></span> Machu Picchu
+                    <i data-lucide="mountain-snow style="width:14px;height:14px;"></i> Machu Picchu
                 </button>
                 <button class="place-btn" onclick="flyTo(51.5007, -0.1246, 800, 'Big Ben, London')">
-                    <span class="emoji"></span> London
+                    <i data-lucide="clock" style="width:14px;height:14px;"></i> London
                 </button>
             </div>
         </div>
 
         <!-- Actions -->
         <div class="btn-group">
-            <button class="btn btn-fly" onclick="resetView()">Initial View</button>
-            <button class="btn btn-fly" onclick="startAutoRotate()" style="background: linear-gradient(135deg, #6a1b9a, #ab47bc);">Auto-Rotation</button>
+            <button class="btn btn-fly" onclick="resetView()">
+                <i data-lucide="home"></i> Initial View
+            </button>
+            <button class="btn btn-fly" onclick="startAutoRotate()" style="background: linear-gradient(135deg, #6a1b9a, #ab47bc);">
+                <i data-lucide="rotate-cw"></i> Auto-Rotation
+            </button>
         </div>
     </div>
 
     <!-- Zoom Controls -->
      <div class="zoom-controls">
-        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">
+            <i data-lucide="plus" style="width:20px;height:20px;"></i>
+        </button>
         <div class="zoom-divider"></div>
-        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">-</button>
+        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">
+            <i data-lucide="minus" style="width:20px;height:20px;"></i>
+        </button>
         <div class="zoom-divider"></div>
-        <button class="zoom-btn" onclick="resetView()" title="Reset" style="font-size: 14px;">RESET</button>
+        <button class="zoom-btn" onclick="resetView()" title="Reset">
+            <i data-lucide="home" style="width:20px;height:20px;"></i>
+        </button>
         <div class="zoom-divider"></div>
-        <button class="zoom-btn" onclick="toggleFullscreen()" title="Fullscreen" style="font-size: 14px;">▨</button>
+        <button class="zoom-btn" onclick="toggleFullscreen()" title="Fullscreen">
+            <i data-lucide="maximize" style="width:20px;height:20px;"></i>
+        </button>
      </div>
 
      <!-- Info Bar -->
       <div class="info-bar" id="infoBar">
         <div class="info-item">
+            <i data-lucide="navigation" style="width:14px;color:rgba(255,255,255,0.5);"></i>
             <span class="label">Lat:</span>
             <span class="value" id="latValue">0.000</span>
         </div>
         <div class="info-item">
+            <i data-lucide="compass" style="width:14px;color:rgba(255,255,255,0.5);"></i>
             <span class="label">Lon:</span>
             <span class="value" id="lonValue">0.000</span>
         </div>
         <div class="info-item">
+            <i data-lucide="arrow-up" style="width:14px;color:rgba(255,255,255,0.5);"></i>
             <span class="label">Alt:</span>
             <span class="value" id="altValue">0 km</span>
         </div>
         <div class="info-item">
+            <i data-lucide="map-pin" style="width:14px;color:rgba(255,255,255,0.5);"></i>
             <span class="label">Location: </span>
             <span class="value" id="locationName">-</span>
         </div>
@@ -1958,6 +2034,12 @@
                 `;
                 document.getElementById('locationName').textContent = planet.name;
             }
+
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }, 100);
         }
 
         // Utility
@@ -2447,6 +2529,14 @@
         }
 
         initGlobe();
+
+        lucide.createIcons();
+        
+        const originalUpdatePlanetUI = updatePlanetUI;
+        updatePlanetUI = function(planetId, planet) {
+            originalUpdatePlanetUI(planetId, planet);
+            setTimeout(() => lucide.createIcons(), 100);
+        };
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
