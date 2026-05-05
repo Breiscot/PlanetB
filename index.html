@@ -683,7 +683,7 @@
                     <i data-lucide="snowflake" style="width:14px;height:14px;"></i> Moscow
                 </button>
                 <button class="place-btn" onclick="flyTo(-13.1631, -72.5450, 2000, 'Machu Picchu')">
-                    <i data-lucide="mountain-snow style="width:14px;height:14px;"></i> Machu Picchu
+                    <i data-lucide="mountain" style="width:14px;height:14px;"></i> Machu Picchu
                 </button>
                 <button class="place-btn" onclick="flyTo(51.5007, -0.1246, 800, 'Big Ben, London')">
                     <i data-lucide="clock" style="width:14px;height:14px;"></i> London
@@ -747,7 +747,7 @@
 
       <script>
         
-        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYzgxMDM4Mi0wOGZiLTQ3MTAtOGZhNS1lZWY3OTlkY2IzM2IiLCJpZCI6NDI2Mzg1LCJpc3MiOiJodHRwczovL2lvbi5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3Nzc3MTM1MTF9.3fyU4NS_gcjcKttom8X93wKqDvO8RGX21l-lY3AyQx8';
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0YjAyNjFhYS0wNGM3LTQyODItOTBkYi01NmFiNWI4MmM2YjEiLCJpZCI6MjU5LCJpYXQiOjE3MjUwMzIwMDB9.placeholder';
 
         (function patchCesiumRangeError() {
             const originalRender = Cesium.Scene.prototype.render;
@@ -1264,8 +1264,11 @@
             sunLight.position.set(5, 3, 5);
             threeScene.add(sunLight);
 
-            const ambientLight = new THREE.AmbientLight(0x333333, 0.5);
+            const ambientLight = new THREE.AmbientLight(0x555555, 0.8);
             threeScene.add(ambientLight);
+
+            window._moonGroup = new THREE.Group();
+            threeScene.add(window._moonGroup);
 
             const geometry = new THREE.SphereGeometry(1, 64, 64);
 
@@ -1281,15 +1284,15 @@
                 console.log('Moon texture loaded (Three.js)');
             } catch (e) {
                 console.warn('Moon texture failed');
-                material = new THREE.MeshPhongMaterial({
-                    color: 0xaaaaaa,
-                });
+                material = new THREE.MeshPhongMaterial({ color: 0xaaaaaa });
             }
 
             const moonMesh = new THREE.Mesh(geometry, material);
-            threeScene.add(moonMesh);
+            window._moonGroup.add(moonMesh);
 
             addMoonPOIsThreeJS();
+
+            window._moonAutoRotate = false;
 
             isThreeJSActive = true;
 
@@ -1298,7 +1301,9 @@
                 if (!isThreeJSActive) return;
                 threeAnimationId = requestAnimationFrame(animate);
 
-                moonMesh.rotation.y += 0.0005;
+                if (window._moonAutoRotate) {
+                    window._moonGroup.rotation.y += 0.002;
+                }
 
                 threeControls.update();
                 threeRenderer.render(threeScene, threeCamera);
@@ -1365,45 +1370,97 @@
             pois.forEach(poi => {
                 const latRad = THREE.MathUtils.degToRad(poi.lat);
                 const lonRad = THREE.MathUtils.degToRad(poi.lon);
-                const r = 1.02;
 
-                const x = r * Math.cos(latRad) * Math.cos(lonRad);
-                const y = r * Math.sin(latRad);
-                const z = -r * Math.cos(latRad) * Math.sin(lonRad);
+                // Point on the surface
+                const surfaceR = 1.0;
+                const sx = surfaceR * Math.cos(latRad) * Math.cos(lonRad);
+                const sy = surfaceR * Math.sin(latRad);
+                const sz = -surfaceR * Math.cos(latRad) * Math.sin(lonRad);
 
-                const dotGeometry = new THREE.SphereGeometry(0.015, 8, 8);
-                const dotMaterial = new THREE.MeshBasicMaterial({ color: 0x4fc3f7 });
+                // Vertical line from the point of the label
+                const lineR = 1.08;
+                const lx = lineR * Math.cos(latRad) * Math.cos(lonRad);
+                const ly = lineR * Math.sin(latRad);
+                const lz = -lineR * Math.cos(latRad) * Math.sin(lonRad);
+
+                // Luminous point on the surface
+                const dotGeometry = new THREE.SphereGeometry(0.018, 12, 12);
+                const dotMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x4fc3f7,
+                    transparent: true,
+                    opacity: 1.0
+                });
                 const dot = new THREE.Mesh(dotGeometry, dotMaterial);
-                dot.position.set(x, y, z);
-                dot.userData = { name: poi.name, lat: poi.lat, lon: poi.lon };
-                threeScene.add(dot);
+                dot.position.set(sx, sy, sz);
+                window._moonGroup.add(dot);
 
-                const label = createTextSprite(poi.name);
-                label.position.set(x, y + 0.05, z);
-                label.scale.set(0.3, 0.15, 1);
-                threeScene.add(label);
+                // Glow around the point
+                const glowGeometry = new THREE.SphereGeometry(0.03, 12, 12);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x4fc3f7,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.set(sx, sy, sz);
+                window._moonGroup.add(glow); 
+                
+                // Line from point on the label
+                const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(sx, sy, sz),
+                    new THREE.Vector3(lx, ly, lz)
+                ]);
+                const lineMaterial = new THREE.LineBasicMaterial({
+                    color: 0x4fc3f7,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const line = new THREE.Line(lineGeometry, lineMaterial);
+                window._moonGroup.add(line);
+
+                const labelR = 1.12;
+                const labX = labelR * Math.cos(latRad) * Math.cos(lonRad);
+                const labY = labelR * Math.sin(latRad);
+                const labZ = -labelR * Math.cos(latRad) * Math.sin(lonRad);
+
+                const label = createMoonLabel(poi.name);
+                label.position.set(labX, labY, labZ);
+                label.scale.set(0.25, 0.08, 1);
+                window._moonGroup.add(label);
             });
         }
 
-        function createTextSprite(text) {
+        function createMoonLabel(text) {
             const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 64;
+            canvas.width = 512;
+            canvas.height = 80;
             const ctx = canvas.getContext('2d');
 
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            ctx.fillRect(0, 0, 256, 64);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.beginPath();
+            ctx.roundRect(4, 4, 504, 72, 12);
+            ctx.fill();
+            
+            ctx.strokeStyle = 'rgba(79, 195, 247, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(4, 4, 504, 72, 12);
+            ctx.stroke();
 
-            ctx.font = 'bold 20px Arial';
-            ctx.fillStyle = 'white';
+            ctx.font = 'bold 28px Arial, sans-serif';
+            ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(text, 128, 32);
+            ctx.fillText(text, 256, 42);
 
             const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.LinearFilter;
+
             const material = new THREE.SpriteMaterial({
                 map: texture,
-                transparent: true
+                transparent: true,
+                depthTest: false,
+                depthWrite: false
             });
             
             return new THREE.Sprite(material);
@@ -2257,9 +2314,12 @@
                     duration: 2
                 });
             } else if (currentPlanet === 'moon') {
-                if (threeCamera) {
+                if (threeCamera && threeControls) {
                     threeCamera.position.set(0, 0, 3);
-                    if (threeControls) threeControls.reset();
+                    threeControls.reset();
+                }
+                if (window._moonGroup) {
+                    window._moonGroup.rotation.set(0, 0, 0);
                 }
             } else {
                 const DISPLAY_RADIUS = 6371000;
@@ -2377,6 +2437,11 @@
         // AutoRotate
 
         function startAutoRotate() {
+            if (currentPlanet === 'moon') {
+                window._moonAutoRotate = !window._moonAutoRotate;
+                return;
+            }
+
             if (autoRotateEnabled) {
                 stopAutoRotate();
                 return;
@@ -2392,8 +2457,15 @@
 
         function stopAutoRotate() {
             autoRotateEnabled = false;
+
+            if (window._moonAutoRotate) {
+                window._moonAutoRotate = false;
+            }
+
             try {
-                viewer.clock.onTick.removeEventListener(autoRotateTick);
+                if (viewer && !viewer.isDestroyed()) {
+                    viewer.clock.onTick.removeEventListener(autoRotateTick);
+                }
             } catch (e) {}
         }
 
