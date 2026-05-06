@@ -1142,14 +1142,57 @@
         function addSaturnRings(viewer) {
             const DISPLAY_RADIUS = 6371000;
 
-            const INNER_RADIUS = DISPLAY_RADIUS * 1.25;
-            const OUTER_RADIUS = DISPLAY_RADIUS * 2.5;
-            const RING_SEGMENTS = 128;
+            const ringCanvas = createSaturnRingTexture();
+            const ringTextureUrl = ringCanvas.toDataURL('images/png');
+            const ringCtx = ringCanvas.getContext('2d');
 
-            const ringCanvas = document.createElement('canvas');
+            const INNER_R = DISPLAY_RADIUS * 1.25;
+            const OUTER_R = DISPLAY_RADIUS * 2.3;
+            const NUM_RINGS = 60;
+            const SEGMENTS = 180;
+
+            for (let ring = 0; ring < NUM_RINGS; ring++) {
+                const t = ring / NUM_RINGS;
+                const radius = INNER_R + t * (OUTER_R - INNER_R);
+                
+                const canvasX = Math.floor(t * 1024);
+                const pixelData = ringCtx.getImageData(canvasX, 32, 1, 1).data;
+
+                if (pixelData[3] < 8) continue;
+
+                const color = Cesium.Color.fromBytes(
+                    pixelData[0], pixelData[1], pixelData[2],
+                    Math.min(255, pixelData[3] + 30)
+                );
+
+                const positions = [];
+                for (let i = 0; i <= SEGMENTS; i++) {
+                    const angle = (i / SEGMENTS) * Math.PI * 2;
+                    positions.push(new Cesium.Cartesian3(
+                        radius * Math.cos(angle),
+                        radius * Math.sin(angle),
+                        0
+                    ));
+                }
+
+                viewer.entities.add({
+                    polyline: {
+                        positions: positions,
+                        width: 3,
+                        material: new Cesium.ColorMaterialProperty(color),
+                        followSurface: false,
+                    }
+                });
+            }
+        }
+
+        function createSaturnRingTexture() {
+            const canvas = document.createElement('canvas');
             ringCanvas.width = 1024;
             ringCanvas.height = 64;
             const ctx = ringCanvas.getContext('2d');
+
+            ctx.clearRect(0, 0, 1024, 64);
 
             const bands = [
                 // Ring D
@@ -1212,9 +1255,7 @@
                     ? `rgba(255, 240, 200, ${alpha})`
                     : `rgba(0, 0, 0, ${alpha})`;
                 ctx.fillRect(x, y, 1, 1);
-            }
-
-            const ringTextureUrl = ringCanvas.toDataURL('images/png');
+            }            
 
             const NUM_RING_STRIPS = 360;
             const NUM_RADIAL_STEPS = 40;
@@ -1252,6 +1293,7 @@
                 });
             }
         }
+        
 
         function createSkyBox() {
             return new Cesium.SkyBox({
