@@ -1196,13 +1196,18 @@
 
             const bands = [
                 // Ring D
-                { start: 0, end: 0.05, r: 140, g: 120, b: 100, alpha: 0.15 },
+                { start: 0.00, end: 0.04, r: 120, g: 105, b: 85, alpha: 0.12 },
                 // Ring C
-                { start: 0.05, end: 0.18, r: 160, g: 140, b: 110, alpha: 0.3 },
-                // Gap C-B
-                { start: 0.18, end: 0.20, r: 100, g: 80, b: 60, alpha: 0.1 },
-                // Ring B
-                { start: 0.20, end: 0.48, r: 210, g: 190, b: 160, alpha: 0.85 },
+                { start: 0.04, end: 0.17, r: 155, g: 135, b: 105, alpha: 0.25 },
+                { start: 0.10, end: 0.12, r: 140, g: 120, b: 95, alpha: 0.15 }, // Gap C
+                // Transition C -> B
+                { start: 0.17, end: 0.19, r: 170, g: 150, b: 120, alpha: 0.35 },
+                // Internal Ring B
+                { start: 0.19, end: 0.30, r: 220, g: 200, b: 170, alpha: 0.90 },
+                // Center Ring B
+                { start: 0.30, end: 0.40, r: 235, g: 215, b: 180, alpha: 0.95 },
+                // External Ring B
+                
                 // Cassini Division
                 { start: 0.48, end: 0.53, r: 30, g: 25, b: 20, alpha: 0.08 },
                 // Ring A
