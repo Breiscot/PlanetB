@@ -848,6 +848,10 @@
             });
 
             addPlanetPOIsOnSphere(planetId, DISPLAY_RADIUS);
+
+            if (planetId === 'saturn') {
+                addSaturnRings(viewer);
+            }
         }
 
         // Earth Viewer
@@ -999,6 +1003,11 @@
             viewer.scene.screenSpaceCameraController.maximumZoomDistance = DISPLAY_RADIUS * 20;
 
             addPlanetPOIsOnSphere(planetId, DISPLAY_RADIUS);
+
+            if (planetId === 'saturn') {
+                addSaturnRings(viewer);
+            }
+
             setupPlanetMouseTracking(planetId, planet);
         }
 
@@ -1143,7 +1152,7 @@
             const DISPLAY_RADIUS = 6371000;
 
             const ringCanvas = createSaturnRingTexture();
-            const ringTextureUrl = ringCanvas.toDataURL('images/png');
+            const ringTextureUrl = ringCanvas.toDataURL('image/png');
             const ringCtx = ringCanvas.getContext('2d');
 
             const INNER_R = DISPLAY_RADIUS * 1.25;
@@ -1188,9 +1197,9 @@
 
         function createSaturnRingTexture() {
             const canvas = document.createElement('canvas');
-            ringCanvas.width = 1024;
-            ringCanvas.height = 64;
-            const ctx = ringCanvas.getContext('2d');
+            canvas.width = 1024;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
 
             ctx.clearRect(0, 0, 1024, 64);
 
@@ -1207,96 +1216,72 @@
                 // Center Ring B
                 { start: 0.30, end: 0.40, r: 235, g: 215, b: 180, alpha: 0.95 },
                 // External Ring B
-                
+                { start: 0.40, end: 0.47, r: 215, g: 195, b: 165, alpha: 0.85 },
                 // Cassini Division
-                { start: 0.48, end: 0.53, r: 30, g: 25, b: 20, alpha: 0.08 },
-                // Ring A
-                { start: 0.53, end: 0.78, r: 190, g: 170, b: 140, alpha: 0.7 },
+                { start: 0.47, end: 0.53, r: 25, g: 20, b: 15, alpha: 0.06 },
+                // Internal Ring A
+                { start: 0.53, end: 0.62, r: 195, g: 175, b: 145, alpha: 0.70 },
                 // Encke Division
-                { start: 0.70, end: 0.71, r: 20, g: 15, b: 10, alpha: 0.05 },
+                { start: 0.62, end: 0.63, r: 15, g: 12, b: 8, alpha: 0.04 },
+                // Center Ring A
+                { start: 0.63, end: 0.72, r: 185, g: 165, b: 135, alpha: 0.65 },
+                // Keeler Division
+                { start: 0.72, end: 0.725, r: 10, g: 8, b: 5, alpha: 0.03 },
                 // External Ring A
-                { start: 0.71, end: 0.78, r: 180, g: 160, b: 130, alpha: 0.6 },
+                { start: 0.725, end: 0.78, r: 175, g: 155, b: 125, alpha: 0.55 },
                 // Gap A-F
-                { start: 0.78, end: 0.82, r: 10, g: 8, b: 5, alpha: 0.02 },
+                { start: 0.78, end: 0.82, r: 8, g: 6, b: 4, alpha: 0.02 },
                 // Ring F
-                { start: 0.82, end: 0.84, r: 170, g: 150, b: 120, alpha: 0.4 },
+                { start: 0.82, end: 0.84, r: 180, g: 160, b: 130, alpha: 0.45 },
+                // Null Space
+                { start: 0.84, end: 0.88, r: 5, g: 4, b: 3, alpha: 0.01 },
                 // Ring G
-                { start: 0.87, end: 0.92, r: 130, g: 110, b: 90, alpha: 0.08 },
+                { start: 0.88, end: 0.93, r: 120, g: 105, b: 85, alpha: 0.06 },
                 // Ring E
-                { start: 0.93, end: 1.0, r: 150, g: 140, b: 130, alpha: 0.04 },
+                { start: 0.94, end: 1.00, r: 140, g: 130, b: 120, alpha: 0.03 },
             ];
-
-            ctx.clearRect(0, 0, 1024, 64);
 
             bands.forEach(band => {
                 const x1 = Math.floor(band.start * 1024);
                 const x2 = Math.floor(band.end * 1024);
 
                 for (let x = x1; x < x2; x++) {
-                    const t = (x - x1) / (x2 - x1);
-                    const noise1 = Math.sin(x * 0.5) * 10;
-                    const noise2 = Math.sin(x * 1.7) * 5;
-                    const noise3 = Math.sin(x * 4.3) * 3;
-                    const variation = noise1 + noise2 + noise3;
+                    const noise = Math.sin(x * 0.3) * 12
+                                + Math.sin(x * 1.1) * 7
+                                + Math.sin(x * 3.7) * 4
+                                + Math.sin(x * 11.3) * 2;
 
-                    const r = Math.max(0, Math.min(255, band.r + variation));
-                    const g = Math.max(0, Math.min(255, band.g + variation * 0.8));
-                    const b = Math.max(0, Math.min(255, band.b + variation * 0.6));
+                    const bandT = (x - x1) / Math.max(1, x2 - x1);
+                    const radialFade = 1.0 - Math.pow(Math.abs(bandT - 0.5) * 2, 2) * 0.15;
 
-                    const alphaVariation = (Math.random() - 0.5) * 0.1;
-                    const alpha = Math.max(0, Math.min(1, band.alpha + alphaVariation));
+                    const r = Math.max(0, Math.min(255, band.r + noise));
+                    const g = Math.max(0, Math.min(255, band.g + noise * 0.85));
+                    const b = Math.max(0, Math.min(255, band.b + noise * 0.7));
+                    const a = Math.max(0, Math.min(1, band.alpha * radialFade + (Math.random() - 0.5) * 0.05));
 
-                    ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${alpha})`;
-                    ctx.fillRect(x, 0.1, 64);
+                    for (let y = 0; y < 64; y++) {
+                        const yNoise = (Math.random() - 0.5) * 8;
+                        const finalR = Math.max(0, Math.min(255, r + yNoise));
+                        const finalG = Math.max(0, Math.min(255, g + yNoise * 0.8));
+                        const finalB = Math.max(0, Math.min(255, b + yNoise * 0.6));
+                        ctx.fillStyle = `rgba(${Math.floor(finalR)}, ${Math.floor(finalG)}, ${Math.floor(finalB)}, ${a})`;
+                        ctx.fillRect(x, y, 1, 1);
+                    }
                 }
             });
 
-            for (let i = 0; i < 3000; i++) {
+            for (let i = 0; i < 5000; i++) {
                 const x = Math.random() * 1024;
                 const y = Math.random() * 64;
-                const bright = Math.random() > 0.5;
-                const alpha = Math.random() * 0.15;
+                const bright = Math.random() > 0.4;
+                const alpha = Math.random() * 0.08;
                 ctx.fillStyle = bright
                     ? `rgba(255, 240, 200, ${alpha})`
-                    : `rgba(0, 0, 0, ${alpha})`;
+                    : `rgba(0, 0, 0, ${alpha * 1.5})`;
                 ctx.fillRect(x, y, 1, 1);
-            }            
-
-            const NUM_RING_STRIPS = 360;
-            const NUM_RADIAL_STEPS = 40;
-
-            for (let radialStep = 0; radialStep < NUM_RADIAL_STEPS; radialStep++) {
-                const t = radialStep / NUM_RADIAL_STEPS;
-                const radius = INNER_RADIUS + t * (OUTER_RADIUS - INNER_RADIUS);
-                const nextRadius = INNER_RADIUS + (radialStep + 1) / NUM_RADIAL_STEPS * (OUTER_RADIUS - INNER_RADIUS);
-
-                const canvasX = Math.floor(t * 1024);
-                const pixelData = ctx.getImageData(canvasX, 32, 1, 1).data;
-                const color = Cesium.Color.fromBytes(pixelData[0], pixelData[1], pixelData[2], pixelData[3]);
-
-                if (color.alpha < 0.03) continue;
-
-                const positions = [];
-                for (let i = 0; i <= NUM_RING_STRIPS; i++) {
-                    const angle = (i / NUM_RING_STRIPS) * Math.PI * 2;
-                    const x1 = radius * Math.cos(angle);
-                    const y1 = radius * Math.sin(angle);
-                    const x2 = nextRadius * Math.cos(angle);
-                    const y2 = nextRadius * Math.sin(angle);
-                    positions.push(
-                        new Cesium.Cartesian3(x1, y1, 0),
-                        new Cesium.Cartesian3(x2, y2, 0)
-                    );
-                }
-
-                viewer.entities.add({
-                    polyline: {
-                        positions: positions,
-                        width: 2,
-                        material: new Cesium.ColorMaterialProperty(color),
-                    }
-                });
             }
+            
+            return canvas;
         }
         
 
