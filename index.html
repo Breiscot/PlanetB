@@ -143,28 +143,47 @@
 
         <!-- Famous places -->
         <div class="earth-only" id="earthOnlyPlaces">
-            <div class="section-title"><i data-lucide="landmark" style="width:14px;height:14px;"></i> Famous Places</div>
-            <div class="places-grid">
+            <div class="section-title"><i data-lucide="sparkles" style="width:14px;height:14px;"></i> 7 Wonders of the Modern World</div>
+            <div class="places-grid"></div>
+                <button class="place-btn" onclick="flyTo(41.0082, 28.9784, 800, 'Hagia Sophia, Istanbul')">
+                    <i data-lucide="building" style="width:14px;height:14px;"></i> Hagia Sophia
+                </button>
+                <button class="place-btn" onclick="flyTo(20.6843, -88.5678, 800, 'Chichén Itzá, Mexico')">
+                    <i data-lucide="triangle" style="width:14px;height:14px;"></i> Chichén Itzá
+                </button>
+                <button class="place-btn" onclick="flyTo(-22.9519, -43.2105, 1000, 'Cristo Redentore, Rio')">
+                    <i data-lucide="cross" style="width:14px;height:14px;"></i> Cristo Redentor
+                </button>
                 <button class="place-btn" onclick="flyTo(41.8902, 12.4922, 800, 'Colosseum, Rome')">
                     <i data-lucide="building" style="width:14px;height:14px;"></i> Colosseum
                 </button>
-                <button class="place-btn" onclick="flyTo(48.8584, 2.2945, 800, 'Tour Eiffel, Paris')">
-                    <i data-lucide="tower-control" style="width:14px;height:14px;"></i> Tour Eiffel
+                <button class="place-btn" onclick="flyTo(40.4319, 116.5704, 2000, 'Great Wall, China')">
+                    <i data-lucide="fence" style="width:14px;height:14px;"></i> Great Wall
                 </button>
-                <button class="place-btn" onclick="flyTo(40.6892, -74.0445, 800, 'Statue of Liberty')">
-                    <i data-lucide="building-2" style="width:14px;height:14px;"></i> New York
+                <button class="place-btn" onclick="flyTo(-13.1631, -72.5450, 2000, 'Machu Picchu, Peru')">
+                    <i data-lucide="mountain" style="width:14px;height:14px;"></i> Machu Picchu
+                </button>
+                <button class="place-btn" onclick="flyTo(30.3285, 35.4444, 1000, 'Petra, Jordan')">
+                    <i data-lucide="landmark" style="width:14px;height:14px;"></i> Petra
                 </button>
                 <button class="place-btn" onclick="flyTo(27.1751, 78.0421, 800, 'Taj Mahal, India')">
                     <i data-lucide="church" style="width:14px;height:14px;"></i> Taj Mahal
                 </button>
+        </div>
+
+            <div class="section-title"><i data-lucide="landmark" style="width:14px;height:14px;"></i> Famous Places</div>
+            <div class="places-grid">
+                <button class="place-btn" onclick="flyTo(48.8584, 2.2945, 800, 'Tour Eiffel, Paris')">
+                    <i data-lucide="tower-control" style="width:14px;height:14px;"></i> Tour Eiffel
+                </button>
+                <button class="place-btn" onclick="flyTo(40.6892, -74.0445, 800, 'Statue of Liberty, New York')">
+                    <i data-lucide="building-2" style="width:14px;height:14px;"></i> Statue of Liberty
+                </button>
                 <button class="place-btn" onclick="flyTo(35.6762, 139.6503, 1500, 'Tokyo, Japan')">
                     <i data-lucide="train-front" style="width:14px;height:14px;"></i> Tokyo
                 </button>
-                <button class="place-btn" onclick="flyTo(-22.9519, -43.2105, 1000, 'Cristo Redentore')">
-                    <i data-lucide="cross" style="width:14px;height:14px;"></i> Rio
-                </button>
-                <button class="place-btn" onclick="flyTo(29.9792, 31.1342, 800, 'Pyramid Giza')">
-                    <i data-lucide="triangle" style="width:14px;height:14px;"></i> Pyramid
+                <button class="place-btn" onclick="flyTo(29.9792, 31.1342, 800, 'Pyramid of Giza')">
+                    <i data-lucide="triangle" style="width:14px;height:14px;"></i> Pyramids
                 </button>
                 <button class="place-btn" onclick="flyTo(-33.8568, 151.2153, 1000, 'Sydney Opera House')">
                     <i data-lucide="music" style="width:14px;height:14px;"></i> Sydney
@@ -175,12 +194,25 @@
                 <button class="place-btn" onclick="flyTo(55.7558, 37.6173, 2000, 'Moscow, Russia')">
                     <i data-lucide="snowflake" style="width:14px;height:14px;"></i> Moscow
                 </button>
-                <button class="place-btn" onclick="flyTo(-13.1631, -72.5450, 2000, 'Machu Picchu')">
-                    <i data-lucide="mountain" style="width:14px;height:14px;"></i> Machu Picchu
-                </button>
                 <button class="place-btn" onclick="flyTo(51.5007, -0.1246, 800, 'Big Ben, London')">
                     <i data-lucide="clock" style="width:14px;height:14px;"></i> London
                 </button>
+                <button class="place-btn" onclick="flyTo(37.9715, 23.7267, 800, 'Acropolis, Athens')">
+                    <i data-lucide="columns-3" style="width:14px;height:14px;"></i> Acropolis
+                </button>
+                <button class="place-btn" onclick="flyTo(48.8606, 2.3376, 800, 'Louvre Museum, Paris')">
+                    <i data-lucide="frame" style="width:14px;height:14px;"></i> Louvre
+                </button>
+                <button class="place-btn" onclick="flyTo(36.1069, -112.1129, 2000, 'Grand Canyon, USA')">
+                    <i data-lucide="mountain" style="width:14px;height:14px;"></i> Grand Canyon
+                </button>
+                <button class="place-btn" onclick="flyTo(-3.0674, 37.3556, 8000, 'Mount Kilimanjaro')">
+                    <i data-lucide="triangle" style="width:14px;height:14px;"></i> Kilimanjaro
+                </button>
+                <button class="place-btn" onclick="flyTo(64.0460, -16.1711, 3000, 'Iceland Glacier')">
+                    <i data-lucide="snowflake" style="width:14px;height:14px;"></i> Iceland
+                </button>
+                
             </div>
         </div>
 

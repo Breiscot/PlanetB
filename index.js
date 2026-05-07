@@ -1,5 +1,5 @@
         
-        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0YjAyNjFhYS0wNGM3LTQyODItOTBkYi01NmFiNWI4MmM2YjEiLCJpZCI6MjU5LCJpYXQiOjE3MjUwMzIwMDB9.placeholder';
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYzgxMDM4Mi0wOGZiLTQ3MTAtOGZhNS1lZWY3OTlkY2IzM2IiLCJpZCI6NDI2Mzg1LCJpc3MiOiJodHRwczovL2lvbi5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3Nzc3MTM1MTF9.3fyU4NS_gcjcKttom8X93wKqDvO8RGX21l-lY3AyQx8';
 
         (function patchCesiumRangeError() {
             const originalRender = Cesium.Scene.prototype.render;
@@ -1088,11 +1088,11 @@
                     { name: 'Lunar South Pole', lat: -89.5, lon: 0, desc: 'Possible water ice'},
                 ],
                 mars: [
-                    { name: 'Olympus Mons', lat: 18.65, lon: -133.8, desc: 'Tallest volcano in the Solar System (21.9 Km)'},
+                    { name: 'Olympus Mons', lat: 18.65, lon: 133.8, desc: 'Tallest volcano in the Solar System (21.9 Km)'},
                     { name: 'North Pole', lat: 89.5, lon: 0, desc: 'Cap Polar Ice'},
                 ],
                 jupiter: [
-                    { name: 'Big chunky spot', lat: -22.0, lon: -10.0, desc: 'Large Storm 16.000 km'},
+                    { name: 'Big chunky spot', lat: -22.0, lon: -138.0, desc: 'Large Storm 16.000 km'},
                 ],
                 saturn: [
                     { name: 'Storm of the 2011', lat: 35.0, lon: 0, desc: 'Large White Storm'},
