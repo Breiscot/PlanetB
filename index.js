@@ -1504,16 +1504,34 @@
 
         function addFamousPlaceMarkers() {
             const places = [
-                { name: 'Colosseum', lat: 41.8902, lon: 12.4922, emoji: '🏛️' },
-                { name: 'Tour Eiffel', lat: 48.8584, lon: 2.2945, emoji: '🗼' },
-                { name: 'Statue of Liberty', lat: 40.6892, lon: -74.0445, emoji: '🗽' },
-                { name: 'Taj Mahal', lat: 27.1751, lon: 78.0421, emoji: '🕌' },
-                { name: 'Tokyo Tower', lat: 35.6586, lon: 139.7454, emoji: '🗾' },
-                { name: 'Cristo Redentore', lat: -22.9519, lon: -43.2105, emoji: '✝️' },
-                { name: 'Pyramid Giza', lat: 29.9792, lon: 31.1342, emoji: '' },
-                { name: 'Sydney Opera House ', lat: -33.8568, lon: 151.2153, emoji: '' },
+                // 7 Wonders of the Modern World
+                { name: 'Hagia Sophia', lat: 41.0082, lon: 28.9784, emoji: '' },
+                { name: 'Chichén Itzá', lat: 20.6843, lon: -88.5678, emoji: '' },
+                { name: 'Cristo Redentor', lat: -22.9519, lon: -43.2105, emoji: '' },
+                { name: 'Colosseum', lat: 41.8902, lon: 12.4922, emoji: '' },
+                { name: 'Great Wall', lat: 40.4319, lon: 116.5704, emoji: '' },
                 { name: 'Machu Picchu', lat: -13.1631, lon: -72.5450, emoji: '' },
+                { name: 'Petra', lat: 30.3285, lon: 35.4444, emoji: '' },
+                { name: 'Taj Mahal', lat: 27.1751, lon: 78.0421, emoji: '' },
+
+                // Famous Places
+                { name: 'Tour Eiffel', lat: 48.8584, lon: 2.2945, emoji: '' },
+                { name: 'Statue of Liberty', lat: 40.6892, lon: -74.0445, emoji: '' },
+                { name: 'Tokyo Tower', lat: 35.6586, lon: 139.7454, emoji: '' },
+                { name: 'Pyramids of Giza', lat: 29.9792, lon: 31.1342, emoji: '' },
+                { name: 'Sydney Opera House ', lat: -33.8568, lon: 151.2153, emoji: '' },
                 { name: 'Big Ben', lat: 51.5007, lon: -0.1246, emoji: '' },
+                { name: 'Acropolis', lat: 37.9715, lon: 23.7267, emoji: '' },
+                { name: 'Louvre Museum', lat: 48.8606, lon: 2.3376, emoji: '' },
+                { name: 'Grand Canyon', lat: 36.1069, lon: -112.1129, emoji: '' },
+                { name: 'Mt. Kilimanjaro', lat: -3.0674, lon: 37.3556, emoji: '' },
+                { name: 'Victoria Falls', lat: -17.9243, lon: 25.8572, emoji: ''},
+                { name: 'Mount Everest', lat: 27.9881, lon: 86.9250, emoji: '' },
+                { name: 'Uluru', lat: -25.3444, lon: 131.0369, emoji: '' },
+                { name: 'Tower of Pisa', lat: 43.7230, lon: 10.3966, emoji: '' },
+                { name: 'Sagrada Familia', lat: 41.4036, lon: 2.1744, emoji: '' },
+                { name: 'Angkor Wat', lat: 13.4125, lon: 103.8670, emoji: '' },
+                { name: 'Burj Khalifa', lat: 25.1972, lon: 55.2744, emoji: '' },
             ];
 
             places.forEach(place => {
