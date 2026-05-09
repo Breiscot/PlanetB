@@ -1542,7 +1542,7 @@
             ];
 
             wonderEntities = [];
-            wonder.forEach(place => {
+            wonders.forEach(place => {
                 const entity = viewer.entities.add({
                     name: place.name,
                     position: Cesium.Cartesian3.fromDegrees(place.lon, place.lat, 0),
@@ -1564,12 +1564,23 @@
                         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
                         pixelOffset: new Cesium.Cartesian2(0, -15),
                         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-                    }
-                })
-            })
+                        scaleByDistance: new Cesium.NearFarScalar(1.5e2, 1.0, 5.0e6, 0.0),
+                        translucencyByDistance: new Cesium.NearFarScalar(1.5e5, 1.0, 5.0e6, 0.0),
+                    },
+                    description: `
+                        <div style="font-family: sans-serif; padding: 10px;">
+                            <h2>${place.emoji} ${place.name}</h2>
+                            <p><strong>Wonder of the Modern World</strong></p>
+                            <p><strong>Coordinates:</strong> ${place.lat.toFixed(4)}°, ${place.lon.toFixed(4)}°</p>
+                        </div>
+                    `
+                });
+                wonderEntities.push(entity);
+            });
 
-            places.forEach(place => {
-                viewer.entities.add({
+            famousEntities = [];
+            famous.forEach(place => {
+                const entity = viewer.entities.add({
                     name: place.name,
                     position: Cesium.Cartesian3.fromDegrees(place.lon, place.lat, 0),
                     point: {
@@ -1585,6 +1596,7 @@
                         font: '14px sans-serif',
                         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                         outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
                         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
                         pixelOffset: new Cesium.Cartesian2(0, -15),
                         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
@@ -1598,7 +1610,34 @@
                         </div>
                     `
                 });
+                famousEntities.push(entity);
             });
+        }
+
+        function toggleWonders() {
+            wondersVisible = !wondersVisible;
+
+            wonderEntities.forEach(entity => {
+                entity.show = wondersVisible;
+            });
+
+            const section = document.getElementById('wondersSection');
+            section.style.display = wondersVisible ? 'block' : 'none';
+
+            document.getElementById('btnToggleWonders').classList.toggle('active', wondersVisible);
+        }
+
+        function toggleFamous() {
+            famousVisible = !famousVisible;
+
+            famousEntities.forEach(entity => {
+                entity.show = famousVisible;
+            });
+
+            const section = document.getElementById('famousSection');
+            section.style.display = famousVisible ? 'block' : 'none';
+
+            document.getElementById('btnToggleFamous').classList.toggle('active', famousVisible);
         }
 
         // Mouse Tracking
