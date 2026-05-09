@@ -1502,8 +1502,13 @@
 
         // Markers in famous places
 
+        let wondersVisible = true;
+        let famousVisible = true;
+        let wonderEntities = [];
+        let famousEntities = [];
+
         function addFamousPlaceMarkers() {
-            const places = [
+            const wonders = [
                 // 7 Wonders of the Modern World
                 { name: 'Hagia Sophia', lat: 41.0082, lon: 28.9784, emoji: '' },
                 { name: 'Chichén Itzá', lat: 20.6843, lon: -88.5678, emoji: '' },
@@ -1513,7 +1518,9 @@
                 { name: 'Machu Picchu', lat: -13.1631, lon: -72.5450, emoji: '' },
                 { name: 'Petra', lat: 30.3285, lon: 35.4444, emoji: '' },
                 { name: 'Taj Mahal', lat: 27.1751, lon: 78.0421, emoji: '' },
+            ];
 
+            const famous = [
                 // Famous Places
                 { name: 'Tour Eiffel', lat: 48.8584, lon: 2.2945, emoji: '' },
                 { name: 'Statue of Liberty', lat: 40.6892, lon: -74.0445, emoji: '' },
@@ -1533,6 +1540,33 @@
                 { name: 'Angkor Wat', lat: 13.4125, lon: 103.8670, emoji: '' },
                 { name: 'Burj Khalifa', lat: 25.1972, lon: 55.2744, emoji: '' },
             ];
+
+            wonderEntities = [];
+            wonder.forEach(place => {
+                const entity = viewer.entities.add({
+                    name: place.name,
+                    position: Cesium.Cartesian3.fromDegrees(place.lon, place.lat, 0),
+                    point: {
+                        pixelSize: 12,
+                        color: Cesium.Color.fromCssColorString('#ffd700'),
+                        outlineColor: Cesium.Color.WHITE,
+                        outlineWidth: 2,
+                        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                        scaleByDistance: new Cesium.NearFarScalar(1.5e2, 2.0, 1.5e7, 0.5),
+                    },
+                    label: {
+                        text: `${place.emoji} ${place.name}`,
+                        font: 'bold 14px sans-serif',
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                        fillColor: Cesium.Color.fromCssColorString('#ffd700'),
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        pixelOffset: new Cesium.Cartesian2(0, -15),
+                        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                    }
+                })
+            })
 
             places.forEach(place => {
                 viewer.entities.add({

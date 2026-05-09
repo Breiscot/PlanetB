@@ -143,7 +143,18 @@
 
         <!-- Famous places -->
         <div class="earth-only" id="earthOnlyPlaces">
-            <div class="section-title"><i data-lucide="sparkles" style="width:14px;height:14px;"></i> 7 Wonders of the Modern World</div>
+
+            <div class="btn-group" style="flex-direction:row; gap:6px; margin-bottom:10px;">
+                <button class="btn btn-view active" id="btnToggleWonders" onclick="toggleWonders()" style="flex:1; font-size:11px; padding:8px;">
+                    <i data-lucide="sparkles" style="width:14px;height:14px;"></i> Wonders
+                </button>
+                <button class="btn btn-view active" id="btnToggleFamous" onclick="toggleFamous()" style="flex:1; font-size:11px; padding:8px;">
+                    <i data-lucide="landmark" style="width:14px;height:14px;"></i> Famous
+                </button>
+            </div>
+            
+            <div id="wondersSection">
+                <div class="section-title"><i data-lucide="sparkles" style="width:14px;height:14px;"></i> 7 Wonders of the Modern World</div>
             <div class="places-grid">
                 <button class="place-btn" onclick="flyTo(41.0082, 28.9784, 800, 'Hagia Sophia, Istanbul')">
                     <i data-lucide="building" style="width:14px;height:14px;"></i> Hagia Sophia
@@ -172,6 +183,7 @@
             </div>
         </div>
 
+        <div id="famousSection">
             <div class="section-title"><i data-lucide="landmark" style="width:14px;height:14px;"></i> Famous Places</div>
             <div class="places-grid">
                 <button class="place-btn" onclick="flyTo(48.8584, 2.2945, 800, 'Tour Eiffel, Paris')">
@@ -234,8 +246,9 @@
                 <button class="place-btn" onclick="flyTo(25.1972, 55.2744, 800, 'Burj Khalifa, Dubai')">
                     <i data-lucide="building-2" style="width:14px;height:14px;"></i> Burj Khalifa
                 </button>
-            </div>
+            </div>      
         </div>
+    </div>
 
         <!-- Actions -->
         <div class="btn-group">
