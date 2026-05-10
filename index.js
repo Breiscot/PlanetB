@@ -215,6 +215,106 @@
                 cameraHeight: 8000000,
                 hasAtmosphere: false,
                 scale: 0.18
+            },
+            timber_hearth: {
+                name: 'Timber Hearth',
+                emoji: '',
+                radius: 300,
+                description: 'Home planet of the Hearthians. A small rocky world with forests, geysers and a village.',
+                distance: 'Outer Wilds System',
+                diameter: '~600 m',
+                gravity: 'Low',
+                temperature: 'Temperate',
+                moons: '1 (Attlerock)',
+                dayLength: '22 min (loop)',
+                yearLength: '22 min (loop)',
+                atmosphere: 'Breathable',
+                textureUrl: null,
+                color: '#4a7c3f',
+                cameraHeight: 15000000,
+                hasAtmosphere: true,
+                scale: 1.0,
+                isOuterWilds: true
+            },
+            giants_deep: {
+                name: "Giant's Deep",
+                emoji: '',
+                radius: 500,
+                description: 'A gas giant covered in a turbulent ocean with massive tornadoes that launch islands into orbit.',
+                distance: 'Outer Wilds System',
+                diameter: '~1000 m',
+                gravity: 'High',
+                temperature: 'Cold (surface)',
+                moons: '0',
+                dayLength: '22 min (loop)',
+                yearLength: '22 min (loop)',
+                atmosphere: 'Dense, stormy',
+                textureUrl: null,
+                color: '#1a5c3a',
+                cameraHeight: 15000000,
+                hasAtmosphere: true,
+                scale: 1.0,
+                isOuterWilds: true
+            },
+            brittle_hollow: {
+                name: "Brittle Hollow",
+                emoji: '',
+                radius: 400,
+                description: 'A fragile planet that slowly collapses into its own black hole as volcanic moon bombards it.',
+                distance: 'Outer Wilds System',
+                diameter: '~800 m',
+                gravity: 'Medium',
+                temperature: 'Varies',
+                moons: "1 (Hollow's Lantern)",
+                dayLength: '22 min (loop)',
+                yearLength: '22 min (loop)',
+                atmosphere: 'Thin',
+                textureUrl: null,
+                color: '#6b4c8a',
+                cameraHeight: 15000000,
+                hasAtmosphere: false,
+                scale: 1.0,
+                isOuterWilds: true
+            },
+            ash_twin: {
+                name: "Ash Twin",
+                emoji: '',
+                radius: 250,
+                description: 'One of the Hourglass Twins. Sand flows from Ember Twin through a sand column connecting them.',
+                distance: 'Outer Wilds System',
+                diameter: '~500 m',
+                gravity: 'Low',
+                temperature: 'Hot',
+                moons: '0 (twin: Ember Twin)',
+                dayLength: '22 min (loop)',
+                yearLength: '22 min (loop)',
+                atmosphere: 'None',
+                textureUrl: null,
+                color: '#c4956a',
+                cameraHeight: 15000000,
+                hasAtmosphere: false,
+                scale: 1.0,
+                isOuterWilds: true
+            },
+            dark_bramble: {
+                name: "Dark Bramble",
+                emoji: '',
+                radius: 450,
+                description: 'A terrifying seed that consumed the original fifth planet. Bigger on the inside than the outside.',
+                distance: 'Outer Wilds System',
+                diameter: '~900 m (outside)',
+                gravity: 'Zero (inside)',
+                temperature: 'Freezing',
+                moons: '0',
+                dayLength: '22 min (loop)',
+                yearLength: '22 min (loop)',
+                atmosphere: 'Foggy void',
+                textureUrl: null,
+                color: '#2a3a2a',
+                cameraHeight: 15000000,
+                hasAtmosphere: false,
+                scale: 1.0,
+                isOuterWilds: true
             }
         };
 
@@ -401,18 +501,21 @@
                     viewer = null;
                 }
 
-                //cleanupCurrentView(previousPlanet);
-
                 // Create new viewer
                 if (planetId === 'earth') {
                     document.getElementById('threejsContainer').style.display = 'none';
                     document.getElementById('cesiumContainer').style.display = 'block';
                     await createEarthViewer();
 
-                } else if (planetId === 'moon') {
+                } else if (planetId === 'moon' || planet.isOuterWilds) {
                     document.getElementById('cesiumContainer').style.display = 'none';
                     document.getElementById('threejsContainer').style.display = 'block';
-                    await createMoonThreeJS();
+
+                    if (planetId === 'moon') {
+                        await createMoonThreeJS();
+                    } else {
+                        await createOuterWildsThreeJS(planetId, planet);
+                    }
 
                 } else {
                     document.getElementById('threejsContainer').style.display = 'none';
@@ -571,6 +674,15 @@
             window.addEventListener('resize', window._threeResizeHandler);
 
             setupMoonMouseTracking();
+        }
+
+        async function createOuterWildsThreeJS(planetId, planet) {
+            const container = document.getElementById('threejsContainer');
+            container.style.display = 'block';
+            container.innerHTML = '';
+
+            
+            
         }
 
         function loadThreeTexture(url) {
