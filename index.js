@@ -1,5 +1,5 @@
         
-        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYzgxMDM4Mi0wOGZiLTQ3MTAtOGZhNS1lZWY3OTlkY2IzM2IiLCJpZCI6NDI2Mzg1LCJpc3MiOiJodHRwczovL2lvbi5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3Nzc3MTM1MTF9.3fyU4NS_gcjcKttom8X93wKqDvO8RGX21l-lY3AyQx8';
+        Cesium.Ion.defaultAccessToken = '';
 
         (function patchCesiumRangeError() {
             const originalRender = Cesium.Scene.prototype.render;
@@ -857,55 +857,57 @@
         // Earth Viewer
 
         async function createEarthViewer() {
+            viewer = new Cesium.Viewer('cesiumContainer', {
+                terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+                animation: false,
+                baseLayerPicker: false,
+                fullscreenButton: false,
+                vrButton: false,
+                geocoder: false,
+                homeButton: false,
+                infoBox: true,
+                sceneModePicker: false,
+                selectionIndicator: true,
+                timeline: false,
+                navigationHelpButton: false,
+                navigationInstructionsInitiallyVisible: false,
+                scene3DOnly: false,
+                skyBox: createSkyBox(),
+                skyAtmosphere: new Cesium.SkyAtmosphere(),
+                baseLayer: false
+            });
+
             try {
-                viewer = new Cesium.Viewer('cesiumContainer', {
-                    terrainProvider: await Cesium.createWorldTerrainAsync({
-                        requestWaterMask: true,
-                        requestVertexNormals: true
-                    }),
-                    animation: false,
-                    baseLayerPicker: false,
-                    fullscreenButton: false,
-                    vrButton: false,
-                    geocoder: false,
-                    homeButton: false,
-                    infoBox: true,
-                    sceneModePicker: false,
-                    selectionIndicator: true,
-                    timeline: false,
-                    navigationHelpButton: false,
-                    navigationInstructionsInitiallyVisible: false,
-                    scene3DOnly: false,
-                    skyBox: createSkyBox(),
-                    skyAtmosphere: new Cesium.SkyAtmosphere()
-                });
-
-                viewer.imageryLayers.removeAll();
-                await setImageryLayer('satellite');
-
-                const scene = viewer.scene;
-                scene.globe.enableLighting = true;
-                scene.globe.depthTestAgainstTerrain = true;
-                scene.fog.enabled = true;
-                scene.globe.showGroundAtmosphere = true;
-
-                viewer.camera.flyTo({
-                    destination: Cesium.Cartesian3.fromDegrees(12.4964, 41.9028, 15000000),
-                    orientation: {
-                        heading: Cesium.Math.toRadians(0),
-                        pitch: Cesium.Math.toRadians(-90),
-                        roll: 0
-                    },
-                    duration: 2
-                });
-
-                addFamousPlaceMarkers();
-                setupMouseTracking();
-                
-            } catch (error) {
-                console.error('Error creating Earth viewer:', error);
-                initFallbackGlobe();
+                const esriProvider = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+                    'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+                );
+                viewer.imageryLayers.addImageryProvider(esriProvider);
+            } catch (e) {
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.OpenStreetMapImageryProvider({
+                        url: 'https://tile.openstreetmap.org/'
+                    })
+                );
             }
+
+            const scene = viewer.scene;
+            scene.globe.enableLighting = true;
+            scene.globe.depthTestAgainstTerrain = false;
+            scene.fog.enabled = true;
+            scene.globe.showGroundAtmosphere = true;
+
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(12.4964, 41.9028, 15000000),
+                orientation: {
+                    heading: Cesium.Math.toRadians(0),
+                    pitch: Cesium.Math.toRadians(-90),
+                    roll: 0
+                },
+                duration: 2
+            });
+
+            addFamousPlaceMarkers();
+            setupMouseTracking();
         }
 
         // Viewer Generic Planet
@@ -945,6 +947,7 @@
                 scene3DOnly: false,
                 skyBox: createSkyBox(),
                 skyAtmosphere: false,
+                baseLayer: false
             });
 
             const scene = viewer.scene;
@@ -1933,12 +1936,14 @@
                 selectionIndicator: true,
                 timeline: false,
                 navigationHelpButton: false,
+                terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+                baseLayer: false
             });
 
-            // Remove the layer default and add OpenStreetMap
-            viewer.imageryLayers.removeAll();
             viewer.imageryLayers.addImageryProvider(
-                new Cesium.OpenStreetMapImageryProvider({ url: 'https://tile.openstreetmap.org/' })
+                new Cesium.OpenStreetMapImageryProvider({
+                    url: 'https://tile.openstreetmap.org/'
+                })
             );
 
             viewer.scene.globe.enableLighting = true;

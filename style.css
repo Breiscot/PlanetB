@@ -504,3 +504,18 @@
             pointer-events: none !important;
             overflow: hidden !important;
         }
+
+        .ow-btn {
+            border-color: rgba(255, 150, 50, 0.2) !important;
+        }
+
+        .ow-btn:hover {
+            background: rgba(255, 150, 50, 0.2) !important;
+            border-color: rgba(255, 150, 50, 0.5) !important;
+        }
+
+        .ow-btn.active {
+            background: rgba(255, 150, 50, 0.3) !important;
+            border-color: #ff9632 !important;
+            box-shadow: 0 0 15px rgba(255, 150, 50, 0.2) !important;
+        }
