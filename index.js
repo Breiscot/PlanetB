@@ -802,8 +802,64 @@
 
                 const len = Math.sqrt(x * x + y * y + z * z);
                 const newLen = len + noise;
-                const scale
+                const scale = newLen / len;
+
+                positions.setXYZ(i, x * scale, y * scale, z * scale);
             }
+            geometry.computeVertexNormals();
+
+            // Colors for vertex (green forests, brown terrain, gray rock)
+            const colors = new Float32Array(positions.count * 3);
+            for (let i = 0; i < positions.count; i++) {
+                const x = positions.getX(i);
+                const y = positions.getY(i);
+                const z = positions.getZ(i);
+                const height = Math.sqrt(x * x + y * y + z * z) - radius;
+
+                let r, g, b;
+                if (height > 0.05) {
+                    // Rocky peaks - Gray
+                    r = 0.45; g = 0.42; b = 0.38;
+                } else if (height > 0.02) {
+                    // Forests - Dark Green
+                    r = 0.2; g = 0.45; b = 0.15;
+                } else if (height > -0.02) {
+                    // Plains - Light Green
+                    r = -0.3; g = 0.55; b = 0.2;
+                } else {
+                    // Valley - Brown Terrain
+                    r = 0.4; g = 0.3; b = 0.2;
+                }
+
+                const variation = (simplex3D(x * 8, y * 8, z * 8) * 0.1);
+                colors[i * 3] = Math.max(0, Math.min(1, r + variation));
+                colors[i * 3 + 1] = Math.max(0, Math.min(1, g + variation));
+                colors[i * 3 + 2] = Math.max(0, Math.min(1, b + variation));
+            }
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                flatShading: true,
+                shininess: 5
+            });
+
+            const planet = new THREE.Mesh(geometry, material);
+            planet.castShadow = true;
+            planet.receiveShadow = true;
+            group.add(planet);
+
+            // Trees
+            addTreesOnSurface(group, radius, 80);
+
+            // Geyser
+            addGeysers(group, radius, 5);
+
+            // Atmosphere glow
+            addAtmosphereGlow(group, radius, 0x88ccff, 0.15);
+
+            // Village
+            addVillage(group, radius);
         }
 
         function loadThreeTexture(url) {
