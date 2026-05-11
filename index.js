@@ -681,8 +681,107 @@
             container.style.display = 'block';
             container.innerHTML = '';
 
-            
-            
+            threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+            threeRenderer.setSize(window.innerWidth, window.innerHeight);
+            threeRenderer.setPixelRatio(window.devicePixelRatio);
+            threeRenderer.setClearColor(0x000000);
+            threeRenderer.shadowMap.enabled = true;
+            threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(threeRenderer.domElement);
+
+            threeScene = new THREE.Scene();
+
+            threeCamera = new THREE.PerspectiveCamera(
+                50,
+                window.innerWidth / window.innerHeight,
+                0.01,
+                500
+            );
+            threeCamera.position.set(0, 0, 4);
+
+            threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+            threeControls.enableDamping = true;
+            threeControls.dampingFactor = 0.05;
+            threeControls.minDistance = 1.5;
+            threeControls.maxDistance = 15;
+            threeControls.rotateSpeed = 0.5;
+
+            createStarField();
+
+            // sunLight
+            const sunLight = new THREE.DirectionalLight(0xffeedd, 1.8);
+            sunLight.position.set(10, 5, 8);
+            sunLight.castShadow = true;
+            threeScene.add(sunLight);
+
+            // ambientLight
+            const ambientLight = new THREE.AmbientLight(0x334455, 0.4);
+            threeScene.add(ambientLight);
+
+            // OW Planet group
+            window._owPlanetGroup = new THREE.Group();
+            threeScene.add(window._owPlanetGroup);
+
+            // Build Planet
+            switch (planetId) {
+                case 'timber_hearth':
+                    buildTimberHearth(window._owPlanetGroup);
+                    break;
+                case 'giants_deep':
+                    buildGiantsDeep(window._owPlanetGroup);
+                    break;
+                case 'brittle_hollow':
+                    buildBrittleHollow(window._owPlanetGroup);
+                    break;
+                case 'ash_twin':
+                    buildAshTwin(window._owPlanetGroup);
+                    break;
+                case 'dark_bramble':
+                    buildDarkBramble(window._owPlanetGroup);
+                    break;
+            }
+
+            // AutoRotate 
+            window._owAutoRotate = true;
+
+            isThreeJSActive = true;
+
+            // Render loop with dynamic effects
+            const clock = new THREE.Clock();
+            function animate() {
+                if (!isThreeJSActive) return;
+                threeAnimationId = requestAnimationFrame(animate);
+
+                const elapsed = clock.getElapsedTime();
+
+                if (window._owAutoRotate) {
+                    window._owPlanetGroup.rotation.y += 0.001;
+                }
+
+                // Specific effects for planet
+                if (planetId === 'giants_deep') {
+                    updateGiantsDeep(elapsed);
+                } else if (planetId === 'brittle_hollow') {
+                    updateBrittleHollow(elapsed);
+                } else if (planetId === 'dark_bramble') {
+                    updateDarkBramble(elapsed);
+                } else if (planetId === 'ash_twin') {
+                    updateAshTwin(elapsed);
+                }
+
+                threeControls.update();
+                threeRenderer.render(threeScene, threeCamera);
+            }
+            animate();
+
+            // Resize
+            window._threeResizeHandler = function () {
+                if (!isThreeJSActive) return;
+                threeCamera.aspect = window.innerWidth / window.innerHeight;
+                threeCamera.updateProjectionMatrix();
+                threeRenderer.setSize(window.innerWidth, window.innerHeight);
+            };
+            window.addEventListener('resize', window._threeResizeHandler);
         }
 
         function loadThreeTexture(url) {
