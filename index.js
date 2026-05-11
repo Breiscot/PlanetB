@@ -784,6 +784,28 @@
             window.addEventListener('resize', window._threeResizeHandler);
         }
 
+        function buildTimberHearth(group) {
+            const radius = 1;
+
+            const geometry = new THREE.IcosahedronGeometry(radius, 5);
+            const positions = geometry.attributes.position;
+
+            for (let i = 0; i < positions.count; i++) {
+                const x = positions.getX(i);
+                const y = positions.getY(i);
+                const z = positions.getZ(i);
+
+                // Noise for mountain
+                const noise = simplex3D(x * 2, y * 2, z * 2) * 0.08
+                            + simplex3D(x * 5, y * 5, z * 5) * 0.03
+                            + simplex3D(x * 10, y * 10, z * 10) * 0.01;
+
+                const len = Math.sqrt(x * x + y * y + z * z);
+                const newLen = len + noise;
+                const scale
+            }
+        }
+
         function loadThreeTexture(url) {
             return new Promise((resolve, reject) => {
                 const loader = new THREE.TextureLoader();
