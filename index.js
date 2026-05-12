@@ -894,7 +894,7 @@
                 crown.position.y = trunkHeight / 2 + crownHeight / 3;
 
                 // Tree Group
-                const tree = new THREE.group();
+                const tree = new THREE.Group();
                 tree.add(trunk);
                 tree.add(crown);
 
@@ -1005,8 +1005,8 @@
             
             // Campfire in center of the Village (orange light point)
             const fireGeo = new THREE.SphereGeometry(0.008, 8, 8);
-            const fireMat = new THREE.MathBasicMaterial({ color: 0xff6600 });
-            const fire = new THREE.Math(fireGeo, fireMat);
+            const fireMat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
+            const fire = new THREE.Mesh(fireGeo, fireMat);
 
             const fx = (radius + 0.015) * Math.cos(villageLat) * Math.cos(villageLon);
             const fy = (radius + 0.015) * Math.cos(villageLat) * Math.sin(villageLon);
@@ -1083,6 +1083,38 @@
                     lerp(u, grad(perm[AB + 1], x, y - 1, z - 1), grad(perm[BB + 1], x - 1, y - 1, z - 1))
                 )
             );
+        }
+
+        // PLACEHOLDER for the updates of planets
+        function updateGiantsDeep(elapsed) {}
+        function updateBrittleHollow(elapsed) {}
+        function updateDarkBramble(elapsed) {}
+        function updateAshTwin(elapsed) {}
+
+        // PLACEHOLDER for the builds of planets
+        function buildGiantsDeep(group) {
+            const geo = new THREE.SphereGeometry(1, 32, 32);
+            const mat = new THREE.MeshPhongMaterial({ color: 0x1a5c3a, flatShading: true })
+            group.add(new THREE.Mesh(geo, mat));
+            addAtmosphereGlow(group, 1, 0x44aa88, 0.2);
+        }
+
+        function buildBrittleHollow(group) {
+            const geo = new THREE.SphereGeometry(1, 32, 32);
+            const mat = new THREE.MeshPhongMaterial({ color: 0x6b4c8a, flatShading: true })
+            group.add(new THREE.Mesh(geo, mat));
+        }
+
+        function buildAshTwin(group) {
+            const geo = new THREE.SphereGeometry(1, 32, 32);
+            const mat = new THREE.MeshPhongMaterial({ color: 0xc4956a, flatShading: true })
+            group.add(new THREE.Mesh(geo, mat));
+        }
+        
+        function buildDarkBramble(group) {
+            const geo = new THREE.SphereGeometry(1, 32, 32);
+            const mat = new THREE.MeshPhongMaterial({ color: 0x2a3a2a, flatShading: true })
+            group.add(new THREE.Mesh(geo, mat));
         }
 
         function loadThreeTexture(url) {
@@ -2343,6 +2375,11 @@
                 return;
             }
 
+            if (PLANETS[currentPlanet] && PLANETS[currentPlanet].isOuterWilds) {
+                window._owAutoRotate = !window._owAutoRotate;
+                return;
+            }
+
             if (autoRotateEnabled) {
                 stopAutoRotate();
                 return;
@@ -2359,9 +2396,8 @@
         function stopAutoRotate() {
             autoRotateEnabled = false;
 
-            if (window._moonAutoRotate) {
-                window._moonAutoRotate = false;
-            }
+            if (window._moonAutoRotate) window._moonAutoRotate = false;
+            if (window._owAutoRotate) window._owAutoRotate = false;
 
             try {
                 if (viewer && !viewer.isDestroyed()) {
