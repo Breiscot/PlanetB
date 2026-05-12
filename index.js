@@ -953,6 +953,56 @@
                 opacity: opacity,
                 side: THREE.BackSide
             });
+            const atmosphere = new THREE.Mesh(atmosGeo, atmosMat);
+            group.add(atmosphere);
+        }
+
+        // Hearthian Village
+        function addVillage(group, radius) {
+            const villageLat = 0.3;
+            const villageLon = 0.5;
+
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const spread = 0.04;
+
+                const baseTheta = villageLon + Math.cos(angle) * spread;
+                const basePhi = villageLat + Math.sin(angle) * spread;
+
+                const x = (radius + 0.01) * Math.cos(basePhi) * Math.cos(baseTheta);
+                const y = (radius + 0.01) * Math.cos(basePhi) * Math.sin(baseTheta);
+                const z = (radius + 0.01) * Math.sin(basePhi);
+
+                // House
+                const size = 0.01 + Math.random() * 0.008;
+                const houseGeo = new THREE.BoxGeometry(size, size * 1.2, size);
+                const houseMat = new THREE.MeshPhongMaterial({
+                    color: 0xd4884a,
+                    flatShading: true
+                });
+                const house = new THREE.Mesh(houseGeo, houseMat);
+
+                // Roof
+                const roofGeo = new THREE.ConeGeometry(size * 0.8, size * 0.6, 4);
+                const roofMat = new THREE.MeshPhongMaterial({
+                    color: 0x8b4513,
+                    flatShading: true
+                });
+                const roof = new THREE.Mesh(roofGeo, roofMat);
+                roof.position.y = size * 0.9;
+                roof.rotation.y = Math.PI / 4;
+
+                const building = new THREE.Group();
+                building.add(house);
+                building.add(roof);
+
+                building.position.set(x, y, z);
+                building.lookAt(0, 0, 0);
+                building.rotateX(Math.PI / 2);
+
+                group.add(building);
+            }
+            
         }
 
         function loadThreeTexture(url) {
