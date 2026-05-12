@@ -862,6 +862,99 @@
             addVillage(group, radius);
         }
 
+        function addTreesOnSurface(group, radius, count) {
+            for (let i = 0; i < count; i++) {
+                // Random position on the sphere
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+
+                const x = (radius + 0.01) * Math.sin(phi) * Math.cos(theta);
+                const y = (radius + 0.01) * Math.sin(phi) * Math.sin(theta);
+                const z = (radius + 0.01) * Math.cos(phi);
+
+                // Only green parts
+                const height = Math.sqrt(x * x + y * y + z * z) - radius;
+                if (height < -0.02 || height > 0.06) continue;
+
+                // Trunk
+                const trunkHeight = 0.03 + Math.random() * 0.03;
+                const trunkGeo = new THREE.CylinderGeometry(0.003, 0.005, trunkHeight, 4);
+                const trunkMat = new THREE.MeshPhongMaterial({ color: 0x5c3d2e });
+                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+
+                // Crown
+                const crownHeight = 0.04 + Math.random() * 0.04;
+                const crownGeo = new THREE.ConeGeometry(0.015 + Math.random() * 0.01, crownHeight, 5);
+                const greenShade = 0x228b22 + Math.floor(Math.random() * 0x333300);
+                const crownMat = new THREE.MeshPhongMaterial({
+                    color: greenShade,
+                    flatShading: true
+                });
+                const crown = new THREE.Mesh(crownGeo, crownMat);
+                crown.position.y = trunkHeight / 2 + crownHeight / 3;
+
+                // Tree Group
+                const tree = new THREE.group();
+                tree.add(trunk);
+                tree.add(crown);
+
+                // Position and orient to the center of planet
+                tree.position.set(x, y, z);
+                tree.lookAt(0, 0, 0);
+                tree.rotateX(Math.PI / 2);
+
+                group.add(tree);
+            }
+        }
+
+        // Geyser
+        function addGeysers(group, radius, count) {
+            for (let i = 0; i < count; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+
+                const x = radius * Math.sin(phi) * Math.cos(theta);
+                const y = radius * Math.sin(phi) * Math.sin(theta);
+                const z = radius * Math.cos(phi);
+
+                // Hole of the Geyser
+                const holeGeo = new THREE.CylinderGeometry(0.015, 0.02, 0.01, 8);
+                const HoleMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
+                const hole = new THREE.Mesh(holeGeo, HoleMat);
+
+                // Column steam
+                const steamGeo = new THREE.CylinderGeometry(0.005, 0.02, 0.15, 6);
+                const steamMat = new THREE.MeshPhongMaterial({
+                    color: 0xccddff,
+                    transparent: true,
+                    opacity: 0.25
+                });
+                const steam = new THREE.Mesh(steamGeo, steamMat);
+                steam.position.y = 0.08;
+                steam.userData.isGeyser = true;
+
+                const geyser = new THREE.Group();
+                geyser.add(hole);
+                geyser.add(steam);
+
+                geyser.position.set(x, y, z);
+                geyser.lookAt(0, 0, 0);
+                geyser.rotateX(Math.PI / 2);
+
+                group.add(geyser);
+            }
+        }
+
+        function addAtmosphereGlow(group, radius, color, opacity) {
+            const atmosGeo = new THREE.SphereGeometry(radius * 1.08, 32, 32);
+            const atmosMat = new THREE.MeshPhongMaterial({
+                color : color,
+                transparent: true,
+                opacity: opacity,
+                side: THREE.BackSide
+            });
+        }
+
         function loadThreeTexture(url) {
             return new Promise((resolve, reject) => {
                 const loader = new THREE.TextureLoader();
