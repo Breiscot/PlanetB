@@ -695,23 +695,23 @@
             threeCamera = new THREE.PerspectiveCamera(
                 50,
                 window.innerWidth / window.innerHeight,
-                0.01,
-                500
+                0.1,
+                5000
             );
-            threeCamera.position.set(0, 0, 4);
+            threeCamera.position.set(0, 200, 800);
 
             threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
             threeControls.enableDamping = true;
             threeControls.dampingFactor = 0.05;
-            threeControls.minDistance = 1.5;
-            threeControls.maxDistance = 15;
+            threeControls.minDistance = 100;
+            threeControls.maxDistance = 3000;
             threeControls.rotateSpeed = 0.5;
 
             createStarField();
 
             // sunLight
             const sunLight = new THREE.DirectionalLight(0xffeedd, 1.8);
-            sunLight.position.set(10, 5, 8);
+            sunLight.position.set(1000, 500, 800);
             sunLight.castShadow = true;
             threeScene.add(sunLight);
 
@@ -799,9 +799,7 @@
 
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
-                    const targetSize = 3;
-                    const scale = targetSize / maxDim;
-                    model.scale.setScalar(scale);
+                    console.log('Model original size:', maxDim);
 
                     model.traverse(function (child) {
                         if (child.isMesh) {
@@ -825,12 +823,15 @@
                     });
 
                     group.add(model);
-                    console.log('Timber Hearth loaded, scale: ', scale);
+                    console.log('Timber Hearth loaded.');
 
                     if (threeCamera && threeControls) {
-                        threeCamera.position.set(0, 0, 6);
-                        threeControls.minDistance = 2;
-                        threeControls.maxDistance = 20;
+                        const cameraDistance = maxDim * 1.5;
+                        threeCamera.position.set(0, maxDim * 0.3 , cameraDistance);
+                        threeCamera.lookAt(0, 0, 0);
+                        threeControls.minDistance = maxDim * 0.6;
+                        threeControls.maxDistance = maxDim * 5;
+                        threeControls.target.set(0, 0, 0);
                         threeControls.update();
                     }
                 },
@@ -848,7 +849,7 @@
                 }
             );
 
-            //addAtmosphereGlow(group, 1, 0x88ccff, 0.15);
+            addAtmosphereGlow(group, 1, 0x88ccff, 0.15);
         }
 
         function addAtmosphereGlow(group, radius, color, opacity) {
@@ -2089,10 +2090,10 @@
                     orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
                     duration: 2
                 });
-            } else if (currentPlanet === 'moon') {
+            } else if (currentPlanet === 'moon' || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isOuterWilds)) {
                 if (threeCamera && threeControls) {
-                    threeCamera.position.set(0, 0, 3);
-                    threeControls.reset();
+                    threeCamera.position.set(0, 0, 8);
+                    threeControls.update();
                 }
                 if (window._moonGroup) {
                     window._moonGroup.rotation.set(0, 0, 0);
@@ -2119,10 +2120,28 @@
         // Zoom
 
         function zoomIn() {
+            if (currentPlanet === 'moon' || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isOuterWilds)) {
+                if (threeCamera) {
+                    const direction = new THREE.Vector3();
+                    threeCamera.getWorldDirection(direction);
+                    threeCamera.position.addScaledVector(direction, threeCamera.position.length() * 0.2);
+                }
+                return;
+            }
+            if (!viewer || viewer.isDestroyed()) return;
             viewer.camera.zoomIn(viewer.camera.positionCartographic.height * 0.3);
         }
 
         function zoomOut() {
+            if (currentPlanet === 'moon' || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isOuterWilds)) {
+                if (threeCamera) {
+                    const direction = new THREE.Vector3();
+                    threeCamera.getWorldDirection(direction);
+                    threeCamera.position.addScaledVector(direction, -threeCamera.position.length() * 0.2);
+                }
+                return;
+            }
+            if (!viewer || viewer.isDestroyed()) return;
             viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.5);
         }
 
