@@ -230,6 +230,7 @@
                 yearLength: '22 min (loop)',
                 atmosphere: 'Breathable',
                 textureUrl: null,
+                modelUrl: 'OW-planets/TimberHearth/TimberHearth_noMoon.glb',
                 color: '#4a7c3f',
                 cameraHeight: 15000000,
                 hasAtmosphere: true,
@@ -785,164 +786,69 @@
         }
 
         function buildTimberHearth(group) {
-            const radius = 1;
+            const loader = new THREE.GLTFLoader();
 
-            const geometry = new THREE.IcosahedronGeometry(radius, 5);
-            const positions = geometry.attributes.position;
+            loader.load(
+                'OW-planets/TimberHearth/TimberHearth_noMoon.glb',
+                function (gltf) {
+                    const model = gltf.scene;
 
-            for (let i = 0; i < positions.count; i++) {
-                const x = positions.getX(i);
-                const y = positions.getY(i);
-                const z = positions.getZ(i);
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
 
-                // Noise for mountain
-                const noise = simplex3D(x * 2, y * 2, z * 2) * 0.08
-                            + simplex3D(x * 5, y * 5, z * 5) * 0.03
-                            + simplex3D(x * 10, y * 10, z * 10) * 0.01;
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const targetSize = 3;
+                    const scale = targetSize / maxDim;
+                    model.scale.setScalar(scale);
 
-                const len = Math.sqrt(x * x + y * y + z * z);
-                const newLen = len + noise;
-                const scale = newLen / len;
+                    model.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
 
-                positions.setXYZ(i, x * scale, y * scale, z * scale);
-            }
-            geometry.computeVertexNormals();
+                            if (child.material) {
+                                const materials = Array.isArray(child.material)
+                                    ? child.material
+                                    : [child.material];
 
-            // Colors for vertex (green forests, brown terrain, gray rock)
-            const colors = new Float32Array(positions.count * 3);
-            for (let i = 0; i < positions.count; i++) {
-                const x = positions.getX(i);
-                const y = positions.getY(i);
-                const z = positions.getZ(i);
-                const height = Math.sqrt(x * x + y * y + z * z) - radius;
+                                materials.forEach(mat => {
+                                    mat.transparent = false;
+                                    mat.opacity = 1.0;
+                                    mat.side = THREE.DoubleSide
+                                    mat.depthWrite = true;
+                                    mat.needsUpdate = true;
+                                });
+                            }
+                        }
+                    });
 
-                let r, g, b;
-                if (height > 0.05) {
-                    // Rocky peaks - Gray
-                    r = 0.45; g = 0.42; b = 0.38;
-                } else if (height > 0.02) {
-                    // Forests - Dark Green
-                    r = 0.2; g = 0.45; b = 0.15;
-                } else if (height > -0.02) {
-                    // Plains - Light Green
-                    r = -0.3; g = 0.55; b = 0.2;
-                } else {
-                    // Valley - Brown Terrain
-                    r = 0.4; g = 0.3; b = 0.2;
+                    group.add(model);
+                    console.log('Timber Hearth loaded, scale: ', scale);
+
+                    if (threeCamera && threeControls) {
+                        threeCamera.position.set(0, 0, 6);
+                        threeControls.minDistance = 2;
+                        threeControls.maxDistance = 20;
+                        threeControls.update();
+                    }
+                },
+                function (progress) {
+                    if (progress.total > 0) {
+                        console.log('Loading Timber Hearth: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    }  
+                },
+                function (error) {
+                    console.error('Failed to load Timber Hearth model:', error);
+                    // Fallback
+                    const geo = new THREE.SphereGeometry(1, 32, 32);
+                    const mat = new THREE.MeshPhongMaterial({ color: 0x4a7c3f, flatShading: true });
+                    group.add(new THREE.Mesh(geo, mat));
                 }
+            );
 
-                const variation = (simplex3D(x * 8, y * 8, z * 8) * 0.1);
-                colors[i * 3] = Math.max(0, Math.min(1, r + variation));
-                colors[i * 3 + 1] = Math.max(0, Math.min(1, g + variation));
-                colors[i * 3 + 2] = Math.max(0, Math.min(1, b + variation));
-            }
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-            const material = new THREE.MeshPhongMaterial({
-                vertexColors: true,
-                flatShading: true,
-                shininess: 5
-            });
-
-            const planet = new THREE.Mesh(geometry, material);
-            planet.castShadow = true;
-            planet.receiveShadow = true;
-            group.add(planet);
-
-            // Trees
-            addTreesOnSurface(group, radius, 80);
-
-            // Geyser
-            addGeysers(group, radius, 5);
-
-            // Atmosphere glow
-            addAtmosphereGlow(group, radius, 0x88ccff, 0.15);
-
-            // Village
-            addVillage(group, radius);
-        }
-
-        function addTreesOnSurface(group, radius, count) {
-            for (let i = 0; i < count; i++) {
-                // Random position on the sphere
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
-
-                const x = (radius + 0.01) * Math.sin(phi) * Math.cos(theta);
-                const y = (radius + 0.01) * Math.sin(phi) * Math.sin(theta);
-                const z = (radius + 0.01) * Math.cos(phi);
-
-                // Only green parts
-                const height = Math.sqrt(x * x + y * y + z * z) - radius;
-                if (height < -0.02 || height > 0.06) continue;
-
-                // Trunk
-                const trunkHeight = 0.03 + Math.random() * 0.03;
-                const trunkGeo = new THREE.CylinderGeometry(0.003, 0.005, trunkHeight, 4);
-                const trunkMat = new THREE.MeshPhongMaterial({ color: 0x5c3d2e });
-                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-
-                // Crown
-                const crownHeight = 0.04 + Math.random() * 0.04;
-                const crownGeo = new THREE.ConeGeometry(0.015 + Math.random() * 0.01, crownHeight, 5);
-                const greenShade = 0x228b22 + Math.floor(Math.random() * 0x333300);
-                const crownMat = new THREE.MeshPhongMaterial({
-                    color: greenShade,
-                    flatShading: true
-                });
-                const crown = new THREE.Mesh(crownGeo, crownMat);
-                crown.position.y = trunkHeight / 2 + crownHeight / 3;
-
-                // Tree Group
-                const tree = new THREE.Group();
-                tree.add(trunk);
-                tree.add(crown);
-
-                // Position and orient to the center of planet
-                tree.position.set(x, y, z);
-                tree.lookAt(0, 0, 0);
-                tree.rotateX(Math.PI / 2);
-
-                group.add(tree);
-            }
-        }
-
-        // Geyser
-        function addGeysers(group, radius, count) {
-            for (let i = 0; i < count; i++) {
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
-
-                const x = radius * Math.sin(phi) * Math.cos(theta);
-                const y = radius * Math.sin(phi) * Math.sin(theta);
-                const z = radius * Math.cos(phi);
-
-                // Hole of the Geyser
-                const holeGeo = new THREE.CylinderGeometry(0.015, 0.02, 0.01, 8);
-                const HoleMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
-                const hole = new THREE.Mesh(holeGeo, HoleMat);
-
-                // Column steam
-                const steamGeo = new THREE.CylinderGeometry(0.005, 0.02, 0.15, 6);
-                const steamMat = new THREE.MeshPhongMaterial({
-                    color: 0xccddff,
-                    transparent: true,
-                    opacity: 0.25
-                });
-                const steam = new THREE.Mesh(steamGeo, steamMat);
-                steam.position.y = 0.08;
-                steam.userData.isGeyser = true;
-
-                const geyser = new THREE.Group();
-                geyser.add(hole);
-                geyser.add(steam);
-
-                geyser.position.set(x, y, z);
-                geyser.lookAt(0, 0, 0);
-                geyser.rotateX(Math.PI / 2);
-
-                group.add(geyser);
-            }
+            //addAtmosphereGlow(group, 1, 0x88ccff, 0.15);
         }
 
         function addAtmosphereGlow(group, radius, color, opacity) {
@@ -955,69 +861,6 @@
             });
             const atmosphere = new THREE.Mesh(atmosGeo, atmosMat);
             group.add(atmosphere);
-        }
-
-        // Hearthian Village
-        function addVillage(group, radius) {
-            const villageLat = 0.3;
-            const villageLon = 0.5;
-
-            for (let i = 0; i < 8; i++) {
-                const angle = (i / 8) * Math.PI * 2;
-                const spread = 0.04;
-
-                const baseTheta = villageLon + Math.cos(angle) * spread;
-                const basePhi = villageLat + Math.sin(angle) * spread;
-
-                const x = (radius + 0.01) * Math.cos(basePhi) * Math.cos(baseTheta);
-                const y = (radius + 0.01) * Math.cos(basePhi) * Math.sin(baseTheta);
-                const z = (radius + 0.01) * Math.sin(basePhi);
-
-                // House
-                const size = 0.01 + Math.random() * 0.008;
-                const houseGeo = new THREE.BoxGeometry(size, size * 1.2, size);
-                const houseMat = new THREE.MeshPhongMaterial({
-                    color: 0xd4884a,
-                    flatShading: true
-                });
-                const house = new THREE.Mesh(houseGeo, houseMat);
-
-                // Roof
-                const roofGeo = new THREE.ConeGeometry(size * 0.8, size * 0.6, 4);
-                const roofMat = new THREE.MeshPhongMaterial({
-                    color: 0x8b4513,
-                    flatShading: true
-                });
-                const roof = new THREE.Mesh(roofGeo, roofMat);
-                roof.position.y = size * 0.9;
-                roof.rotation.y = Math.PI / 4;
-
-                const building = new THREE.Group();
-                building.add(house);
-                building.add(roof);
-
-                building.position.set(x, y, z);
-                building.lookAt(0, 0, 0);
-                building.rotateX(Math.PI / 2);
-
-                group.add(building);
-            }
-            
-            // Campfire in center of the Village (orange light point)
-            const fireGeo = new THREE.SphereGeometry(0.008, 8, 8);
-            const fireMat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
-            const fire = new THREE.Mesh(fireGeo, fireMat);
-
-            const fx = (radius + 0.015) * Math.cos(villageLat) * Math.cos(villageLon);
-            const fy = (radius + 0.015) * Math.cos(villageLat) * Math.sin(villageLon);
-            const fz = (radius + 0.015) * Math.sin(villageLat);
-            fire.position.set(fx, fy, fz);
-
-            // Light of the campfire
-            const fireLight = new THREE.PointLight(0xff6600, 0.5, 0.3);
-            fireLight.position.copy(fire.position);
-            group.add(fire)
-            group.add(fireLight);
         }
 
         // Simplex Noise 3D
