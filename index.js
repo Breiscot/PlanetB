@@ -1024,6 +1024,57 @@
             threeScene.add(stars);
         }
 
+        function addSun() {
+            // Sphere of the sun
+            const sunGeo = new THREE.SphereGeometry(80, 32, 32);
+            const sunMat = new THREE.MeshBasicMaterial({
+                color: 0xffee88
+            });
+            const sun = new THREE.SphereGeometry(sunGeo, sunMat);
+            sun.position.set(1000, 500, 800);
+            threeScene.add(sun);
+
+            // Glow around the sun
+            const glowGeo = new THREE.SphereGeometry(120, 32, 32);
+            const glowMat = new THREE.MeshBasicMaterial({
+                color: 0xffdd44,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.BackSide
+            });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            glow.position.copy(sun.position);
+            threeScene.add(glow);
+
+            // Second glow
+            const glow2Geo = new THREE.SphereGeometry(200, 32, 32)
+            const glow2Mat = new THREE.MeshBasicMaterial({
+                color: 0xffaa22,
+                transparent: true,
+                opacity: 0.1,
+                side: THREE.BackSide
+            });
+            const glow2 = new THREE.Mesh(glow2Geo, glow2Mat);
+            glow2.position.copy(sun.position);
+            threeScene.add(glow2);
+
+            // Lensflare
+            const flareCanvas = document.createElement('canvas');
+            flareCanvas.width = 128;
+            flareCanvas.height = 128;
+            const ctx = flareCanvas.getContext('2d');
+
+            const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+            gradient.addColorStop(0, 'rgba(255, 240, 150, 1');
+            gradient.addColorStop(0.2, 'rgba(255, 220, 100, 0.6');
+            gradient.addColorStop(0.5, 'rgba(255, 180, 50, 0.2');
+            gradient.addColorStop(1, 'rgba(255, 150, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 128, 128);
+
+            const flareTexture = new
+        }
+
         function addMoonPOIsThreeJS() {
             const pois = [
                 { name: 'Sea ​​of ​​tranquility', lat: 8.5, lon: 31.4, desc: 'Apollo 11 - First Moon Landing'},
