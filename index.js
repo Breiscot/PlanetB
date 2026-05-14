@@ -976,22 +976,48 @@
         function createStarField() {
             const starsGeometry = new THREE.BufferGeometry();
             const starPositions = [];
+            const starColors = [];
 
-            for (let i = 0; i < 5000; i++) {
-                const x = (Math.random() - 0.5) * 200;
-                const y = (Math.random() - 0.5) * 200;
-                const z = (Math.random() - 0.5) * 200;
+            for (let i = 0; i < 8000; i++) {
+                const distance = 2000 + Math.random() * 3000;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+
+                const x = distance * Math.sin(phi) * Math.cos(theta);
+                const y = distance * Math.sin(phi) * Math.sin(theta);
+                const z = distance * Math.cos(phi);
                 starPositions.push(x, y, z);
+            
+                // Variants Colors
+                const colorType = Math.random();
+                if (colorType < 0.6) {
+                    // Whites
+                    starColors.push(1, 1, 1);
+                } else if (colorType < 0.8) {
+                    // Blues
+                    starColors.push(0.7, 0.8, 1);
+                } else if (colorType < 0.95) {
+                    // Yellow
+                    starColors.push(1, 0.95, 0.7);
+                } else {
+                    // Red
+                    starColors.push(1, 0.7, 0.6);
+                }
             }
 
             starsGeometry.setAttribute('position',
                 new THREE.Float32BufferAttribute(starPositions, 3)
             );
+            starsGeometry.setAttribute('color',
+                new THREE.Float32BufferAttribute(starColors, 3)
+            );
 
             const starsMaterial = new THREE.PointsMaterial({
-                color: 0xffffff,
-                size: 0.15,
-                sizeAttenuation: true
+                size: 2,
+                sizeAttenuation: true,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9
             });
 
             const stars = new THREE.Points(starsGeometry, starsMaterial);
