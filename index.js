@@ -600,7 +600,7 @@
                 45,
                 window.innerWidth / window.innerHeight,
                 0.1,
-                1000
+                20000
             );
             threeCamera.position.set(0, 0, 3);
 
@@ -613,14 +613,14 @@
             threeControls.rotateSpeed = 0.5;
 
             // Skybox
-            createStarField();
+            createStarField(50);
             
             // Light
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
-            sunLight.position.set(5, 3, 5);
+            const sunLight = new THREE.DirectionalLight(0xfffaf0, 2.0);
+            sunLight.position.set(50, 30, 50);
             threeScene.add(sunLight);
 
-            const ambientLight = new THREE.AmbientLight(0x555555, 0.8);
+            const ambientLight = new THREE.AmbientLight(0x222233, 0.3);
             threeScene.add(ambientLight);
 
             window._moonGroup = new THREE.Group();
@@ -707,16 +707,16 @@
             threeControls.maxDistance = 3000;
             threeControls.rotateSpeed = 0.5;
 
-            createStarField();
+            createStarField(2000);
 
             // sunLight
-            const sunLight = new THREE.DirectionalLight(0xffeedd, 1.8);
-            sunLight.position.set(1000, 500, 800);
+            const sunLight = new THREE.DirectionalLight(0xfffaf0, 2.0);
+            sunLight.position.set(3000, 1500, 2000);
             sunLight.castShadow = true;
             threeScene.add(sunLight);
 
             // ambientLight
-            const ambientLight = new THREE.AmbientLight(0x334455, 0.4);
+            const ambientLight = new THREE.AmbientLight(0x222233, 0.3);
             threeScene.add(ambientLight);
 
             // OW Planet group
@@ -973,13 +973,14 @@
             });
         }
 
-        function createStarField() {
+        function createStarField(minDistance) {
+            const baseDistance = minDistance || 2000;
             const starsGeometry = new THREE.BufferGeometry();
             const starPositions = [];
             const starColors = [];
 
             for (let i = 0; i < 8000; i++) {
-                const distance = 2000 + Math.random() * 3000;
+                const distance = baseDistance + Math.random() * baseDistance * 1.5;
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.acos(2 * Math.random() - 1);
 
@@ -1012,8 +1013,10 @@
                 new THREE.Float32BufferAttribute(starColors, 3)
             );
 
+            const starSize = baseDistance * 0.001;
+
             const starsMaterial = new THREE.PointsMaterial({
-                size: 2,
+                size: Math.max(0.15, starSize),
                 sizeAttenuation: true,
                 vertexColors: true,
                 transparent: true,
@@ -1022,57 +1025,6 @@
 
             const stars = new THREE.Points(starsGeometry, starsMaterial);
             threeScene.add(stars);
-        }
-
-        function addSun() {
-            // Sphere of the sun
-            const sunGeo = new THREE.SphereGeometry(80, 32, 32);
-            const sunMat = new THREE.MeshBasicMaterial({
-                color: 0xffee88
-            });
-            const sun = new THREE.SphereGeometry(sunGeo, sunMat);
-            sun.position.set(1000, 500, 800);
-            threeScene.add(sun);
-
-            // Glow around the sun
-            const glowGeo = new THREE.SphereGeometry(120, 32, 32);
-            const glowMat = new THREE.MeshBasicMaterial({
-                color: 0xffdd44,
-                transparent: true,
-                opacity: 0.3,
-                side: THREE.BackSide
-            });
-            const glow = new THREE.Mesh(glowGeo, glowMat);
-            glow.position.copy(sun.position);
-            threeScene.add(glow);
-
-            // Second glow
-            const glow2Geo = new THREE.SphereGeometry(200, 32, 32)
-            const glow2Mat = new THREE.MeshBasicMaterial({
-                color: 0xffaa22,
-                transparent: true,
-                opacity: 0.1,
-                side: THREE.BackSide
-            });
-            const glow2 = new THREE.Mesh(glow2Geo, glow2Mat);
-            glow2.position.copy(sun.position);
-            threeScene.add(glow2);
-
-            // Lensflare
-            const flareCanvas = document.createElement('canvas');
-            flareCanvas.width = 128;
-            flareCanvas.height = 128;
-            const ctx = flareCanvas.getContext('2d');
-
-            const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-            gradient.addColorStop(0, 'rgba(255, 240, 150, 1');
-            gradient.addColorStop(0.2, 'rgba(255, 220, 100, 0.6');
-            gradient.addColorStop(0.5, 'rgba(255, 180, 50, 0.2');
-            gradient.addColorStop(1, 'rgba(255, 150, 0, 0)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 128, 128);
-
-            const flareTexture = new
         }
 
         function addMoonPOIsThreeJS() {
