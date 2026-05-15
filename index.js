@@ -1025,24 +1025,6 @@
             addAtmosphereGlow(group, 1, 0x44aa88, 0.2);
         }
 
-        function buildBrittleHollow(group) {
-            const geo = new THREE.SphereGeometry(1, 32, 32);
-            const mat = new THREE.MeshPhongMaterial({ color: 0x6b4c8a, flatShading: true })
-            group.add(new THREE.Mesh(geo, mat));
-        }
-
-        function buildAshTwin(group) {
-            const geo = new THREE.SphereGeometry(1, 32, 32);
-            const mat = new THREE.MeshPhongMaterial({ color: 0xc4956a, flatShading: true })
-            group.add(new THREE.Mesh(geo, mat));
-        }
-        
-        function buildDarkBramble(group) {
-            const geo = new THREE.SphereGeometry(1, 32, 32);
-            const mat = new THREE.MeshPhongMaterial({ color: 0x2a3a2a, flatShading: true })
-            group.add(new THREE.Mesh(geo, mat));
-        }
-
         function loadThreeTexture(url) {
             return new Promise((resolve, reject) => {
                 const loader = new THREE.TextureLoader();
