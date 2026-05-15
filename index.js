@@ -857,69 +857,81 @@
 
         function buildBrittleHollow(group) {
             console.log('buildBrittleHollow called');
-            console.log('Loading file: OW-planets/BrittleHollow/BrittleHollow_noMoon.glb');
-            
+
             const loader = new THREE.GLTFLoader();
+            const filePath = 'OW-planets/BrittleHollow/BrittleHollow_noMoon.glb';
 
-            loader.load(
-                'OW-planets/BrittleHollow/BrittleHollow_noMoon.glb',
-                function (gltf) {
-                    const model = gltf.scene;
+            console.log('Attempting to load:', filePath);
 
-                    const box = new THREE.Box3().setFromObject(model);
-                    const center = box.getCenter(new THREE.Vector3());
-                    model.position.sub(center);
+            try {
+                loader.load(
+                    filePath,
+                    function (gltf) {
+                        console.log('GLTF loaded successfully');
+                        console.log('Scene children:', gltf.scene.children.length);
 
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    console.log('Brittle Hollow size:', maxDim);
+                        const model = gltf.scene;
 
-                    model.traverse(function (child) {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
+                        const box = new THREE.Box3().setFromObject(model);
+                        const center = box.getCenter(new THREE.Vector3());
+                        model.position.sub(center);
 
-                            if (child.material) {
-                                const materials = Array.isArray(child.material)
-                                    ? child.material
-                                    : [child.material];
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        console.log('Brittle Hollow size:', maxDim);
 
-                                materials.forEach(mat => {
-                                    mat.transparent = false;
-                                    mat.opacity = 1.0;
-                                    mat.side = THREE.DoubleSide;
-                                    mat.depthWrite = true;
-                                    mat.needsUpdate = true;
-                                });
+                        model.traverse(function (child) {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+
+                                if (child.material) {
+                                    const materials = Array.isArray(child.material)
+                                        ? child.material
+                                        : [child.material];
+
+                                    materials.forEach(mat => {
+                                        mat.transparent = false;
+                                        mat.opacity = 1.0;
+                                        mat.side = THREE.DoubleSide;
+                                        mat.depthWrite = true;
+                                        mat.needsUpdate = true;
+                                    });
+                                }
                             }
+                        });
+
+                        group.add(model);
+                        console.log('Brittle Hollow added to scene');
+
+                        if (threeCamera && threeControls) {
+                            const cameraDistance = maxDim * 1.5;
+                            threeCamera.position.set(0, maxDim * 0.3, cameraDistance);
+                            threeCamera.lookAt(0, 0, 0);
+                            threeControls.minDistance = maxDim * 0.6;
+                            threeControls.maxDistance = maxDim * 5;
+                            threeControls.target.set(0, 0, 0);
+                            threeControls.update();
+                            console.log('Camera set at distance:', cameraDistance);
                         }
-                    });
-
-                    group.add(model);
-                    console.log('Brittle Hollow loaded');
-
-                    if (threeCamera && threeControls) {
-                        const cameraDistance = maxDim * 1.5;
-                        threeCamera.position.set(0, maxDim * 0.3, cameraDistance);
-                        threeCamera.lookAt(0, 0, 0);
-                        threeControls.minDistance = maxDim * 0.6;
-                        threeControls.maxDistance = maxDim * 5;
-                        threeControls.target.set(0, 0, 0);
-                        threeControls.update();
+                    },
+                    function (progress) {
+                        if (progress.total > 0) {
+                            console.log('Loading Brittle Hollow: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                        }
+                    },
+                    function (error) {
+                        console.error('Failed to load Brittle Hollow:', error);
+                        const geo = new THREE.SphereGeometry(1, 32, 32);
+                        const mat = new THREE.MeshPhongMaterial({ color: 0x6b4c8a, flatShading: true });
+                        group.add(new THREE.Mesh(geo, mat));
                     }
-                },
-                function (progress) {
-                    if (progress.total > 0) {
-                        console.log('Loading Brittle Hollow: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
-                    }
-                },
-                function (error) {
-                    console.error('Failed to load Brittle Hollow:', error);
-                    const geo = new THREE.SphereGeometry(1, 32, 32);
-                    const mat = new THREE.MeshPhongMaterial({ color: 0x6b4c8a, flatShading: true });
-                    group.add(new THREE.Mesh(geo, mat));
-                }
-            );
+                );
+            } catch (e) {
+                console.error('Exception in buildBrittleHollow:', e);
+            }
+            
+            console.log('loader.load() called');
         }
 
         function addAtmosphereGlow(group, radius, color, opacity) {
