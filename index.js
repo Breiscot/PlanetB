@@ -313,6 +313,7 @@
                 yearLength: '22 min (loop)',
                 atmosphere: 'Foggy void',
                 textureUrl: null,
+                modelUrl: 'OW-planets/DarkBramble/DarkBramble.glb',
                 color: '#2a3a2a',
                 cameraHeight: 15000000,
                 hasAtmosphere: false,
@@ -1000,6 +1001,76 @@
             );
         }
 
+        function buildDarkBramble(group) {
+            console.log('buildDarkBramble called');
+            const loader = new THREE.GLTFLoader();
+            const filePath = 'OW-planets/DarkBramble/DarkBramble.glb';
+
+            // Fog effect
+            if (threeScene) {
+                threeScene.fog = new THREE.FogExp2(0x101510, 0.0008);
+            }
+
+            loader.load(
+                filePath,
+                function (gltf) {
+                    const model = gltf.scene;
+
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    console.log('Dark Bramble size:', maxDim);
+
+                    model.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+
+                            if (child.material) {
+                                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                                materials.forEach(mat => {
+                                    mat.transparent = false;
+                                    mat.opacity = 1.0;
+                                    mat.side = THREE.DoubleSide;
+                                    mat.depthWrite = true;
+                                    
+                                    if (child.name.toLowerCase().includes('thorn') || child.name.toLowerCase().includes('branch')) {
+                                        mat.emissive = new THREE.Color(0x111111);
+                                    }
+                                });
+                            }
+                        }
+                    });
+                    group.add(model);
+                    console.log('Dark Bramble loaded');
+
+                    // Camera
+                    if (threeCamera && threeControls) {
+                        const cameraDistance = maxDim * 1.6;
+                        threeCamera.position.set(maxDim * 0.2, maxDim * 0.2, cameraDistance);
+                        threeCamera.lookAt(0, 0, 0);
+                        threeControls.minDistance = maxDim * 0.4;
+                        threeControls.maxDistance = maxDim * 8;
+                        threeControls.update();
+                    }
+                },
+                function (progress) {
+                    if (progress.total > 0) {
+                        console.log('Loading Dark Bramble: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    }
+                },
+                function (error) {
+                    console.error('Failed to load Dark Bramble:', error);
+                    const geo = new THREE.SphereGeometry(1, 32, 32);
+                    const mat = new THREE.MeshPhongMaterial({ color: 0x2a3a2a, flatShading: true });
+                    group.add(new THREE.Mesh(geo, mat));
+                }
+            );
+        }
+
         function addAtmosphereGlow(group, radius, color, opacity) {
             const atmosGeo = new THREE.SphereGeometry(radius * 1.08, 32, 32);
             const atmosMat = new THREE.MeshPhongMaterial({
@@ -1307,6 +1378,10 @@
 
         function destroyThreeJS() {
             isThreeJSActive = false;
+
+            if (threeScene) {
+                threeScene.fog = null;
+            }
 
             if (threeAnimationId) {
                 cancelAnimationFrame(threeAnimationId);
