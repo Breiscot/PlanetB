@@ -292,6 +292,7 @@
                 yearLength: '22 min (loop)',
                 atmosphere: 'None',
                 textureUrl: null,
+                modelUrl: 'OW-planets/Ash-EmberTwins/TwinPlanets_Ash-Ember.glb',
                 color: '#c4956a',
                 cameraHeight: 15000000,
                 hasAtmosphere: false,
@@ -904,6 +905,7 @@
                         group.add(model);
                         console.log('Brittle Hollow added to scene');
 
+                        // Camera
                         if (threeCamera && threeControls) {
                             const cameraDistance = maxDim * 1.5;
                             threeCamera.position.set(0, maxDim * 0.3, cameraDistance);
@@ -932,6 +934,70 @@
             }
             
             console.log('loader.load() called');
+        }
+
+        function buildAshTwin(group) {
+            console.log('buildAshTwin called');
+            const loader = new THREE.GLTFLoader();
+            const filePath = 'OW-planets/Ash-EmberTwins/TwinPlanets_Ash-Ember.glb';
+
+            loader.load(
+                filePath,
+                function (gltf) {
+                    const model = gltf.scene;
+
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    console.log('Hourglass Twins size:', maxDim);
+
+                    model.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+
+                            if (child.material) {
+                                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                                materials.forEach(mat => {
+                                    mat.transparent = false;
+                                    mat.opacity = 1.0;
+                                    mat.side = THREE.DoubleSide;
+                                    mat.depthWrite = true;
+                                    mat.needsUpdate = true;
+                                });
+                            }
+                        }
+                    });
+
+                    group.add(model);
+                    console.log('Ash & Ember Twins loaded');
+
+                    // Camera
+                    if (threeCamera && threeControls) {
+                        const cameraDistance = maxDim * 1.8;
+                        threeCamera.position.set(0, maxDim * 0.5, cameraDistance);
+                        threeCamera.lookAt(0, 0, 0);
+                        threeControls.minDistance = maxDim * 0.5;
+                        threeControls.maxDistance = maxDim * 10;
+                        threeControls.update();
+                    }
+                },
+                function (progress) {
+                    if (progress.total > 0) {
+                        console.log('Loading Hourglass Twins: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    }
+                },
+                function (error) {
+                    console.error('Failed to load Hourglass Twins:', error);
+                    // Fallback sphere
+                    const geo = new THREE.SphereGeometry(1, 32, 32);
+                    const mat = new THREE.MeshPhongMaterial({ color: 0xc4956a, flatShading: true });
+                    group.add(new THREE.Mesh(geo, mat));
+                }
+            );
         }
 
         function addAtmosphereGlow(group, radius, color, opacity) {
