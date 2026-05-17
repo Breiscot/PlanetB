@@ -696,11 +696,12 @@
 
             threeScene = new THREE.Scene();
 
+            // Camera
             threeCamera = new THREE.PerspectiveCamera(
                 50,
                 window.innerWidth / window.innerHeight,
                 0.1,
-                20000
+                5000
             );
             threeCamera.position.set(0, 200, 800);
 
@@ -750,7 +751,6 @@
 
             // AutoRotate 
             window._owAutoRotate = true;
-
             isThreeJSActive = true;
 
             // Render loop with dynamic effects
@@ -761,7 +761,7 @@
 
                 const elapsed = clock.getElapsedTime();
 
-                if (window._owAutoRotate) {
+                if (window._owAutoRotate && window._owPlanetGroup) {
                     window._owPlanetGroup.rotation.y += 0.001;
                 }
 
@@ -1090,25 +1090,25 @@
                     const maxDim = Math.max(size.x, size.y, size.z);
                     console.log("Giant's Deep size:", maxDim);
 
+                    // Scale
+                    const targetSize = 500;
+                    const scale = targetSize / maxDim;
+                    model.scale.setScalar(scale);
+
                     model.traverse(function (child) {
                         if (child.isMesh) {
                             child.castShadow = true;
                             child.receiveShadow = true;
+                            child.frustumCulled = false;
 
                             if (child.material) {
-                                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                                const materials = Array.isArray(child.material)
+                                    ? child.material
+                                    : [child.material];
+
                                 materials.forEach(mat => {
                                     mat.side = THREE.DoubleSide;
                                     mat.depthWrite = true;
-
-                                    if (child.name.toLowerCase().includes('cloud') || child.name.toLowerCase().includes('atmosphere') || child.name.toLowerCase().includes('fog')) {
-                                        mat.transparent = true;
-                                        mat.opacity = 0.6;
-                                    } else {
-                                        mat.transparent = true;
-                                        mat.opacity = 1.0;
-                                    }
-
                                     mat.needsUpdate = true;
                                 });
                             }
@@ -1120,11 +1120,15 @@
 
                     // Camera
                     if (threeCamera && threeControls) {
-                        const cameraDistance = maxDim * 1.5;
-                        threeCamera.position.set(0, maxDim * 0.2, cameraDistance);
+                        const scaledSize = maxDim * scale;
+                        const cameraDistance = scaledSize * 2.2;
+
+                        threeCamera.position.set(0, scaledSize * 0.35, cameraDistance);
                         threeCamera.lookAt(0, 0, 0);
-                        threeControls.minDistance = maxDim * 0.5;
-                        threeControls.maxDistance = maxDim * 6;
+
+                        threeControls.target.set(0, 0, 0);
+                        threeControls.minDistance = scaledSize * 0.6;
+                        threeControls.maxDistance = scaledSize * 6;
                         threeControls.update();
                     }
                 },
@@ -1140,8 +1144,6 @@
                     group.add(new THREE.Mesh(geo, mat));
                 }
             );
-
-            addAtmosphereGlow(group, 1.05, 0x20ffaa, 0.1);
         }
 
         function addAtmosphereGlow(group, radius, color, opacity) {
