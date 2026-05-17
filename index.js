@@ -251,6 +251,7 @@
                 yearLength: '22 min (loop)',
                 atmosphere: 'Dense, stormy',
                 textureUrl: null,
+                modelUrl: 'OW-planets/GiantsDeep/GiantsDeep_green.glb',
                 color: '#1a5c3a',
                 cameraHeight: 15000000,
                 hasAtmosphere: true,
@@ -699,7 +700,7 @@
                 50,
                 window.innerWidth / window.innerHeight,
                 0.1,
-                5000
+                20000
             );
             threeCamera.position.set(0, 200, 800);
 
@@ -1071,6 +1072,78 @@
             );
         }
 
+        function buildGiantsDeep(group) {
+            console.log('buildGiantsDeep called');
+            const loader = new THREE.GLTFLoader();
+            const filePath = 'OW-planets/GiantsDeep/GiantsDeep_green.glb';
+
+            loader.load(
+                filePath,
+                function (gltf) {
+                    const model = gltf.scene;
+
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    console.log("Giant's Deep size:", maxDim);
+
+                    model.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+
+                            if (child.material) {
+                                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                                materials.forEach(mat => {
+                                    mat.side = THREE.DoubleSide;
+                                    mat.depthWrite = true;
+
+                                    if (child.name.toLowerCase().includes('cloud') || child.name.toLowerCase().includes('atmosphere') || child.name.toLowerCase().includes('fog')) {
+                                        mat.transparent = true;
+                                        mat.opacity = 0.6;
+                                    } else {
+                                        mat.transparent = true;
+                                        mat.opacity = 1.0;
+                                    }
+
+                                    mat.needsUpdate = true;
+                                });
+                            }
+                        }
+                    });
+
+                    group.add(model);
+                    console.log("Giant's Deep loaded");
+
+                    // Camera
+                    if (threeCamera && threeControls) {
+                        const cameraDistance = maxDim * 1.5;
+                        threeCamera.position.set(0, maxDim * 0.2, cameraDistance);
+                        threeCamera.lookAt(0, 0, 0);
+                        threeControls.minDistance = maxDim * 0.5;
+                        threeControls.maxDistance = maxDim * 6;
+                        threeControls.update();
+                    }
+                },
+                function (progress) {
+                    if (progress.total > 0) {
+                        console.log("Loading Giant's Deep: " + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    }
+                },
+                function (error) {
+                    console.error("Failed to load Giant's Deep:", error);
+                    const geo = new THREE.SphereGeometry(1, 32, 32);
+                    const mat = new THREE.MeshPhongMaterial({ color: 0x1a5c3a, flatShading: true });
+                    group.add(new THREE.Mesh(geo, mat));
+                }
+            );
+
+            addAtmosphereGlow(group, 1.05, 0x20ffaa, 0.1);
+        }
+
         function addAtmosphereGlow(group, radius, color, opacity) {
             const atmosGeo = new THREE.SphereGeometry(radius * 1.08, 32, 32);
             const atmosMat = new THREE.MeshPhongMaterial({
@@ -1153,14 +1226,6 @@
         function updateBrittleHollow(elapsed) {}
         function updateDarkBramble(elapsed) {}
         function updateAshTwin(elapsed) {}
-
-        // PLACEHOLDER for the builds of planets
-        function buildGiantsDeep(group) {
-            const geo = new THREE.SphereGeometry(1, 32, 32);
-            const mat = new THREE.MeshPhongMaterial({ color: 0x1a5c3a, flatShading: true })
-            group.add(new THREE.Mesh(geo, mat));
-            addAtmosphereGlow(group, 1, 0x44aa88, 0.2);
-        }
 
         function loadThreeTexture(url) {
             return new Promise((resolve, reject) => {
