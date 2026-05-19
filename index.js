@@ -2789,7 +2789,17 @@
         // UI Help
 
         function togglePanel() {
-            document.getElementById('controlPanel').classList.toggle('collapsed');
+            const panel = document.getElementById('controlPanel');
+            const btn = document.getElementById('togglePanelBtn');
+            panel.classList.toggle('collapsed');
+
+            if (panel.classList.contains('collapsed')) {
+                btn.style.left = '20px';
+                btn.textContent = '☰';
+            } else {
+                btn.style.left = '325px';
+                btn.textContent = '☰';
+            }
         }
 
         function toggleFullscreen() {
