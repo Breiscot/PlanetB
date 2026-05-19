@@ -1491,6 +1491,7 @@
                     canvas.height = 512;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, 1024, 512);
+                    bakeShadowOnTexture(ctx, 1024, 512);
                     textureDataUrl = canvas.toDataURL('image/jpeg', 0.9);
                 } catch (e) {
                     console.warn('Texture failed:', planet.name, e.message);
@@ -1535,8 +1536,6 @@
                     up: Cesium.Cartesian3.UNIT_Z
                 }
             });
-
-            addPlanetShadow(viewer);
 
             addPlanetPOIsOnSphere(planetId, DISPLAY_RADIUS);
 
@@ -1615,6 +1614,7 @@
                     canvas.height = 512;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, 1024, 512);
+                    bakeShadowOnTexture(ctx, 1024, 512);
                     textureDataUrl = canvas.toDataURL('image/jpeg', 0.9);
                     console.log('Texture ready: ' + planet.name);
                 } catch (e) {
@@ -1645,6 +1645,7 @@
             scene.globe.show = false;
             scene.fog.enabled = false;
             scene.backgroundColor = Cesium.Color.BLACK;
+            scene.globe.enableLighting = false;
 
             if (scene.skyAtmosphere) {
                 scene.skyAtmosphere.show = false;
@@ -1674,7 +1675,10 @@
                 position: Cesium.Cartesian3.ZERO,
                 ellipsoid: {
                     radii: new Cesium.Cartesian3(DISPLAY_RADIUS, DISPLAY_RADIUS, DISPLAY_RADIUS),
-                    material: sphereMaterial,
+                    material: new Cesium.ImageMaterialProperty({
+                        image: textureDataUrl,
+                        color: Cesium.Color.WHITE
+                    }),
                     outline: false,
                 }
             });
@@ -1695,8 +1699,6 @@
 
             viewer.scene.screenSpaceCameraController.minimumZoomDistance = DISPLAY_RADIUS * 1.05;
             viewer.scene.screenSpaceCameraController.maximumZoomDistance = DISPLAY_RADIUS * 20;
-
-            addPlanetShadow(viewer);
 
             addPlanetPOIsOnSphere(planetId, DISPLAY_RADIUS);
 
@@ -1842,66 +1844,6 @@
                     `
                 });
             });
-        }
-
-        function addPlanetShadow(viewer) {
-            const DISPLAY_RADIUS = 6371000;
-
-            // Semi-transparent sphere
-            viewer.entities.add({
-                position: Cesium.Cartesian3.ZERO,
-                ellipsoid: {
-                    radii: new Cesium.Cartesian3(
-                        DISPLAY_RADIUS * 1.002,
-                        DISPLAY_RADIUS * 1.002,
-                        DISPLAY_RADIUS * 1.002
-                    ),
-                    material: new Cesium.ImageMaterialProperty({
-                        image: createShadowTexture(),
-                        transparent: true
-                    }),
-                    outline: false
-                }
-            });
-        }
-
-        function createShadowTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 1024;
-            canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-
-            // Gradient to transparent (illuminated side) to dark (shadow side)
-            const gradient = ctx.createLinearGradient(0, 0, 1024, 0);
-
-            // Illuminated side (transparent)
-            gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-            gradient.addColorStop(0.35, 'rgba(0, 0, 0, 0)');
-
-            // Gradual transition
-            gradient.addColorStop(0.45, 'rgba(0, 0, 0, 0.05)');
-            gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.15)');
-            gradient.addColorStop(0.55, 'rgba(0, 0, 0, 0.3)');
-
-            // Shadow side
-            gradient.addColorStop(0.65, 'rgba(0, 0, 0, 0.5)');
-            gradient.addColorStop(0.8, 'rgba(0, 0, 0, 0.65)');
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
-
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 1024, 512);
-
-            // Added shadow at the poles
-            const poleGradient = ctx.createLinearGradient(0, 0, 0, 512);
-            poleGradient.addColorStop(0, 'rgba(0, 0, 0, 0.15)');
-            poleGradient.addColorStop(0.3, 'rgba(0, 0, 0, 0)');
-            poleGradient.addColorStop(0.7, 'rgba(0, 0, 0, 0)');
-            poleGradient.addColorStop(1, 'rgba(0, 0, 0, 0.15)');
-
-            ctx.fillStyle = poleGradient;
-            ctx.fillRect(0, 0, 1024, 512);
-
-            return canvas.toDataURL('image/png');
         }
 
         function addSaturnRings(viewer) {
@@ -2736,6 +2678,38 @@
             setTimeout(() => {
                 document.getElementById('loadingScreen').classList.add('hidden');
             }, 2500);
+        }
+
+        function bakeShadowOnTexture(ctx, width, height) {
+            // Horizontal gradient
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+
+            // Illuminated side
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.6)');
+            gradient.addColorStop(0.2, 'rgba(0, 0, 0, 0)');
+            gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+
+            // Terminator
+            gradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.2)');
+            gradient.addColorStop(0.85, 'rgba(0, 0, 0, 0.6)');
+
+            // Shadow side
+            gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0.85)');
+
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.globalCompositeOperation = 'source-over';
+
+            const poleGradient = ctx.createLinearGradient(0, 0, 0, height);
+            poleGradient.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
+            poleGradient.addColorStop(0.2, 'rgba(0, 0, 0, 0)');
+            poleGradient.addColorStop(0.8, 'rgba(0, 0, 0, 0)');
+            poleGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+
+            ctx.fillStyle = poleGradient;
+            ctx.fillRect(0, 0, width, height);
         }
 
         // UI Help
