@@ -1610,12 +1610,11 @@
                 try {
                     const img = await loadImage(planet.textureUrl);
                     const canvas = document.createElement('canvas');
-                    canvas.width = 1024;
-                    canvas.height = 512;
+                    canvas.width = 2048;
+                    canvas.height = 1024;
                     const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, 1024, 512);
-                    bakeShadowOnTexture(ctx, 1024, 512);
-                    textureDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    textureDataUrl = canvas.toDataURL('image/jpeg', 0.92);
                     console.log('Texture ready: ' + planet.name);
                 } catch (e) {
                     console.warn('Texture failed:  ' + planet.name, e.message);
@@ -1645,13 +1644,17 @@
             scene.globe.show = false;
             scene.fog.enabled = false;
             scene.backgroundColor = Cesium.Color.BLACK;
-            scene.globe.enableLighting = false;
 
             if (scene.skyAtmosphere) {
                 scene.skyAtmosphere.show = false;
             }
 
             viewer.imageryLayers.removeAll();
+
+            viewer.clock.currentTime = Cesium.JulianDater.fromDate(
+                new Date('2024-06-21T12:00:00Z')
+            );
+            viewer.clock.shouldAnimate = false;
 
             const DISPLAY_RADIUS = 6371000;
 
@@ -1670,22 +1673,20 @@
                 });
             }
 
-            viewer.entities.add({
+            const planetEntity = viewer.entities.add({
                 name: planet.name,
                 position: Cesium.Cartesian3.ZERO,
                 ellipsoid: {
                     radii: new Cesium.Cartesian3(DISPLAY_RADIUS, DISPLAY_RADIUS, DISPLAY_RADIUS),
-                    material: new Cesium.ImageMaterialProperty({
-                        image: textureDataUrl,
-                        color: Cesium.Color.WHITE
-                    }),
+                    material: sphereMaterial,
                     outline: false,
                 }
             });
 
-            const cameraDistance = DISPLAY_RADIUS * 3.5;
+            addSphericalShadow(viewer, DISPLAY_RADIUS, planetId);
 
             // Camera
+            const cameraDistance = DISPLAY_RADIUS * 3.5;
             viewer.camera.setView({
                 destination: new Cesium.Cartesian3(0, -cameraDistance, DISPLAY_RADIUS * 0.3),
                 orientation: {
@@ -1708,6 +1709,87 @@
 
             setupPlanetMouseTracking(planetId, planet);
         }
+
+        function addSphericalShadow(viewer, radius, planetId) {
+            const shadowCanvas = createSphericalShadowTexture(2048, 1024);
+            const shadowDataUrl = shadowCanvas.toDataURL('image/png');
+
+            const shadowRadius = radius * 1.002;
+
+            viewer.entities.add({
+                name: 'shadow_overlay',
+                position: Cesium.Cartesian3.ZERO,
+                ellipsoid: {
+                    radii: new Cesium.Cartesian3(shadowRadius, shadowRadius, shadowRadius),
+                    material: new Cesium.ImageMaterialProperty({
+                        image: shadowDataUrl,
+                        transparent: true,
+                        color: Cesium.Color.WHITE
+                    }),
+                    outline: false,
+                }
+            });
+        }
+
+        function createSphericalShadowTexture(width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            // Direction of the light
+
+            const sunLon = Math.PI * 0.3;
+            const sunLat = 0
+
+            const sunX = Math.cos(sunLat) * Math.cos(sunLon);
+            const sunY = Math.cos(sunLat) * Math.sin(sunLon);
+            const sunZ = Math.sin(sunLat);
+
+            const imageData = ctx.createImageData(width, height);
+            const data = imageData.data;
+
+            for (let py = 0; py < height; py++) {
+                // Lat:
+                const lat = (1.0 - py / height) * Math.PI - Math.PI / 2;
+
+                for (let px = 0; px < width; px++) {
+                    // Lon:
+                    const lon = (px / width) * 2.0 * Math.PI - Math.PI;
+
+                    const nx = Math.cos(lat) * Math.cos(lon);
+                    const ny = Math.cos(lat) * Math.sin(lon);
+                    const nz = Math.sin(lat);
+
+                    let dot = nx * sunX + ny * sunY + nz * sunZ;
+
+                    let shadow;
+                    const termLow = -0.08;  // Start shade
+                    const termHigh = 0.12;  // End shade
+
+                    if (dot <= termLow) {
+                        shadow = 0.82;
+                    } else if (dot >= termHigh) {
+                        shadow = 0.0;
+                    } else {
+                        let t = (dot - termLow) / (termHigh - termLow);
+                        t = t * t * (3.0 - 2.0 * t);
+                        shadow = 0.82 * (1.0 - t);
+                    }
+
+                    const poleFactor = Math.cos(lat);
+                    const poleDarken = (1.0 - poleFactor) * 0.08;
+                    shadow = Math.min(0.9, shadow + poleDarken);
+
+                    const idx = (py * width + px) * 4;
+                    data[idx] = 0;      // R
+                    data[idx + 1] = 0;  // G
+                    data[idx + 2] = 0;  // B
+                    data[idx + 3] = Math.floor(shadow * 255);   // Alpha
+                }
+            }
+        
+        } 
 
         function buildProceduralCanvas(planet) {
             const canvas = document.createElement('canvas');
@@ -2681,35 +2763,7 @@
         }
 
         function bakeShadowOnTexture(ctx, width, height) {
-            // Horizontal gradient
-            const gradient = ctx.createLinearGradient(0, 0, width, 0);
-
-            // Illuminated side
-            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.6)');
-            gradient.addColorStop(0.2, 'rgba(0, 0, 0, 0)');
-            gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
-
-            // Terminator
-            gradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.2)');
-            gradient.addColorStop(0.85, 'rgba(0, 0, 0, 0.6)');
-
-            // Shadow side
-            gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0.85)');
-
-            ctx.globalCompositeOperation = 'multiply';
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, width, height);
-
-            ctx.globalCompositeOperation = 'source-over';
-
-            const poleGradient = ctx.createLinearGradient(0, 0, 0, height);
-            poleGradient.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
-            poleGradient.addColorStop(0.2, 'rgba(0, 0, 0, 0)');
-            poleGradient.addColorStop(0.8, 'rgba(0, 0, 0, 0)');
-            poleGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
-
-            ctx.fillStyle = poleGradient;
-            ctx.fillRect(0, 0, width, height);
+            return;
         }
 
         // UI Help
