@@ -1482,17 +1482,16 @@
             // Remove all entities
             viewer.entities.removeAll();
 
-            let textureDataUrl = null
+            let textureDataUrl = null;
             if (planet.textureUrl) {
                 try {
                     const img = await loadImage(planet.textureUrl);
                     const canvas = document.createElement('canvas');
-                    canvas.width = 1024;
-                    canvas.height = 512;
+                    canvas.width = 2048;
+                    canvas.height = 1024;
                     const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, 1024, 512);
-                    bakeShadowOnTexture(ctx, 1024, 512);
-                    textureDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    textureDataUrl = canvas.toDataURL('image/jpeg', 0.92);
                 } catch (e) {
                     console.warn('Texture failed:', planet.name, e.message);
                 }
@@ -1524,6 +1523,8 @@
                     outline: false,
                 }
             });
+
+            addSphericalShadow(viewer, DISPLAY_RADIUS, planetId);
 
             const cameraDistance = DISPLAY_RADIUS * 3.5;
             viewer.camera.setView({
@@ -1651,7 +1652,7 @@
 
             viewer.imageryLayers.removeAll();
 
-            viewer.clock.currentTime = Cesium.JulianDater.fromDate(
+            viewer.clock.currentTime = Cesium.JulianDate.fromDate(
                 new Date('2024-06-21T12:00:00Z')
             );
             viewer.clock.shouldAnimate = false;
@@ -1755,7 +1756,7 @@
 
                 for (let px = 0; px < width; px++) {
                     // Lon:
-                    const lon = (px / width) * 2.0 * Math.PI - Math.PI;
+                    const lon = ((px + 0.5) / width) * 2.0 * Math.PI - Math.PI;
 
                     const nx = Math.cos(lat) * Math.cos(lon);
                     const ny = Math.cos(lat) * Math.sin(lon);
@@ -1788,8 +1789,27 @@
                     data[idx + 3] = Math.floor(shadow * 255);   // Alpha
                 }
             }
-        
-        } 
+
+            ctx.putImageData(imageData, 0, 0);
+
+            for (let py = 0; py < height; py++) {
+                const rowStart = py * width * 4;
+
+                data[rowStart + (width - 1) * 4 + 0] = data[rowStart + 0];
+                data[rowStart + (width - 1) * 4 + 1] = data[rowStart + 1];
+                data[rowStart + (width - 1) * 4 + 2] = data[rowStart + 2];
+                data[rowStart + (width - 1) * 4 + 3] = data[rowStart + 3];
+            }
+
+            //const blurCanvas = document.createElement('canvas');
+            //blurCanvas.width = width;
+            //blurCanvas.height = height;
+            //const blurCtx = blurCanvas.getContext('2d');
+            //blurCtx.filter = 'blur(4px)';
+            //blurCtx.drawImage(canvas, 0, 0);
+
+            return canvas;
+        }
 
         function buildProceduralCanvas(planet) {
             const canvas = document.createElement('canvas');
