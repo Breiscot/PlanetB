@@ -527,3 +527,18 @@
             border-color: #ff9632 !important;
             box-shadow: 0 0 15px rgba(255, 150, 50, 0.2) !important;
         }
+
+        .halo-btn {
+            border-color: rgba(68, 136, 255, 0.2) !important;
+        }
+
+        .halo-btn:hover {
+            background: rgba(68, 136, 255, 0.2) !important;
+            border-color: rgba(68, 136, 255, 0.5) !important;
+        }
+
+        .halo-btn.active {
+            background: rgba(68, 136, 255, 0.3) !important;
+            border-color: #4488ff !important;
+            box-shadow: 0 0 15px rgba(68, 136, 255, 0.2) !important;
+        }

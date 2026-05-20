@@ -335,7 +335,7 @@
                 yearLength: 'N/A',
                 atmosphere: 'Earth-like (artificial)',
                 textureUrl: null,
-                modelUrl: 'Halo-planets/Halo.glb',
+                modelUrl: 'Halo-planets/HaloRing/Halo.glb',
                 color: '#4a9e6b',
                 cameraHeight: 15000000,
                 hasAtmosphere: true,
@@ -356,7 +356,7 @@
                 yearLength: '390 days',
                 atmosphere: 'N₂, O₂ (breathable)',
                 textureUrl: null,
-                modelUrl: 'Halo-planets/Reach.glb',
+                modelUrl: 'Halo-planets/Reach/Reach.glb',
                 color: '#3a6b9e',
                 cameraHeight: 15000000,
                 hasAtmosphere: true,
@@ -554,12 +554,14 @@
                     document.getElementById('cesiumContainer').style.display = 'block';
                     await createEarthViewer();
 
-                } else if (planetId === 'moon' || planet.isOuterWilds) {
+                } else if (planetId === 'moon' || planet.isOuterWilds || planet.isHalo) {
                     document.getElementById('cesiumContainer').style.display = 'none';
                     document.getElementById('threejsContainer').style.display = 'block';
 
                     if (planetId === 'moon') {
                         await createMoonThreeJS();
+                    } else if (planet.isHalo) {
+                        await createHaloThreeJS(planetId, planet);
                     } else {
                         await createOuterWildsThreeJS(planetId, planet);
                     }
@@ -824,6 +826,110 @@
             animate();
 
             // Resize
+            window._threeResizeHandler = function () {
+                if (!isThreeJSActive) return;
+                threeCamera.aspect = window.innerWidth / window.innerHeight;
+                threeCamera.updateProjectionMatrix();
+                threeRenderer.setSize(window.innerWidth, window.innerHeight);
+            };
+            window.addEventListener('resize', window._threeResizeHandler);
+        }
+
+        async function createHaloThreeJS(planetId, planet) {
+            const container = document.getElementById('threejsContainer');
+            container.style.display = 'block';
+            container.innerHTML = '';
+
+            threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+            threeRenderer.setSize(window.innerWidth, window.innerHeight);
+            threeRenderer.setPixelRatio(window.devicePixelRatio);
+            threeRenderer.setClearColor(0x000000);
+            threeRenderer.shadowMap.enabled = true;
+            threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(threeRenderer.domElement);
+
+            threeScene = new THREE.Scene();
+
+            // Camera
+            threeCamera = new THREE.PerspectiveCamera(
+                50,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                50000
+            );
+            threeCamera.position.set(0, 200, 800);
+
+            // Controls
+            threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+            threeControls.enableDamping = true;
+            threeControls.dampingFactor = 0.05;
+            threeControls.minDistance = 50;
+            threeControls.maxDistance = 5000;
+            threeControls.rotateSpeed = 0.5;
+
+            // Stars
+            createStarField(3000);
+
+            // Lights
+            const sunLight = new THREE.DirectionalLight(0xfffaf0, 2.0);
+            sunLight.position.set(3000, 1500, 2000);
+            sunLight.castShadow = true;
+            threeScene.add(sunLight);
+
+            // Ambiental light blue for Halo
+            const ambientColor = planet.isHalo ? 0x1a2233 : 0x222233;
+            const ambientLight = new THREE.AmbientLight(ambientColor, 0.4);
+            threeScene.add(ambientLight);
+
+            // Rim light
+            const rimLight = new THREE.DirectionalLight(0x4488ff, 0.5);
+            rimLight.position.set(-2000, 500, -1000);
+            threeScene.add(rimLight);
+
+            // Planet group
+            window._haloPlanetGroup = new THREE.Group();
+            threeScene.add(window._haloPlanetGroup);
+
+            console.log('Building Halo planet:', planetId);
+
+            // Build
+            switch (planetId) {
+                case 'halo_ring':
+                    buildHaloRing(window._haloPlanetGroup);
+                    break;
+                case 'reach':
+                    buildReach(window._haloPlanetGroup);
+                    break;
+            }
+
+            // Auto Rotate
+            window._haloAutoRotate = true;
+            isThreeJSActive = true;
+
+            // Render
+            const clock = new THREE.Clock();
+            function animate() {
+                if (!isThreeJSActive) return;
+                threeAnimationId = requestAnimationFrame(animate);
+
+                const elapsed = clock.getElapsedTime();
+
+                if (window._haloAutoRotate && window._haloPlanetGroup) {
+                    window._haloPlanetGroup.rotation.y += 0.001;
+                }
+
+                if (planetId === 'halo_ring') {
+                    updateHaloRing(elapsed);
+                } else if (planetId === 'reach') {
+                    updateReach(elapsed);
+                }
+
+                threeControls.update();
+                threeRenderer.render(threeScene, threeCamera);
+            }
+            animate();
+
+            // Resize Handler
             window._threeResizeHandler = function () {
                 if (!isThreeJSActive) return;
                 threeCamera.aspect = window.innerWidth / window.innerHeight;
@@ -1195,7 +1301,7 @@
         function buildHaloRing(group) {
             console.log('buildHaloRing called');
             const loader = new THREE.GLTFLoader();
-            const filePath = 'Halo-planets/Halo.glb';
+            const filePath = 'Halo-planets/HaloRing/Halo.glb';
 
             loader.load(
                 filePath,
@@ -1274,8 +1380,78 @@
                     }
                 }
             );
+        }
 
-            addAtmosphereGlow(group, 3, 0x44ff88, 0.08);
+        function buildReach(group) {
+            console.log('buildReach called');
+            const loader = new THREE.GLTFLoader();
+            const filePath = 'Halo-planets/Reach/Reach.glb';
+
+            loader.load(
+                filePath,
+                function (gltf) {
+                    const model = gltf.scene;
+
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    console.log('Reach size:', maxDim);
+
+                    model.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            child.frustumCulled = false;
+
+                            if (child.material) {
+                                const materials = Array.isArray(child.material)
+                                    ? child.material
+                                    : [child.material];
+
+                                materials.forEach(mat => {
+                                    mat.side = THREE.DoubleSide;
+                                    mat.depthWrite = true;
+                                    mat.needsUpdate = true;
+                                });
+                            }
+                        }
+                    });
+
+                    group.add(model);
+                    console.log('Reach loaded');
+
+                    // Camera
+                    if (threeCamera && threeControls) {
+                        const cameraDistance = maxDim * 1.5;
+                        threeCamera.position.set(0, maxDim * 0.3, cameraDistance);
+                        threeCamera.lookAt(0, 0, 0);
+                        threeControls.target.set(0, 0, 0);
+                        threeControls.minDistance = maxDim * 0.6;
+                        threeControls.maxDistance = maxDim * 5;
+                        threeControls.update();
+                    }
+                },
+                function (progress) {
+                    if (progress.total > 0) {
+                        console.log('Loading Reach: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    }
+                },
+                function (error) {
+                    console.error('Failed to load Reach:', error);
+                    // Fallback
+                    const geo = new THREE.SphereGeometry(1, 32, 32);
+                    const mat = new THREE.MeshPhongMaterial({
+                        color: 0x3a6b9e,
+                        flatShading: true
+                    });
+                    group.add(new THREE.Mesh(geo, mat));
+                }
+            );
+
+            addAtmosphereGlow(group, 1, 0x4488ff, 0.15);
         }
 
         function addAtmosphereGlow(group, radius, color, opacity) {
@@ -1360,6 +1536,8 @@
         function updateBrittleHollow(elapsed) {}
         function updateDarkBramble(elapsed) {}
         function updateAshTwin(elapsed) {}
+        function updateHaloRing(elapsed) {}
+        function updateReach(elapsed) {}
 
         function loadThreeTexture(url) {
             return new Promise((resolve, reject) => {
@@ -2631,7 +2809,7 @@
                     orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
                     duration: 2
                 });
-            } else if (currentPlanet === 'moon' || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isOuterWilds)) {
+            } else if (currentPlanet === 'moon' || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isOuterWilds) || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isHalo)) {
                 if (threeCamera && threeControls) {
                     threeCamera.position.set(0, 0, 8);
                     threeControls.update();
@@ -2661,7 +2839,7 @@
         // Zoom
 
         function zoomIn() {
-            if (currentPlanet === 'moon' || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isOuterWilds)) {
+            if (currentPlanet === 'moon' || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isOuterWilds) || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isHalo)) {
                 if (threeCamera) {
                     const direction = new THREE.Vector3();
                     threeCamera.getWorldDirection(direction);
@@ -2674,7 +2852,7 @@
         }
 
         function zoomOut() {
-            if (currentPlanet === 'moon' || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isOuterWilds)) {
+            if (currentPlanet === 'moon' || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isOuterWilds) || (PLANETS[currentPlanet] && PLANETS[currentPlanet].isHalo)) {
                 if (threeCamera) {
                     const direction = new THREE.Vector3();
                     threeCamera.getWorldDirection(direction);
@@ -2783,6 +2961,11 @@
                 return;
             }
 
+            if (PLANETS[currentPlanet] && PLANETS[currentPlanet].isHalo) {
+                window._haloAutoRotate = !window._haloAutoRotate;
+                return;
+            }
+
             if (autoRotateEnabled) {
                 stopAutoRotate();
                 return;
@@ -2801,6 +2984,7 @@
 
             if (window._moonAutoRotate) window._moonAutoRotate = false;
             if (window._owAutoRotate) window._owAutoRotate = false;
+            if (window._haloAutoRotate) window._haloAutoRotate = false;
 
             try {
                 if (viewer && !viewer.isDestroyed()) {
