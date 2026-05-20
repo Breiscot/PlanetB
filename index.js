@@ -320,6 +320,48 @@
                 hasAtmosphere: false,
                 scale: 1.0,
                 isOuterWilds: true
+            },
+            halo_ring: {
+                name: 'Halo',
+                emoji: '',
+                radius: 5000,
+                description: 'Installation 04. A massive ring-shaped superweapon built by the Forerunners to contain the Flood.',
+                distance: 'Soell System',
+                diameter: '10.000 km',
+                gravity: '1.0 G (Artificial)',
+                temperature: 'Varied (Earth-like)',
+                moons: '0',
+                dayLength: 'Artificial cycle',
+                yearLength: 'N/A',
+                atmosphere: 'Earth-like (artificial)',
+                textureUrl: null,
+                modelUrl: 'Halo-planets/Halo.glb',
+                color: '#4a9e6b',
+                cameraHeight: 15000000,
+                hasAtmosphere: true,
+                scale: 1.0,
+                isHalo: true
+            },
+            reach: {
+                name: 'Reach',
+                emoji: '',
+                radius: 7000,
+                description: 'A major UNSC military stronghold and the largest human colony. Fell during the Covenant invasion in 2552.',
+                distance: 'Epsilon Eridani System',
+                diameter: '15.273 km',
+                gravity: '1.08 G',
+                temperature: 'Temperate',
+                moons: '2 (Csodaszarvas, Turul)',
+                dayLength: '27 hours',
+                yearLength: '390 days',
+                atmosphere: 'N₂, O₂ (breathable)',
+                textureUrl: null,
+                modelUrl: 'Halo-planets/Reach.glb',
+                color: '#3a6b9e',
+                cameraHeight: 15000000,
+                hasAtmosphere: true,
+                scale: 1.0,
+                isHalo: true
             }
         };
 
@@ -2795,10 +2837,8 @@
 
             if (panel.classList.contains('collapsed')) {
                 btn.style.left = '20px';
-                btn.textContent = '☰';
             } else {
                 btn.style.left = '325px';
-                btn.textContent = '☰';
             }
         }
 
