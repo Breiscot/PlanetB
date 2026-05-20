@@ -833,6 +833,8 @@
             window.addEventListener('resize', window._threeResizeHandler);
         }
 
+        // BUILDS OUTER WILDS
+
         function buildTimberHearth(group) {
             const loader = new THREE.GLTFLoader();
 
@@ -1186,6 +1188,94 @@
                     group.add(new THREE.Mesh(geo, mat));
                 }
             );
+        }
+
+        // BUILDS HALO
+
+        function buildHaloRing(group) {
+            console.log('buildHaloRing called');
+            const loader = new THREE.GLTFLoader();
+            const filePath = 'Halo-planets/Halo.glb';
+
+            loader.load(
+                filePath,
+                function (gltf) {
+                    const model = gltf.scene;
+
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    console.log('Halo Ring size:', maxDim);
+
+                    model.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            child.frustumCulled = false;
+
+                            if (child.material) {
+                                const materials = Array.isArray(child.material)
+                                    ? child.material
+                                    : [child.material];
+                                    
+                                materials.forEach(mat => {
+                                    mat.side = THREE.DoubleSide;
+                                    mat.depthWrite = true;
+                                    mat.needsUpdate = true;
+                                });
+                            }
+                        }
+                    });
+
+                    group.add(model);
+                    console.log('Halo Ring loaded');
+
+                    // Camera
+                    if (threeCamera && threeControls) {
+                        const cameraDistance = maxDim * 1.8;
+                        threeCamera.position.set(
+                            maxDim * 0.5,
+                            maxDim * 0.8,
+                            cameraDistance
+                        );
+                        threeCamera.lookAt(0, 0, 0);
+                        threeControls.target.set(0, 0, 0);
+                        threeControls.minDistance = maxDim * 0.3;
+                        threeControls.maxDistance = maxDim * 6;
+                        threeControls.update();
+                    }
+                },
+                function (progress) {
+                    if (progress.total > 0) {
+                        console.log('Loading Halo Ring: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    }
+                },
+                function (error) {
+                    console.error('Failed to load Halo Ring:', error);
+                    // Fallback
+                    const torusGeo = new THREE.TorusGeometry(2, 0.15, 32, 200);
+                    const torusMat = new THREE.MeshPhongMaterial({
+                        color: 0x4a9e6b,
+                        flatShading: false,
+                        shininess: 30
+                    });
+                    const torus = new THREE.Mesh(torusGeo, torusMat);
+                    group.add(torus);
+
+                    if (threeCamera && threeControls) {
+                        threeCamera.position.set(2, 3, 5);
+                        threeCamera.lookAt(0, 0, 0);
+                        threeControls.minDistance = 2;
+                        threeControls.maxDistance = 20;
+                        threeControls.update();
+                    }
+                }
+            );
+
+            addAtmosphereGlow(group, 3, 0x44ff88, 0.08);
         }
 
         function addAtmosphereGlow(group, radius, color, opacity) {
