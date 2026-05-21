@@ -569,8 +569,8 @@
 
         .streetview-close {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 850px;
+            right: 40px;
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -617,10 +617,10 @@
         body.streetview-active .control-panel,
         body.streetview-active .toggle-panel,
         body.streetview-active .info-bar,
-        body.streetview-active .zoom-controls {
+        body.streetview-active .zoom-controls,
+        body.streetview-active .streetview-floating-btn {
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
         }
 
         body.streetview-active .fullscreen-sv {
@@ -630,4 +630,66 @@
             z-index: 9001;
             opacity: 1;
             pointer-events: all;
+        }
+
+        .streetview-floating-btn {
+            position: fixed;
+            left: 50%;
+            bottom: 90px;
+            transform: translateX(-50%);
+            z-index: 2500;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(79, 195, 247, 0.45);
+            background: linear-gradient(135deg, rgba(26, 115, 232, 0.95), rgba(79, 195, 247, 0.95));
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            transition: all 0.25s ease;
+        }
+
+        .streetview-floating-btn.visible {
+            display: flex;
+        }
+
+        .streetview-floating-btn:hover {
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 10px 28px rgba(79, 195, 247, 0.35);
+        }
+
+        .streetview-floating-btn span {
+            max-width: 260px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .streetview-fullscreen {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(15px);
+            color: white;
+            cursor: pointer;
+            z-index: 9001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .streetview-fullscreen:hover {
+            background: rgba(79, 195, 247, 0.35);
+            border-color: rgba(79, 195, 247, 0.6);
         }

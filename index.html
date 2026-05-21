@@ -322,6 +322,11 @@
         </button>
     </div>
 
+    <button class="streetview-floating-btn" id="streetViewFloatingBtn" onclick="openSelectedStreetView()">
+        <i data-lucide="map-pinned" style="width:18px;height:18px;"></i>
+        <span>Open Street View</span>
+    </button>
+
      <!-- Info Bar -->
     <div class="info-bar" id="infoBar">
         <div class="info-item">
@@ -346,12 +351,16 @@
         </div>
     </div>
 
-      <!-- -->
+      <!-- Street View -->
     <div class="streetview-overlay" id="streetViewOverlay">
         <iframe id="streetViewFrame" class="streetview-frame" allowfullscreen loading="lazy"></iframe>
         <button class="streetview-close" id="streetViewClose" onclick="closeStreetView()">
             <i data-lucide="x" style="width:20px;height:20px;"></i>
             <span>Close Street View</span>
+        </button>
+
+        <button class="streetview-fullscreen" onclick="toggleFullscreen()" title="Fullscreen">
+            <i data-lucide="maximize" style="width:22px;height:22px;"></i>
         </button>
     </div>
 
