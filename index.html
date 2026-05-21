@@ -33,7 +33,9 @@
     <div id="cesiumContainer"></div>
     <div id="threejsContainer"></div>
 
-    <button class="toggle-panel" id="togglePanelBtn" onclick="togglePanel()"><i data-lucide="menu"></i></button>
+    <button class="toggle-panel" id="togglePanelBtn" onclick="togglePanel()">
+        <i data-lucide="panel-left-close" id="togglePanelIcon"></i>
+    </button>
 
     <!-- Control Panel -->
     <div class="control-panel" id="controlPanel">
@@ -302,7 +304,7 @@
     </div>
 
     <!-- Zoom Controls -->
-     <div class="zoom-controls">
+    <div class="zoom-controls">
         <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">
             <i data-lucide="plus" style="width:20px;height:20px;"></i>
         </button>
@@ -318,10 +320,10 @@
         <button class="zoom-btn" onclick="toggleFullscreen()" title="Fullscreen">
             <i data-lucide="maximize" style="width:20px;height:20px;"></i>
         </button>
-     </div>
+    </div>
 
      <!-- Info Bar -->
-      <div class="info-bar" id="infoBar">
+    <div class="info-bar" id="infoBar">
         <div class="info-item">
             <i data-lucide="navigation" style="width:14px;color:rgba(255,255,255,0.5);"></i>
             <span class="label">Lat:</span>
@@ -342,7 +344,16 @@
             <span class="label">Location: </span>
             <span class="value" id="locationName">-</span>
         </div>
-      </div>
+    </div>
+
+      <!-- -->
+    <div class="streetview-overlay" id="streetViewOverlay">
+        <iframe id="streetViewFrame" class="streetview-frame" allowfullscreen loading="lazy"></iframe>
+        <button class="streetview-close" id="streetViewClose" onclick="closeStreetView()">
+            <i data-lucide="x" style="width:20px;height:20px;"></i>
+            <span>Close Street View</span>
+        </button>
+    </div>
 
       <script src="index.js"></script>
 </body>

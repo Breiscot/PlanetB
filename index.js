@@ -2682,6 +2682,10 @@
                             <h2>${place.emoji} ${place.name}</h2>
                             <p><strong>Wonder of the Modern World</strong></p>
                             <p><strong>Coordinates:</strong> ${place.lat.toFixed(4)}°, ${place.lon.toFixed(4)}°</p>
+                            <button onclick="openStreetView(${place.lat}, ${place.lon}, '${place.name.replace(/'/g, "\\'")}')"
+                                style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#1a73e8,#4fc3f7);color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;margin-top:8px;">
+                                📍 Open Street View
+                            </button>
                         </div>
                     `
                 });
@@ -2716,7 +2720,11 @@
                     description: `
                         <div style="font-family: sans-serif; padding: 10px;">
                             <h2>${place.emoji} ${place.name}</h2>
-                            <p><strong>Coordinate:</strong> ${place.lat.toFixed(4)}°, ${place.lon.toFixed(4)}°</p>
+                            <p><strong>Coordinates:</strong> ${place.lat.toFixed(4)}°, ${place.lon.toFixed(4)}°</p>
+                            <button onclick="openStreetView(${place.lat}, ${place.lon}, '${place.name.replace(/'/g, "\\'")}')"
+                                style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#1a73e8,#4fc3f7);color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;margin-top:8px;">
+                                📍 Open Street View
+                            </button>
                         </div>
                     `
                 });
@@ -3102,6 +3110,64 @@
             return;
         }
 
+        // Street View
+
+        function openStreetView(lat, lon, name) {
+            const overlay = document.getElementById('streetViewOverlay');
+            const frame = document.getElementById('streetViewFrame');
+
+            // URL Google Street View embed
+            const url = `https://www.google.com/maps/embed?pb=!4v0!6m8!1m7!1s!2m2!1d${lat}!2d${lon}!3f0!4f0!5f0.7820865974627469&q=${lat},${lon}`;
+            
+            // Alternative street view
+            const streetViewUrl = `https://www.google.com/maps/@${lat},${lon},3a,75y,0h,90t/data=!3m6!1e1!3m4!1s!2e0!7i16384!8i8192?entry=ttu`;
+
+            const embedUrl = `https://www.google.com/maps/embed/v1/streetview?key=&location=${lat},${lon}&heading=0&pitch=0&fov=90`;
+
+            const directUrl = `https://maps.google.com/maps?q=${lat},${lon}&layer=c&cbll=${lat},${lon}&cbp=11,0,0,0,0&ie=UTF8&source=embed&output=svembed`;
+
+            frame.src = directUrl;
+
+            // View Overlay
+            overlay.style.display = 'block';
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+            });
+
+            // Hide UI
+            document.body.classList.add('streetview-active');
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            console.log('Street View opened:', name, lat, lon);
+        }
+
+        function closeStreetView() {
+            const overlay = document.getElementById('streetViewOverlay');
+            const frame = document.getElementById('streetViewFrame');
+
+            // Fade out
+            overlay.classList.remove('active');
+
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                frame.src = '';
+            }, 400);
+
+            // Restore UI
+            document.body.classList.remove('streetview-active');
+
+            console.log('Street View closed');
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.body.classList.contains('streetview-active')) {
+                closeStreetView();
+            }
+        });
+
         // UI Help
 
         function togglePanel() {
@@ -3111,9 +3177,13 @@
 
             if (panel.classList.contains('collapsed')) {
                 btn.style.left = '20px';
+                btn.innerHTML = '<i data-lucide="panel-left-open" id="togglePanelIcon"></i>';
             } else {
                 btn.style.left = '325px';
+                btn.innerHTML = '<i data-lucide="panel-left-close" id="togglePanelIcon"></i>';
             }
+
+            lucide.createIcons();
         }
 
         function toggleFullscreen() {
