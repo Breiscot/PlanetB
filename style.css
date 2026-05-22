@@ -568,28 +568,43 @@
         }
 
         .streetview-close {
-            position: absolute;
-            top: 850px;
-            right: 40px;
+            position: absolute !important;
+            right: 20px !important;
+            bottom: 20px !important;
+            top: auto !important;
+            left: auto !important;
+            z-index: 10050 !important;
+
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             color: white;
-            padding: 10px 20px;
-            border-radius: 12px;
+
+            padding: 11px 18px;
+            border-radius: 14px;
             cursor: pointer;
             font-size: 14px;
-            display: flex;
+            font-weight: 600;
+            
+            display: none;
             align-items: center;
             gap: 8px;
-            z-index: 9001;
-            transition: all 0.3s;
+
+            opacity: 1 !important;
+            pointer-events: auto !important;
+
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+            transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
         }
 
         .streetview-close:hover {
             background: rgba(220, 50, 50, 0.6);
             border-color: rgba(220, 50, 50, 0.8);
             transform: scale(1.05);
+        }
+
+        body.streetview-active .streetview-close {
+            display: flex !important;
         }
 
         .streetview-btn {
