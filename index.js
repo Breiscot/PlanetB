@@ -23,6 +23,10 @@
         let markers = [];
         let currentBaseLayer = 'satellite';
         let currentPlanet = 'earth';
+        let cloudsEnabled = false;
+        let cloudsLayer = null;
+        let cloudsRotationHandler = null;
+        let cloudsEntity = null;
 
         // Database Planets
         const PLANETS = {
@@ -3042,7 +3046,7 @@
                     flyTo(lat, lon, 5000, displayName);
 
                     // Add marker
-                    viewer.entities.add({
+                    const entity = viewer.entities.add({
                         name: displayName,
                         position: Cesium.Cartesian3.fromDegrees(lon, lat),
                         point: {
@@ -3066,9 +3070,19 @@
                                 <h2>- ${displayName}</h2>
                                 <p>${result.display_name}</p>
                                 <p><strong>Coordinate:</strong> ${lat.toFixed(4)}°, ${lon.toFixed(4)}°</p>
+                                <p style="font-size:12px;opacity:0.75;">Use the Street View button outside this panel.</p>
                             </div>
                         `
                     });
+
+                    entity.streetViewData = {
+                        lat: lat,
+                        lon: lon,
+                        name: displayName
+                    };
+
+                    showStreetViewButton(lat, lon, displayName);
+
                 } else {
                     alert('Place not founded. Try with another name.');
                 }
@@ -3239,6 +3253,160 @@
                     }
                 }
             });
+        }
+
+        // Clouds of Earth System
+
+        function toggleClouds() {
+            if (currentPlanet !== 'earth') {
+                alert('Clouds are only available on Earth');
+                return;
+            }
+
+            cloudsEnabled = !cloudsEnabled;
+            document.getElementById('btnClouds').classList.toggle('active');
+
+            if (cloudsEnabled) {
+                addCloudsLayer();
+            } else {
+                removeCloudsLayer();
+            }
+        }
+
+        function addCloudsLayer() {
+            if (!viewer || viewer.isDestroyed()) return;
+
+            // Generate texture
+            const cloudCanvas = generateCloudTexture(4096, 2048);
+            const cloudDataUrl = cloudCanvas.toDataURL('image/png');
+
+            // Altitude
+            const cloudAltitude = 6371000 * 1.008;
+
+            cloudsEntity = viewer.entities.add({
+                name: 'clouds_layer',
+                position: Cesium.Cartesian3.ZERO,
+                ellipsoid: {
+                    radii: new Cesium.Cartesian3(cloudAltitude, cloudAltitude, cloudAltitude),
+                    material: new Cesium.ImageMaterialProperty({
+                        image: cloudDataUrl,
+                        transparent: true,
+                        color: new Cesium.Color(1.0, 1.0, 1.0, 0.65)
+                    }),
+                    outline: false,
+                }
+            });
+
+            startCloudRotation();
+
+            console.log('Clouds layer added');
+        }
+
+        function removeCloudsLayer() {
+            if (cloudsEntity && viewer && !viewer.isDestroyed()) {
+                viewer.entities.remove(cloudsEntity);
+                cloudsEntity = null;
+            }
+
+            stopCloudRotation();
+
+            console.log('Clouds layer removed');
+        }
+
+        function startCloudRotation() {
+            if (!cloudsEntity) return;
+
+            let cloudAngle = 0;
+            const cloudAltitude = 6371000 * 1.008;
+
+            cloudsRotationHandler = function () {
+                if (!cloudsEntity || !viewer || viewer.isDestroyed()) return;
+
+                cloudAngle += 0.0001;
+
+                const heading = cloudAngle;
+                const hpr = new Cesium.HeadingPitchRoll(heading, 0, 0);
+                const orientation = Cesium.Transforms.headingPitchRollQuaternion(
+                    Cesium.Cartesian3.ZERO,
+                    hpr
+                );
+
+                cloudsEntity.orientation = orientation;
+            };
+
+            viewer.clock.onTick.addEventListener(cloudsRotationHandler);
+        }
+
+        function stopCloudRotation() {
+            if (cloudsRotationHandler && viewer && !viewer.isDestroyed()) {
+                try {
+                    viewer.clock.onTick.removeEventListener(cloudsRotationHandler);
+                } catch (e) {}
+            }
+            cloudsRotationHandler = null;
+        }
+
+        function generateCloudTexture(width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, width, height);
+
+            const imageData = ctx.createImageData(width, height);
+            const data = imageData.data;
+
+            const perm = generatePermutationTable();
+
+            for (let py = 0; py < height; py++) {
+                const lat = (py / height) * Math.PI;
+                const latFactor = Math.sin(lat);
+
+                for (let px = 0; px < width; px++) {
+                    const nx = px / width;
+                    const ny = py / height;
+
+                    // Multi-octave noise
+                    let cloudValue = 0;
+
+                    // Octave 1
+                    cloudValue += perlinNoise2D(nx * 6, ny * 3, perm) * 0.5;
+
+                    // Octave 2
+                    cloudValue += perlinNoise2D(nx * 12, ny * 6, perm) * 0.25;
+
+                    // Octave 3
+                    cloudValue += perlinNoise2D(nx * 24, ny * 12, perm) * 0.125;
+
+                    // Octave 4
+                    cloudValue += perlinNoise2D(nx * 48, ny * 24, perm) * 0.0625;
+
+                    // Normalize on -1,1 to 0,1
+                    cloudValue = (cloudValue + 1) * 0.5;
+
+                    cloudValue = Math.max(0, cloudValue - 0.35) / 0.65;
+
+                    cloudValue *= latFactor;
+
+                    const equatorDist = Math.abs(ny - 0.5);
+                    if (equatorDist < 0.08) {
+                        cloudValue = Math.min(1, cloudValue + 0.3 * (1 - equatorDist / 0.08));
+                    }
+
+                    const midLatNorth = Math.abs(ny - 0.3);
+                    const midLatSouth = Math.abs(ny - 0.7);
+                    if (midLatNorth < 0.1) {
+                        cloudValue = Math.min(1, cloudValue + 0.2 * (1 - midLatNorth / 0.1));
+                    }
+                    if (midLatSouth < 0.1) {
+                        cloudValue = Math.min(1, cloudValue + 0.2 * (1 - midLatSouth / 0.1));
+                    }
+
+                    cloudValue = smoothstepCloud(cloudValue);
+
+                }
+            }
         }
 
         // UI Help
