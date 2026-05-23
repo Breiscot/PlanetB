@@ -3362,7 +3362,8 @@
             cloudsRotationHandler = null;
         }
 
-        function generateCloudTexture(width, height) {
+        function generateCloudTexture(width, height, offset) {
+            const timeOffset = offset || 0;
             const workWidth = 1024;
             const workHeight = 512;
 
@@ -3384,7 +3385,7 @@
                 const ny = py / workHeight;
 
                 for (let px = 0; px < workWidth; px++) {
-                    const nx = px / workWidth;
+                    const nx = (px / workWidth) + timeOffset;
 
                     // Three Octave
                     let cloudValue = 0;
@@ -3400,7 +3401,7 @@
 
                     // Normalize on -1,1 to 0,1
                     cloudValue = (cloudValue + 1) * 0.5;
-                    cloudValue = Math.max(0, cloudValue - 0.35) / 0.65;
+                    cloudValue = Math.max(0, cloudValue - 0.3) / 0.7;
                     cloudValue *= latFactor;
 
                     // ITCZ Equator
@@ -3423,16 +3424,16 @@
                     cloudValue = smoothstepCloud(cloudValue);
 
                     // Alpha
-                    const alpha = Math.floor(cloudValue * 220);
+                    const alpha = Math.floor(cloudValue * 255);
 
                     // Brightness
-                    const brightness = 235 + Math.floor(cloudValue * 20);
+                    const brightness = 240 + Math.floor(cloudValue * 15);
 
                     const idx = (py * workWidth + px) * 4;
-                    data[idx] = brightness;         // R
-                    data[idx + 1] = brightness;     // G
-                    data[idx + 2] = brightness + 5; // B
-                    data[idx + 3] = alpha;          // A
+                    data[idx] = brightness;                         // R
+                    data[idx + 1] = brightness;                     // G
+                    data[idx + 2] = Math.min(255, brightness + 8);  // B
+                    data[idx + 3] = alpha;                          // A
                 }
             }
 
