@@ -2925,7 +2925,6 @@
 
         function toggleNight() {
             nightMode = !nightMode;
-            viewer.scene.globe.enableLighting = nightMode;
             document.getElementById('btnNight').classList.toggle('active');
 
             if (nightMode) {
@@ -2934,7 +2933,10 @@
                 viewer.clock.shouldAnimate = false;
             } else {
                 viewer.clock.currentTime = Cesium.JulianDate.now();
+                viewer.clock.shouldAnimate = true;
             }
+
+            viewer.scene.globe.enableLighting = true;
         }
 
         function toggleAtmosphere() {
