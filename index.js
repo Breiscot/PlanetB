@@ -3285,25 +3285,18 @@
             if (!viewer || viewer.isDestroyed()) return;
 
             // Generate texture
-            const cloudCanvas = generateCloudTexture(4096, 2048);
+            const cloudCanvas = generateCloudTexture(2048, 1024);
             const cloudDataUrl = cloudCanvas.toDataURL('image/png');
 
             // Altitude
-            const cloudAltitude = 6371000 * 1.008;
-
-            cloudsEntity = viewer.entities.add({
-                name: 'clouds_layer',
-                position: Cesium.Cartesian3.ZERO,
-                ellipsoid: {
-                    radii: new Cesium.Cartesian3(cloudAltitude, cloudAltitude, cloudAltitude),
-                    material: new Cesium.ImageMaterialProperty({
-                        image: cloudDataUrl,
-                        transparent: true,
-                        color: new Cesium.Color(1.0, 1.0, 1.0, 0.65)
-                    }),
-                    outline: false,
-                }
+            const cloudProvider = new Cesium.SingleTileImageryProvider({
+                url: cloudDataUrl,
+                rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
             });
+
+            cloudsLayer = viewer.imageryLayers.addImageryProvider(cloudProvider);
+            cloudsLayer.alpha = 0.6;
+            cloudsLayer.brightness = 1.8;
 
             startCloudRotation();
 
@@ -3311,6 +3304,11 @@
         }
 
         function removeCloudsLayer() {
+            if (cloudsLayer && viewer && !viewer.isDestroyed()) {
+                viewer.imageryLayers.remove(cloudsLayer);
+                cloudsLayer = null;
+            }
+
             if (cloudsEntity && viewer && !viewer.isDestroyed()) {
                 viewer.entities.remove(cloudsEntity);
                 cloudsEntity = null;
@@ -3322,24 +3320,34 @@
         }
 
         function startCloudRotation() {
-            if (!cloudsEntity) return;
+            if (!cloudsLayer) return;
 
-            let cloudAngle = 0;
-            const cloudAltitude = 6371000 * 1.008;
+            let cloudOffset = 0;
+            let frameCount = 0;
 
             cloudsRotationHandler = function () {
-                if (!cloudsEntity || !viewer || viewer.isDestroyed()) return;
+                if (!cloudsLayer || !viewer || viewer.isDestroyed()) return;
 
-                cloudAngle += 0.0001;
+                frameCount++;
 
-                const heading = cloudAngle;
-                const hpr = new Cesium.HeadingPitchRoll(heading, 0, 0);
-                const orientation = Cesium.Transforms.headingPitchRollQuaternion(
-                    Cesium.Cartesian3.ZERO,
-                    hpr
-                );
+                if (frameCount % 600 === 0) {
+                    cloudOffset += 0.02;
 
-                cloudsEntity.orientation = orientation;
+                    const cloudCanvas = generateCloudTexture(2048, 1024, cloudOffset);
+                    const cloudDataUrl = cloudCanvas.toDataURL('image/png');
+
+                    const currentAlpha = cloudsLayer.alpha;
+                    viewer.imageryLayers.remove(cloudsLayer);
+
+                    const cloudProvider = new Cesium.SingleTileImageryProvider({
+                        url: cloudDataUrl,
+                        rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
+                    });
+
+                    cloudsLayer = viewer.imageryLayers.addImageryProvider(cloudProvider);
+                    cloudsLayer.alpha = currentAlpha;
+                    cloudsLayer.brightness = 1.8;
+                }
             };
 
             viewer.clock.onTick.addEventListener(cloudsRotationHandler);
@@ -3355,27 +3363,30 @@
         }
 
         function generateCloudTexture(width, height) {
+            const workWidth = 1024;
+            const workHeight = 512;
+
             const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
+            canvas.width = workWidth;
+            canvas.height = workHeight;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-            ctx.clearRect(0, 0, width, height);
+            ctx.clearRect(0, 0, workWidth, workHeight);
 
-            const imageData = ctx.createImageData(width, height);
+            const imageData = ctx.createImageData(workWidth, workHeight);
             const data = imageData.data;
 
             const perm = generatePermutationTable();
 
-            for (let py = 0; py < height; py++) {
-                const lat = (py / height) * Math.PI;
+            for (let py = 0; py < workHeight; py++) {
+                const lat = (py / workHeight) * Math.PI;
                 const latFactor = Math.sin(lat);
+                const ny = py / workHeight;
 
-                for (let px = 0; px < width; px++) {
-                    const nx = px / width;
-                    const ny = py / height;
+                for (let px = 0; px < workWidth; px++) {
+                    const nx = px / workWidth;
 
-                    // Multi-octave noise
+                    // Three Octave
                     let cloudValue = 0;
 
                     // Octave 1
@@ -3387,21 +3398,18 @@
                     // Octave 3
                     cloudValue += perlinNoise2D(nx * 24, ny * 12, perm) * 0.125;
 
-                    // Octave 4
-                    cloudValue += perlinNoise2D(nx * 48, ny * 24, perm) * 0.0625;
-
                     // Normalize on -1,1 to 0,1
                     cloudValue = (cloudValue + 1) * 0.5;
-
                     cloudValue = Math.max(0, cloudValue - 0.35) / 0.65;
-
                     cloudValue *= latFactor;
 
+                    // ITCZ Equator
                     const equatorDist = Math.abs(ny - 0.5);
                     if (equatorDist < 0.08) {
                         cloudValue = Math.min(1, cloudValue + 0.3 * (1 - equatorDist / 0.08));
                     }
 
+                    // Mid Latitude
                     const midLatNorth = Math.abs(ny - 0.3);
                     const midLatSouth = Math.abs(ny - 0.7);
                     if (midLatNorth < 0.1) {
@@ -3420,7 +3428,7 @@
                     // Brightness
                     const brightness = 235 + Math.floor(cloudValue * 20);
 
-                    const idx = (py * width + px) * 4;
+                    const idx = (py * workWidth + px) * 4;
                     data[idx] = brightness;         // R
                     data[idx + 1] = brightness;     // G
                     data[idx + 2] = brightness + 5; // B
@@ -3430,36 +3438,47 @@
 
             ctx.putImageData(imageData, 0, 0);
 
-            // Blur
-            const blurCanvas = document.createElement('canvas');
-            blurCanvas.width = width;
-            blurCanvas.height = height;
-            const blurCtx = blurCanvas.getContext('2d');
-            blurCtx.filter = 'blur(3px)';
-            blurCtx.drawImage(canvas, 0, 0);
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = width;
+            finalCanvas.height = height;
+            const finalCtx = finalCanvas.getContext('2d');
 
-            const seamWidth = 20;
-            for (let py = 0; py < height; py++) {
-                for (let sx = 0; sx < seamWidth; sx++) {
-                    const t = sx / seamWidth;
-                    const smoothT = t * t * (3 - 2 * t);
+            finalCtx.imageSmoothingEnabled = true;
+            finalCtx.imageSmoothingQuality = 'high';
+            finalCtx.drawImage(canvas, 0, 0, width, height);
+
+            return finalCanvas;
+
+            // Blur
+            //const blurCanvas = document.createElement('canvas');
+            //blurCanvas.width = width;
+            //blurCanvas.height = height;
+            //const blurCtx = blurCanvas.getContext('2d');
+            //blurCtx.filter = 'blur(3px)';
+            //blurCtx.drawImage(canvas, 0, 0);
+
+            //const seamWidth = 20;
+            //for (let py = 0; py < height; py++) {
+            //    for (let sx = 0; sx < seamWidth; sx++) {
+            //        const t = sx / seamWidth;
+            //        const smoothT = t * t * (3 - 2 * t);
 
                     // Read pixels in the border left and right
-                    const leftPixel = blurCtx.getImageData(sx, py, 1, 1).data;
-                    const rightPixel = blurCtx.getImageData(width - seamWidth + sx, py, 1, 1).data;
+            //        const leftPixel = blurCtx.getImageData(sx, py, 1, 1).data;
+            //        const rightPixel = blurCtx.getImageData(width - seamWidth + sx, py, 1, 1).data;
 
                     // Blend
-                    const r = Math.floor(rightPixel[0] * (1 - smoothT) + leftPixel[0] * smoothT);
-                    const g = Math.floor(rightPixel[1] * (1 - smoothT) + leftPixel[1] * smoothT);
-                    const b = Math.floor(rightPixel[2] * (1 - smoothT) + leftPixel[2] * smoothT);
-                    const a = Math.floor(rightPixel[3] * (1 - smoothT) + leftPixel[3] * smoothT);
+            //        const r = Math.floor(rightPixel[0] * (1 - smoothT) + leftPixel[0] * smoothT);
+            //        const g = Math.floor(rightPixel[1] * (1 - smoothT) + leftPixel[1] * smoothT);
+            //        const b = Math.floor(rightPixel[2] * (1 - smoothT) + leftPixel[2] * smoothT);
+            //        const a = Math.floor(rightPixel[3] * (1 - smoothT) + leftPixel[3] * smoothT);
 
-                    blurCtx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
-                    blurCtx.fillRect(width - seamWidth + sx, py, 1, 1);
-                }
-            }
+            //        blurCtx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
+            //        blurCtx.fillRect(width - seamWidth + sx, py, 1, 1);
+            //    }
+            //}
             
-            return blurCanvas;
+            //return blurCanvas;
         }
 
         function generatePermutationTable() {
