@@ -546,6 +546,14 @@
                 // Stop auto-rotate
                 stopAutoRotate();
 
+                // Remove clouds if active
+                if (cloudsEnabled) {
+                    removeCloudsLayer();
+                    cloudsEnabled = false;
+                    const btnClouds = document.getElementById('btnClouds');
+                    if (btnClouds) btnClouds.classList.remove('active');
+                }
+
                 destroyThreeJS();
                 if (viewer && !viewer.isDestroyed()) {
                     viewer.destroy();
