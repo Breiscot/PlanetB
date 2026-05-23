@@ -3403,10 +3403,111 @@
                         cloudValue = Math.min(1, cloudValue + 0.2 * (1 - midLatSouth / 0.1));
                     }
 
+                    // Soft borders
                     cloudValue = smoothstepCloud(cloudValue);
 
+                    // Alpha
+                    const alpha = Math.floor(cloudValue * 220);
+
+                    // Brightness
+                    const brightness = 235 + Math.floor(cloudValue * 20);
+
+                    const idx = (py * width + px) * 4;
+                    data[idx] = brightness;         // R
+                    data[idx + 1] = brightness;     // G
+                    data[idx + 2] = brightness + 5; // B
+                    data[idx + 3] = alpha;          // A
                 }
             }
+
+            ctx.putImageData(imageData, 0, 0);
+
+            // Blur
+            const blurCanvas = document.createElement('canvas');
+            blurCanvas.width = width;
+            blurCanvas.height = height;
+            const blurCtx = blurCanvas.getContext('2d');
+            blurCtx.filter = 'blur(3px)';
+            blurCtx.drawImage(canvas, 0, 0);
+
+            const seamWidth = 20;
+            for (let py = 0; py < height; py++) {
+                for (let sx = 0; sx < seamWidth; sx++) {
+                    const t = sx / seamWidth;
+                    const smoothT = t * t * (3 - 2 * t);
+
+                    // Read pixels in the border left and right
+                    const leftPixel = blurCtx.getImageData(sx, py, 1, 1).data;
+                    const rightPixel = blurCtx.getImageData(width - seamWidth + sx, py, 1, 1).data;
+
+                    // Blend
+                    const r = Math.floor(rightPixel[0] * (1 - smoothT) + leftPixel[0] * smoothT);
+                    const g = Math.floor(rightPixel[1] * (1 - smoothT) + leftPixel[1] * smoothT);
+                    const b = Math.floor(rightPixel[2] * (1 - smoothT) + leftPixel[2] * smoothT);
+                    const a = Math.floor(rightPixel[3] * (1 - smoothT) + leftPixel[3] * smoothT);
+
+                    blurCtx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
+                    blurCtx.fillRect(width - seamWidth + sx, py, 1, 1);
+                }
+            }
+            
+            return blurCanvas;
+        }
+
+        function generatePermutationTable() {
+            const p = [];
+            for (let i = 0; i < 256; i++) p[i] = i;
+
+            let seed = 42;
+            for (let i = 255; i > 0; i--) {
+                seed = (seed * 16807 + 0) % 2147483647;
+                const j = seed % (i + 1);
+                [p[i], p[j]] = [p[j], p[i]];
+            }
+
+            const perm = new Array(512);
+            for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+
+            return perm;
+        }
+
+        function perlinNoise2D(x, y, perm) {
+            const X = Math.floor(x) & 255;
+            const Y = Math.floor(y) & 255;
+
+            x -= Math.floor(x);
+            y -= Math.floor(y);
+
+            const u = fadeNoise(x);
+            const v = fadeNoise(y);
+
+            const a = perm[X] + Y;
+            const b = perm[X + 1] + Y;
+
+            return lerpNoise(v,
+                lerpNoise(u, gradNoise2D(perm[a], x, y), gradNoise2D(perm[b], x - 1, y)),
+                lerpNoise(u, gradNoise2D(perm[a + 1], x, y - 1), gradNoise2D(perm[b + 1], x - 1, y - 1))
+            );
+        }
+
+        function fadeNoise(t) {
+            return t * t * t * (t * (t * 6 - 15) + 10);
+        }
+
+        function lerpNoise(t, a, b) {
+            return a + t * (b - a);
+        }
+
+        function gradNoise2D(hash, x, y) {
+            const h = hash & 3;
+            const u = h < 2 ? x : y;
+            const v = h < 2 ? y : x;
+            return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+        }
+
+        function smoothstepCloud(t) {
+            t = Math.max(0, Math.min(1, t));
+            return t * t * (3 - 2 * t);
         }
 
         // UI Help
