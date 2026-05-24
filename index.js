@@ -1617,6 +1617,122 @@
             threeScene.add(stars);
         }
 
+        function addSunToScene(scene, lightPosition) {
+            const sunGroup = new THREE.Group();
+            sunGroup.name = 'sunGroup';
+
+            const sunDirection = new THREE.Vector3(
+                lightPosition.x,
+                lightPosition.y,
+                lightPosition.z
+            ).normalize();
+
+            const sunDistance = 4000;
+            const sunPos = sunDirection.multiplyScalar(sunDistance);
+
+            sunGroup.position.copy(sunPos);
+
+            // Core
+            const coreGeo = new THREE.SphereGeometry(15, 32, 32);
+            const coreMat = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: false,
+            });
+            const core = new THREE.Mesh(coreGeo, coreMat);
+            sunGroup.add(core);
+
+            // Hot Core
+            const hotCoreGeo = new THREE.SphereGeometry(22, 32, 32);
+            const hotCoreMat = new THREE.MeshBasicMaterial({
+                color: 0xfff8e0,
+                transparent: true,
+                opacity: 0.85,
+            });
+            const hotCore = new THREE.Mesh(hotCoreGeo, hotCoreMat);
+            sunGroup.add(hotCore);
+
+            // Glow 1
+            const glow1Geo = new THREE.SphereGeometry(35, 32, 32);
+            const glow1Mat = new THREE.MeshBasicMaterial({
+                color: 0xffcc33,
+                transparent: true,
+                opacity: 0.45,
+                side: THREE.BackSide,
+            });
+            const glow1 = new THREE.Mesh(glow1Geo, glow1Mat);
+            sunGroup.add(glow1)
+
+            // Glow 2
+            const glow2Geo = new THREE.SphereGeometry(55, 32, 32);
+            const glow2Mat = new THREE.MeshBasicMaterial({
+                color: 0xff9922,
+                transparent: true,
+                opacity: 0.25,
+                side: THREE.BackSide,
+            });
+            const glow2 = new THREE.Mesh(glow2Geo, glow2Mat);
+            sunGroup.add(glow2);
+
+            // Glow 3
+            const glow3Geo = new THREE.SphereGeometry(85, 32, 32);
+            const glow3Mat = new THREE.MeshBasicMaterial({
+                color: 0xff6611,
+                transparent: true,
+                opacity: 0.12,
+                side: THREE.BackSide,
+            });
+            const glow3 = new THREE.Mesh(glow3Geo, glow3Mat);
+            sunGroup.add(glow3);
+
+            // Glow 4
+            const glow4Geo = new THREE.SphereGeometry(130, 32, 32);
+            const glow4Mat = new THREE.MeshBasicMaterial({
+                color: 0xff4400,
+                transparent: true,
+                opacity: 0.06,
+                side: THREE.BackSide,
+            });
+            const glow4 = new THREE.Mesh(glow4Geo, glow4Mat);
+            sunGroup.add(glow4);
+
+            // Glow 5
+            const glow5Geo = new THREE.SphereGeometry(200, 32, 32);
+            const glow5Mat = new THREE.MeshBasicMaterial({
+                color: 0xff3300,
+                transparent: true,
+                opacity: 0.025,
+                side: THREE.BackSide,
+            });
+            const glow5 = new THREE.Mesh(glow5Geo, glow5Mat);
+            sunGroup.add(glow5);
+
+            // Glow Sprite
+            const glowSprite = createSunGlowSprite();
+            sunGroup.add(glowSprite);
+
+            // Light Rays of the Sun
+            addSunRays(sunGroup);
+
+            const sunPointLight = new THREE.PointLight(0xffeecc, 0.8, sunDistance * 3);
+            sunPointLight.position.set(0, 0, 0);
+            sunGroup.add(sunPointLight);
+
+            scene.add(sunGroup);
+
+            window._sunGroup = sunGroup;
+            window._sunCoreParts = {
+                core: core,
+                hotCore: hotCore,
+                glow1: glow1,
+                glow2: glow2,
+                glow3: glow3,
+                glowSprite: glowSprite
+            };
+
+            console.log('Sun added to scene');
+            return sunGroup;
+        }
+
         function addMoonPOIsThreeJS() {
             const pois = [
                 { name: 'Sea ​​of ​​tranquility', lat: 8.5, lon: 31.4, desc: 'Apollo 11 - First Moon Landing'},
