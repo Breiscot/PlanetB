@@ -1865,6 +1865,10 @@
             if (planetId === 'saturn') {
                 addSaturnRings(viewer);
             }
+
+            if (planetId === 'uranus') {
+                addUranusRings(viewer);
+            }
         }
 
         // Earth Viewer
@@ -2029,6 +2033,10 @@
 
             if (planetId === 'saturn') {
                 addSaturnRings(viewer);
+            }
+
+            if (planetId === 'uranus') {
+                addUranusRings(viewer);
             }
 
             setupPlanetMouseTracking(planetId, planet);
@@ -2404,6 +2412,162 @@
                 ctx.fillRect(x, y, 1, 1);
             }
             
+            return canvas;
+        }
+
+        function addUranusRings(viewer) {
+            const DISPLAY_RADIUS = 6371000;
+
+            const ringCanvas = createUranusRingTexture();
+            const ringCtx = ringCanvas.getContext('2d');
+
+            const INNER_R = DISPLAY_RADIUS * 1.15;
+            const OUTER_R = DISPLAY_RADIUS * 2.0;
+            const NUM_RINGS = 50;
+            const SEGMENTS = 180;
+
+            const TILT_ANGLE = 98 * (Math.PI / 180);
+
+            for (let ring = 0; ring < NUM_RINGS; ring++) {
+                const t = ring / NUM_RINGS;
+                const radius = INNER_R + t * (OUTER_R - INNER_R);
+
+                const canvasX = Math.floor(t * 1024);
+                const pixelData = ringCtx.getImageData(canvasX, 32, 1, 1).data;
+
+                if (pixelData[3] < 5) continue;
+
+                const color = Cesium.Color.fromBytes(
+                    pixelData[0], pixelData[1], pixelData[2],
+                    Math.min(255, pixelData[3] + 20)
+                );
+
+                const positions = [];
+                for (let i = 0; i <= SEGMENTS; i++) {
+                    const angle = (i / SEGMENTS) * Math.PI * 2;
+
+                    const ringX = radius * Math.cos(angle);
+                    const ringY = radius * Math.sin(angle);
+
+                    const finalX = ringX;
+                    const finalY = ringY * Math.cos(TILT_ANGLE);
+                    const finalZ = ringY * Math.sin(TILT_ANGLE);
+
+                    positions.push(new Cesium.Cartesian3(finalX, finalY, finalZ));
+                }
+
+                viewer.entities.add({
+                    polyline: {
+                        positions: positions,
+                        width: 2,
+                        material: new Cesium.ColorMaterialProperty(color),
+                        followSurface: false,
+                    }
+                });
+            }
+        }
+
+        function createUranusRingTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+            ctx.clearRect(0, 0, 1024, 64);
+
+            const rings = [
+                // Ring 1986U2R
+                { start: 0.00, end: 0.04, r: 130, g: 140, b:160, alpha: 0.04 },
+
+                // Ring 6
+                { start: 0.06, end: 0.075, r: 140, g: 150, b: 170, alpha: 0.15 },
+
+                // Ring 5
+                { start: 0.09, end: 0.105, r: 135, g: 145, b: 165, alpha: 0.18 },
+
+                // Ring 4
+                { start: 0.12, end: 0.135, r: 130, g: 140, b: 160, alpha: 0.14 },
+
+                // Ring Alpha
+                { start: 0.16, end: 0.19, r: 150, g: 160, b: 180, alpha: 0.28 },
+
+                // Ring Beta
+                { start: 0.21, end: 0.245, r: 145, g: 155, b: 175, alpha: 0.25 },
+
+                // Ring Eta
+                { start: 0.27, end: 0.29, r: 140, g: 150, b: 170, alpha: 0.12 },
+
+                // Ring Gamma
+                { start: 0.31, end: 0.335, r: 155, g: 165, b: 185, alpha: 0.30 },
+
+                // Ring Delta
+                { start: 0.36, end: 0.39, r: 150, g: 160, b: 180, alpha: 0.22 },
+
+                // Ring Lambda
+                { start: 0.42, end: 0.435, r: 135, g: 145, b: 165, alpha: 0.06 },
+
+                // Ring Epsilon
+                { start: 0.47, end: 0.55, r: 170, g: 180, b: 200, alpha: 0.50 },
+                // Inside border in Epsilon
+                { start: 0.47, end: 0.49, r: 180, g: 190, b: 210, alpha: 0.60 },
+                // Outside border in Epsilon
+                { start: 0.53, end: 0.55, r: 180, g: 190, b: 210, alpha: 0.55 },
+
+                // Gap after Epsilon
+                { start: 0.55, end: 0.62, r: 5, g: 5, b: 8, alpha: 0.01 },
+
+                // Ring Nu
+                { start: 0.65, end: 0.75, r: 120, g: 135, b: 165, alpha: 0.06 },
+                // Border of Nu
+                { start: 0.65, end: 0.67, r: 130, g: 145, b: 175, alpha: 0.10 },
+                { start: 0.73, end: 0.75, r: 130, g: 145, b: 175, alpha: 0.10 },
+
+                // Ring Mu
+                { start: 0.82, end: 0.98, r: 110, g: 125, b: 155, alpha: 0.03 },
+                // Central peak of Mu
+                { start: 0.88, end: 0.92, r: 120, g: 135, b: 165, alpha: 0.06 },
+            ];
+
+            rings.forEach(ring => {
+                const x1 = Math.floor(ring.start * 1024);
+                const x2 = Math.floor(ring.end * 1024);
+
+                for (let x = x1; x < x2; x++) {
+                    const noise = Math.sin(x * 0.5) * 5
+                                + Math.sin(x * 2.3) * 3
+                                + Math.sin(x * 7.1) * 1.5;
+
+                    const bandT = (x - x1) / Math.max(1, x2 - x1);
+                    const radialFade = 1.0 - Math.pow(Math.abs(bandT - 0.5) * 2, 2) * 0.3;
+
+                    const r = Math.max(0, Math.min(255, ring.r + noise));
+                    const g = Math.max(0, Math.min(255, ring.g + noise * 0.9));
+                    const b = Math.max(0, Math.min(255, ring.b + noise * 0.8));
+                    const a = Math.max(0, Math.min(1, ring.alpha * radialFade));
+
+                    for (let y = 0; y < 64; y++) {
+                        const yNoise = (Math.random() - 0.5) * 4;
+                        const finalR = Math.max(0, Math.min(255, r + yNoise));
+                        const finalG = Math.max(0, Math.min(255, g + yNoise * 0.9));
+                        const finalB = Math.max(0, Math.min(255, b + yNoise * 0.8));
+
+                        ctx.fillStyle = `rgba(${Math.floor(finalR)}, ${Math.floor(finalG)}, ${Math.floor(finalB)}, ${a})`;
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            });
+
+            for (let i = 0; i < 2000; i++) {
+                const x = Math.random() * 1024;
+                const y = Math.random() * 64;
+                const bright = Math.random() > 0.5;
+                const alpha = Math.random() * 0.04;
+                ctx.fillStyle = bright
+                    ? `rgba(180, 190, 210, ${alpha})`
+                    : `rgba(0, 0, 0, ${alpha * 1.2})`;
+                ctx.fillRect(x, y, 1, 1);
+            }
+
             return canvas;
         }
         
