@@ -683,6 +683,8 @@
             const ambientLight = new THREE.AmbientLight(0x222233, 0.3);
             threeScene.add(ambientLight);
 
+            addSunToScene(threeScene, sunLight.position);
+
             window._moonGroup = new THREE.Group();
             threeScene.add(window._moonGroup);
 
@@ -720,6 +722,8 @@
                 if (window._moonAutoRotate) {
                     window._moonGroup.rotation.y += 0.002;
                 }
+
+                updateSunAnimation(Date.now() * 0.001);
 
                 threeControls.update();
                 threeRenderer.render(threeScene, threeCamera);
@@ -780,6 +784,8 @@
             const ambientLight = new THREE.AmbientLight(0x222233, 0.3);
             threeScene.add(ambientLight);
 
+            addSunToScene(threeScene, sunLight.position);
+
             // OW Planet group
             window._owPlanetGroup = new THREE.Group();
             threeScene.add(window._owPlanetGroup);
@@ -831,6 +837,8 @@
                 } else if (planetId === 'ash_twin') {
                     updateAshTwin(elapsed);
                 }
+
+                updateSunAnimation(elapsed);
 
                 threeControls.update();
                 threeRenderer.render(threeScene, threeCamera);
@@ -888,6 +896,8 @@
             sunLight.castShadow = true;
             threeScene.add(sunLight);
 
+            addSunToScene(threeScene, sunLight.position);
+
             // Ambiental light blue for Halo
             const ambientColor = planet.isHalo ? 0x1a2233 : 0x222233;
             const ambientLight = new THREE.AmbientLight(ambientColor, 0.4);
@@ -935,6 +945,8 @@
                 } else if (planetId === 'reach') {
                     updateReach(elapsed);
                 }
+
+                updateSunAnimation(elapsed);
 
                 threeControls.update();
                 threeRenderer.render(threeScene, threeCamera);
@@ -1842,6 +1854,53 @@
             }
         }
 
+        function updateSunAnimation(elapsed) {
+            if (!window._sunGroup || !window._sunCoreParts) return;
+
+            const parts = window._sunCoreParts;
+
+            const pulse = 1.0 + Math.sin(elapsed * 0.8) * 0.03;
+            const pulse2 = 1.0 + Math.sin(elapsed * 1.2 + 1.0) * 0.05;
+
+            if (parts.core) {
+                parts.core.scale.setScalar(pulse);
+            }
+
+            if (parts.hotCore) {
+                parts.hotCore.scale.setScalar(pulse2);
+                parts.hotCore.material.opacity = 0.8 + Math.sin(elapsed * 0.6) * 0.05;
+            }
+
+            if (parts.glow1) {
+                const glowPulse = 1.0 + Math.sin(elapsed * 0.5) * 0.04;
+                parts.glow1.scale.setScalar(glowPulse);
+            }
+
+            if (parts.glow2) {
+                const glowPulse2 = 1.0 + Math.sin(elapsed * 0.3 + 0.5) * 0.06;
+                parts.glow2.scale.setScalar(glowPulse2);
+            }
+
+            window._sunGroup.children.forEach(child => {
+                if (child.name && child.name.startsWith('sunRay_')) {
+                    child.material.rotation += 0.0003;
+                    child.material.opacity = 0.2 + Math.sin(elapsed * 0.4 + parseFloat(child.name.split('_')[1])) * 0.08;
+                }
+            });
+
+            if (parts.glowSprite) {
+                parts.glowSprite.material.rotation += 0.0001;
+            }
+        }
+
+        function removeSunFromScene(scene) {
+            if (window._sunGroup && scene) {
+                scene.remove(window._sunGroup);
+                window._sunGroup = null;
+                window._sunCoreParts = null;
+            }
+        }
+
         function addMoonPOIsThreeJS() {
             const pois = [
                 { name: 'Sea ​​of ​​tranquility', lat: 8.5, lon: 31.4, desc: 'Apollo 11 - First Moon Landing'},
@@ -1995,6 +2054,7 @@
 
             if (threeScene) {
                 threeScene.fog = null;
+                removeSunFromScene(threeScene);
             }
 
             if (threeAnimationId) {
