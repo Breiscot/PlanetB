@@ -27,6 +27,10 @@
         let cloudsLayer = null;
         let cloudsRotationHandler = null;
         let cloudsEntity = null;
+        let auroraEnabled = false;
+        let auroraEntities = [];
+        let auroraAnimationHandler = null;
+        let auroraTime = 0;
 
         // Database Planets
         const PLANETS = {
@@ -3960,6 +3964,197 @@
         function smoothstepCloud(t) {
             t = Math.max(0, Math.min(1, t));
             return t * t * (3 - 2 * t);
+        }
+
+        // Aurora Borealis System
+
+        function toggleAurora() {
+            if (currentPlanet !== 'earth') {
+                alert('Aurora Borealis is only available on Earth');
+                return;
+            }
+
+            auroraEnabled = !auroraEnabled;
+            document.getElementById('btnAurora').classList.toggle('active');
+
+            if (auroraEnabled) {
+                createAurora();
+            } else {
+                removeAurora();
+            }
+        }
+
+        function createAurora() {
+            if (!viewer || viewer.isDestroyed()) return;
+
+            removeAurora();
+
+            createAuroraBands('north');
+            createAuroraBands('south');
+
+            startAuroraAnimation();
+
+            console.log('Aurora Borealis enabled');
+        }
+
+        function createAuroraBands(pole) {
+            // Lat on Aurora bands
+            // Nord: 65°-75° / Sud: -65° to -75°
+            const baseLat = pole === 'north' ? 68 : -68;
+            const latSign = pole === 'north' ? 1 : -1;
+
+            const NUM_CURTAINS = 12;
+            const POINTS_PER_CURTAIN = 60;
+
+            for (let c = 0; c < NUM_CURTAINS; c++) {
+                const curtainLat = baseLat + (Math.random() * 8 - 2) * latSign;
+                const startLon = (c / NUM_CURTAINS) * 360 - 180;
+                const lonSpan = 35 + Math.random() * 25;
+
+                // Height of Aurora
+                const baseAlt = 80000 + Math.random() * 40000;
+                const topAlt = baseAlt + 150000 + Math.random() * 200000;
+
+                // Generate Texture
+                const curtainCanvas = generateAuroraCurtainTexture(c);
+                const curtainDataUrl = curtainCanvas.toDataURL('image/png');
+
+                const position = [];
+                const minimumHeights = [];
+                const maximumHeights = [];
+
+                for (let p = 0; p < POINTS_PER_CURTAIN; p++) {
+                    const t = p / (POINTS_PER_CURTAIN - 1);
+                    const lon = startLon + t * lonSpan;
+
+                    const latWave = Math.sin(t * Math.PI * 3 + c * 1.5) * 1.5
+                                  + Math.sin(t * Math.PI * 7 + c * 0.8) * 0.5;
+
+                    const lat = curtainLat + latWave;
+
+                    position.push(Cesium.Cartographic.fromDegrees(lon, lat));
+
+                    const heightWave = Math.sin(t * Math.PI * 4 + c * 2.0) * 0.3
+                                     + Math.sin(t * Math.PI * 9 + c * 1.2) * 0.15;
+                    
+                    minimumHeights.push(baseAlt + heightWave * baseAlt);
+                    maximumHeights.push(topAlt + heightWave * topAlt * 0.5);
+                }
+
+                const wallPositions = positions.map(c =>
+                    Cesium.Cartesian3.fromRadians(c.longitude, c.latitude)
+                );
+
+                const greenIntensity = 0.5 + Math.random() * 0.5;
+                const blueComponent = Math.random() * 0.3;
+                const redComponent = Math.random() * 0.15;
+
+                const auroraColor = new Cesium.Color(
+                    redComponent,
+                    greenIntensity,
+                    0.3 + blueComponent,
+                    0.15 + Math.random() * 0.1
+                );
+
+                const wallEntity = viewer.entities.add({
+                    name: `aurora_${pole}_${c}`,
+                    wall: {
+                        positions: wallPositions,
+                        minimumHeights: minimumHeights,
+                        maximumHeights: maximumHeights,
+                        material: new Cesium.ImageMaterialProperty({
+                            image: curtainDataUrl,
+                            transparent: true,
+                            color: auroraColor
+                        }),
+                        outline: false,
+                    }
+                });
+
+                auroraEntities.push({
+                    entity: wallEntity,
+                    baseColor: auroraColor,
+                    phase: Math.random() * Math.PI * 2,
+                    speed: 0.3 + Math.random() * 0.4,
+                    curtainIndex: c,
+                    pole: pole,
+                    baseLat: curtainLat,
+                    startLon: startLon,
+                    lonSpan: lonSpan,
+                    baseAlt: baseAlt,
+                    topAlt: topAlt
+                });
+            }
+        }
+
+        function generateAuroraCurtainTexture(seed) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, 512, 256);
+
+            for (let x = 0; x < 512; x++) {
+                const xNoise = Math.sin(x * 0.02 + seed) * 0.3
+                             + Math.sin(x * 0.05 + seed * 2.3) * 0.2
+                             + Math.sin(x * 0.11 + seed * 0.7) * 0.1;
+                
+                const intensity = 0.6 + xNoise;
+
+                for (let y = 0; y < 256; y++) {
+                    const yT = y / 256;
+
+                    let verticalProfile;
+                    if (yT < 0.15) {
+                        verticalProfile = (yT / 0.15) * 0.7;
+                    } else if (yT < 0.35) {
+                        verticalProfile = 0.7 + (1 - Math.abs(yT - 0.25) / 0.1) * 0.3;
+                    } else if (yT < 0.6) {
+                        verticalProfile = 0.8 - (yT - 0.35) * 1.2;
+                    } else {
+                        const fadeT = (yT - 0.6) / 0.4;
+                        verticalProfile = Math.max(0, 0.5 * (1 - fadeT * fadeT));
+                    }
+
+                    // Aurora Colors
+                    let r, g, b, a;
+
+                    if (yT < 0.25) {
+                        // Base
+                        r = Math.floor(30 * intensity);
+                        g = Math.floor(220 * intensity * verticalProfile);
+                        b = Math.floor(60 * intensity);
+                    } else if (yT < 0.5) {
+                        // Medium
+                        r = Math.floor(20 * intensity);
+                        g = Math.floor(200 * intensity * verticalProfile);
+                        b = Math.floor(100 * intensity * verticalProfile);
+                    } else if (yT < 0.75) {
+                        // High
+                        r = Math.floor(80 * intensity * verticalProfile);
+                        g = Math.floor(100 * intensity * verticalProfile);
+                        b = Math.floor(180 * intensity * verticalProfile);
+                    } else {
+                        // Peak
+                        r = Math.floor(120 * intensity * verticalProfile);
+                        g = Math.floor(30 * intensity * verticalProfile);
+                        b = Math.floor(100 * intensity * verticalProfile);
+                    }
+
+                    a = Math.floor(verticalProfile * intensity * 200);
+
+                    // Final noise
+                    const noise = (Math.random() - 0.5) * 15;
+                    r = Math.max(0, Math.min(255, r + noise));
+                    g = Math.max(0, Math.min(255, g + noise));
+                    b = Math.max(0, Math.min(255, b + noise));
+
+                    ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a / 255})`;
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+            
         }
 
         // UI Help
