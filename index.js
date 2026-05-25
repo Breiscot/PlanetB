@@ -1648,7 +1648,6 @@
             const coreGeo = new THREE.SphereGeometry(15, 32, 32);
             const coreMat = new THREE.MeshBasicMaterial({
                 color: 0xffffff,
-                transparent: false,
             });
             const core = new THREE.Mesh(coreGeo, coreMat);
             sunGroup.add(core);
@@ -1670,6 +1669,7 @@
                 transparent: true,
                 opacity: 0.45,
                 side: THREE.BackSide,
+                depthWrite: false,
             });
             const glow1 = new THREE.Mesh(glow1Geo, glow1Mat);
             sunGroup.add(glow1)
@@ -1681,6 +1681,7 @@
                 transparent: true,
                 opacity: 0.25,
                 side: THREE.BackSide,
+                depthWrite: false,
             });
             const glow2 = new THREE.Mesh(glow2Geo, glow2Mat);
             sunGroup.add(glow2);
@@ -1692,6 +1693,7 @@
                 transparent: true,
                 opacity: 0.12,
                 side: THREE.BackSide,
+                depthWrite: false,
             });
             const glow3 = new THREE.Mesh(glow3Geo, glow3Mat);
             sunGroup.add(glow3);
@@ -1703,6 +1705,7 @@
                 transparent: true,
                 opacity: 0.06,
                 side: THREE.BackSide,
+                depthWrite: false,
             });
             const glow4 = new THREE.Mesh(glow4Geo, glow4Mat);
             sunGroup.add(glow4);
@@ -1714,6 +1717,7 @@
                 transparent: true,
                 opacity: 0.025,
                 side: THREE.BackSide,
+                depthWrite: false,
             });
             const glow5 = new THREE.Mesh(glow5Geo, glow5Mat);
             sunGroup.add(glow5);
@@ -1788,7 +1792,7 @@
                 transparent: true,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
-                depthTest: false,
+                depthTest: true,
             });
 
             const sprite = new THREE.Sprite(spriteMat);
@@ -1842,7 +1846,7 @@
                     transparent: true,
                     blending: THREE.AdditiveBlending,
                     depthWrite: false,
-                    depthTest: false,
+                    depthTest: true,
                     rotation: angle,
                 });
 
@@ -3900,37 +3904,6 @@
             finalCtx.drawImage(canvas, 0, 0, width, height);
 
             return finalCanvas;
-
-            // Blur
-            //const blurCanvas = document.createElement('canvas');
-            //blurCanvas.width = width;
-            //blurCanvas.height = height;
-            //const blurCtx = blurCanvas.getContext('2d');
-            //blurCtx.filter = 'blur(3px)';
-            //blurCtx.drawImage(canvas, 0, 0);
-
-            //const seamWidth = 20;
-            //for (let py = 0; py < height; py++) {
-            //    for (let sx = 0; sx < seamWidth; sx++) {
-            //        const t = sx / seamWidth;
-            //        const smoothT = t * t * (3 - 2 * t);
-
-                    // Read pixels in the border left and right
-            //        const leftPixel = blurCtx.getImageData(sx, py, 1, 1).data;
-            //        const rightPixel = blurCtx.getImageData(width - seamWidth + sx, py, 1, 1).data;
-
-                    // Blend
-            //        const r = Math.floor(rightPixel[0] * (1 - smoothT) + leftPixel[0] * smoothT);
-            //        const g = Math.floor(rightPixel[1] * (1 - smoothT) + leftPixel[1] * smoothT);
-            //        const b = Math.floor(rightPixel[2] * (1 - smoothT) + leftPixel[2] * smoothT);
-            //        const a = Math.floor(rightPixel[3] * (1 - smoothT) + leftPixel[3] * smoothT);
-
-            //        blurCtx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
-            //        blurCtx.fillRect(width - seamWidth + sx, py, 1, 1);
-            //    }
-            //}
-            
-            //return blurCanvas;
         }
 
         function generatePermutationTable() {
