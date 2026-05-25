@@ -1733,6 +1733,115 @@
             return sunGroup;
         }
 
+        function createSunGlowSprite() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            // Transparent Bg
+            ctx.clearRect(0, 0, 512, 512);
+
+            const cx = 256;
+            const cy = 256;
+
+            // Esternal Glow
+            const outerGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 256);
+            outerGlow.addColorStop(0, 'rgba(255, 220, 150, 0.8)');
+            outerGlow.addColorStop(0.05, 'rgba(255, 200, 100, 0.6)');
+            outerGlow.addColorStop(0.1, 'rgba(255, 180, 60, 0.4)');
+            outerGlow.addColorStop(0.2, 'rgba(255, 150, 30, 0.2)');
+            outerGlow.addColorStop(0.4, 'rgba(255, 100, 10, 0.08)');
+            outerGlow.addColorStop(0.7, 'rgba(255, 60, 0, 0.02)');
+            outerGlow.addColorStop(1.0, 'rgba(255, 30, 0, 0.0)');
+
+            ctx.fillStyle = outerGlow;
+            ctx.fillRect(0, 0, 512, 512);
+
+            // Central Core
+            const coreGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 40);
+            coreGlow.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+            coreGlow.addColorStop(0.3, 'rgba(255, 255, 230, 0.9)');
+            coreGlow.addColorStop(0.6, 'rgba(255, 240, 180, 0.5)');
+            coreGlow.addColorStop(1.0, 'rgba(255, 220, 120, 0.0)');
+
+            ctx.fillStyle = coreGlow;
+            ctx.fillRect(0, 0, 512, 512);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            const spriteMat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                depthTest: false,
+            });
+
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(500, 500, 1);
+
+            return sprite;
+        }
+
+        function addSunRays(sunGroup) {
+            const numRays = 6;
+            const rayLength = 180;
+            const rayWidth = 0.8;
+
+            for (let i = 0; i < numRays; i++) {
+                const angle = (i / numRays) * Math.PI;
+
+                const rayCanvas = document.createElement('canvas');
+                rayCanvas.width = 512;
+                rayCanvas.height = 32;
+                const ctx = rayCanvas.getContext('2d');
+
+                ctx.clearRect(0, 0, 512, 32);
+
+                const gradient = ctx.createLinearGradient(0, 16, 512, 16);
+                gradient.addColorStop(0, 'rgba(255, 220, 150, 0.0)');
+                gradient.addColorStop(0.15, 'rgba(255, 220, 150, 0.15)');
+                gradient.addColorStop(0.5, 'rgba(255, 255, 230, 0.25)');
+                gradient.addColorStop(0.85, 'rgba(255, 220, 150, 0.15)');
+                gradient.addColorStop(1.0, 'rgba(255, 220, 150, 0.0)');
+
+                ctx.fillStyle = gradient;
+
+                const vGradient = ctx.createLinearGradient(0, 0, 0, 32);
+                vGradient.addColorStop(0, 'rgba(255, 220, 150, 0.0)');
+                vGradient.addColorStop(0.4, 'rgba(255, 220, 150, 0.2)');
+                vGradient.addColorStop(0.5, 'rgba(255, 255, 230, 0.3)');
+                vGradient.addColorStop(0.6, 'rgba(255, 220, 150, 0.2)');
+                vGradient.addColorStop(1.0, 'rgba(255, 220, 150, 0.0)');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 512, 32);
+
+                ctx.globalCompositeOperation = 'multiply';
+                ctx.fillStyle = vGradient;
+                ctx.fillRect(0, 0, 512, 32);
+
+                const rayTexture = new THREE.CanvasTexture(rayCanvas);
+
+                const rayMat = new THREE.SpriteMaterial({
+                    map: rayTexture,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    depthTest: false,
+                    rotation: angle,
+                });
+
+                const ray = new THREE.Sprite(rayMat);
+                ray.scale.set(rayLength * 2, rayWidth * 12, 1);
+                ray.name = 'sunRay_' + i;
+
+                sunGroup.add(ray);
+            }
+        }
+
         function addMoonPOIsThreeJS() {
             const pois = [
                 { name: 'Sea ​​of ​​tranquility', lat: 8.5, lon: 31.4, desc: 'Apollo 11 - First Moon Landing'},
