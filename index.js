@@ -4114,8 +4114,27 @@
                     gradient.addColorStop(0.3, `rgba(100, 255, 150, ${rayAlpha})`);
                     gradient.addColorStop(0.6, `rgba(80, 220, 180, ${rayAlpha * 0.7})`);
                     gradient.addColorStop(1, `rgba(60, 150, 200, 0)`);
+                } else {
+                    gradient.addColorStop(0, `rgba(60, 150, 200, 0)`);
+                    gradient.addColorStop(0.4, `rgba(80, 220, 180, ${rayAlpha * 0.7})`);
+                    gradient.addColorStop(0.7, `rgba(100, 255, 150, ${rayAlpha})`);
+                    gradient.addColorStop(1, `rgba(100, 255, 150, 0)`);
                 }
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(rayX, rayStartY, rayWidth, rayHeight);
             }
+
+            // Glow
+            const glowGradient = ctx.createLinearGradient(0, startY - 20, 0, endY + 20);
+            glowGradient.addColorStop(0, 'rgba(50, 200, 100, 0)');
+            glowGradient.addColorStop(0.2, 'rgba(50, 200, 100, 0.03)');
+            glowGradient.addColorStop(0.5, 'rgba(80, 255, 150, 0.06)');
+            glowGradient.addColorStop(0.8, 'rgba(50, 200, 100, 0.03)');
+            glowGradient.addColorStop(1, 'rgba(50, 200, 100, 0)');
+
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(0, startY - 20, width, bandHeight + 40);
         }
 
         function startAuroraAnimation() {
