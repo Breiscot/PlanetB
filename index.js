@@ -558,6 +558,14 @@
                     if (btnClouds) btnClouds.classList.remove('active');
                 }
 
+                // Remove Aurora if active
+                if (auroraEnabled) {
+                    removeAurora();
+                    auroraEnabled = false;
+                    const btnAurora = document.getElementById('btnAurora');
+                    if (btnAurora) btnAurora.classList.remove('active');
+                }
+
                 destroyThreeJS();
                 if (viewer && !viewer.isDestroyed()) {
                     viewer.destroy();
@@ -4003,23 +4011,23 @@
             const baseLat = pole === 'north' ? 68 : -68;
             const latSign = pole === 'north' ? 1 : -1;
 
-            const NUM_CURTAINS = 12;
-            const POINTS_PER_CURTAIN = 60;
+            const NUM_CURTAINS = 8;
+            const POINTS_PER_CURTAIN = 30;
 
             for (let c = 0; c < NUM_CURTAINS; c++) {
-                const curtainLat = baseLat + (Math.random() * 8 - 2) * latSign;
+                const curtainLat = baseLat + (Math.random() * 6 - 1) * latSign;
                 const startLon = (c / NUM_CURTAINS) * 360 - 180;
-                const lonSpan = 35 + Math.random() * 25;
+                const lonSpan = 40 + Math.random() * 20;
 
                 // Height of Aurora
-                const baseAlt = 80000 + Math.random() * 40000;
-                const topAlt = baseAlt + 150000 + Math.random() * 200000;
+                const baseAlt = 100000 + Math.random() * 50000;
+                const topAlt = baseAlt + 200000 + Math.random() * 300000;
 
                 // Generate Texture
                 const curtainCanvas = generateAuroraCurtainTexture(c);
                 const curtainDataUrl = curtainCanvas.toDataURL('image/png');
 
-                const position = [];
+                const wallPositions = [];
                 const minimumHeights = [];
                 const maximumHeights = [];
 
@@ -4032,7 +4040,7 @@
 
                     const lat = curtainLat + latWave;
 
-                    position.push(Cesium.Cartographic.fromDegrees(lon, lat));
+                    wallPositions.push(Cesium.Cartesian3.fromDegrees(lon, lat));
 
                     const heightWave = Math.sin(t * Math.PI * 4 + c * 2.0) * 0.3
                                      + Math.sin(t * Math.PI * 9 + c * 1.2) * 0.15;
@@ -4040,10 +4048,6 @@
                     minimumHeights.push(baseAlt + heightWave * baseAlt);
                     maximumHeights.push(topAlt + heightWave * topAlt * 0.5);
                 }
-
-                const wallPositions = positions.map(c =>
-                    Cesium.Cartesian3.fromRadians(c.longitude, c.latitude)
-                );
 
                 const greenIntensity = 0.5 + Math.random() * 0.5;
                 const blueComponent = Math.random() * 0.3;
@@ -4062,11 +4066,7 @@
                         positions: wallPositions,
                         minimumHeights: minimumHeights,
                         maximumHeights: maximumHeights,
-                        material: new Cesium.ImageMaterialProperty({
-                            image: curtainDataUrl,
-                            transparent: true,
-                            color: auroraColor
-                        }),
+                        material: new Cesium.ColorMaterialProperty(auroraColor),
                         outline: false,
                     }
                 });
@@ -4089,72 +4089,119 @@
 
         function generateAuroraCurtainTexture(seed) {
             const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 256;
+            canvas.width = 256;
+            canvas.height = 128;
             const ctx = canvas.getContext('2d');
 
-            ctx.clearRect(0, 0, 512, 256);
+            ctx.clearRect(0, 0, 256, 128);
 
-            for (let x = 0; x < 512; x++) {
-                const xNoise = Math.sin(x * 0.02 + seed) * 0.3
-                             + Math.sin(x * 0.05 + seed * 2.3) * 0.2
-                             + Math.sin(x * 0.11 + seed * 0.7) * 0.1;
+            for (let x = 0; x < 256; x++) {
+                const xNoise = Math.sin(x * 0.03 + seed) * 0.3
+                             + Math.sin(x * 0.07 + seed * 2) * 0.15;
                 
                 const intensity = 0.6 + xNoise;
 
-                for (let y = 0; y < 256; y++) {
-                    const yT = y / 256;
+                const gradient = ctx.createLinearGradient(x, 0, x, 128);
 
-                    let verticalProfile;
-                    if (yT < 0.15) {
-                        verticalProfile = (yT / 0.15) * 0.7;
-                    } else if (yT < 0.35) {
-                        verticalProfile = 0.7 + (1 - Math.abs(yT - 0.25) / 0.1) * 0.3;
-                    } else if (yT < 0.6) {
-                        verticalProfile = 0.8 - (yT - 0.35) * 1.2;
-                    } else {
-                        const fadeT = (yT - 0.6) / 0.4;
-                        verticalProfile = Math.max(0, 0.5 * (1 - fadeT * fadeT));
-                    }
+                const gVal = Math.floor(200 * intensity);
+                const bVal = Math.floor(80 * intensity);
 
-                    // Aurora Colors
-                    let r, g, b, a;
+                gradient.addColorStop(0, `rgba(20, ${gVal}, ${bVal}, 0)`);
+                gradient.addColorStop(0.15, `rgba(20, ${gVal}, ${bVal}, 0.5)`);
+                gradient.addColorStop(0.3, `rgba(30, ${Math.floor(220 * intensity)}, 60, 0.8)`);
+                gradient.addColorStop(0.5, `rgba(40, ${Math.floor(180 * intensity)}, ${Math.floor(120 * intensity)}, 0.5)`);
+                gradient.addColorStop(0.7, `rgba(80, ${Math.floor(100 * intensity)}, ${Math.floor(180 * intensity)}, 0.3)`);
+                gradient.addColorStop(0.85, `rgba(120, 30, ${Math.floor(150 * intensity)}, 0.15)`);
+                gradient.addColorStop(1, `rgba(100, 20, 80, 0)`);
 
-                    if (yT < 0.25) {
-                        // Base
-                        r = Math.floor(30 * intensity);
-                        g = Math.floor(220 * intensity * verticalProfile);
-                        b = Math.floor(60 * intensity);
-                    } else if (yT < 0.5) {
-                        // Medium
-                        r = Math.floor(20 * intensity);
-                        g = Math.floor(200 * intensity * verticalProfile);
-                        b = Math.floor(100 * intensity * verticalProfile);
-                    } else if (yT < 0.75) {
-                        // High
-                        r = Math.floor(80 * intensity * verticalProfile);
-                        g = Math.floor(100 * intensity * verticalProfile);
-                        b = Math.floor(180 * intensity * verticalProfile);
-                    } else {
-                        // Peak
-                        r = Math.floor(120 * intensity * verticalProfile);
-                        g = Math.floor(30 * intensity * verticalProfile);
-                        b = Math.floor(100 * intensity * verticalProfile);
-                    }
-
-                    a = Math.floor(verticalProfile * intensity * 200);
-
-                    // Final noise
-                    const noise = (Math.random() - 0.5) * 15;
-                    r = Math.max(0, Math.min(255, r + noise));
-                    g = Math.max(0, Math.min(255, g + noise));
-                    b = Math.max(0, Math.min(255, b + noise));
-
-                    ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a / 255})`;
-                    ctx.fillRect(x, y, 1, 1);
-                }
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, 0, 1, 128);
             }
             
+            for (let i = 0; i < 15; i++) {
+                const rayX = Math.random() * 256;
+                const rayWidth = 1 + Math.random() * 2;
+                const rayAlpha = 0.1 + Math.random() * 0.2;
+
+                ctx.fillStyle = `rgba(150, 255, 200, ${rayAlpha})`;
+                ctx.fillRect(rayX, 10, rayWidth, 100);
+            }
+
+            return canvas;
+        }
+
+        function startAuroraAnimation() {
+            if (auroraAnimationHandler) return;
+
+            auroraTime = 0;
+
+            auroraAnimationHandler = function () {
+                if (!auroraEnabled || !viewer || viewer.isDestroyed()) return;
+
+                auroraTime += 0.016;
+
+                auroraEntities.forEach(aurora => {
+                    if (!aurora.entity || !aurora.entity.wall) return;
+
+                    // Pulse of opacity
+                    const pulse = Math.sin(auroraTime * aurora.speed + aurora.phase) * 0.5 + 0.5;
+                    const breathe = Math.sin(auroraTime * 0.2 + aurora.phase * 0.5) * 0.3 + 0.7;
+
+                    const newAlpha = aurora.baseColor.alpha * pulse * breathe;
+
+                    const newColor = new Cesium.Color(
+                        aurora.baseColor.red,
+                        aurora.baseColor.green + Math.sin(auroraTime * 0.5 + aurora.phase) * 0.1,
+                        aurora.baseColor.blue,
+                        Math.max(0.02, Math.min(0.35, newAlpha))
+                    );
+
+                    aurora.entity.wall.material.color = newColor;
+
+                    const POINTS = 60;
+                    const newMinHeights = [];
+                    const newMaxHeights = [];
+
+                    for (let p = 0; p < POINTS; p++) {
+                        const t = p / (POINTS - 1);
+
+                        const heightWave = Math.sin(t * Math.PI * 4 + aurora.curtainIndex * 2.0 + auroraTime * 0.5) * 0.3
+                                         + Math.sin(t * Math.PI * 9 + aurora.curtainIndex * 1.2 + auroraTime * 0.3) * 0.15;
+                        
+                        newMinHeights.push(aurora.baseAlt + heightWave * aurora.baseAlt);
+                        newMaxHeights.push(aurora.topAlt + heightWave * aurora.topAlt * 0.5 + Math.sin(auroraTime * 0.4 + t * 5 + aurora.phase) * 50000);
+                    }
+
+                    aurora.entity.wall.minimumHeights = newMinHeights;
+                    aurora.entity.wall.maximumHeights = newMaxHeights;
+                });
+            };
+
+            viewer.clock.onTick.addEventListener(auroraAnimationHandler);
+        }
+
+        function stopAuroraAnimation() {
+            if (auroraAnimationHandler && viewer && !viewer.isDestroyed()) {
+                try {
+                    viewer.clock.onTick.removeEventListener(auroraAnimationHandler);
+                } catch (e) {}
+            }
+            auroraAnimationHandler = null;
+        }
+
+        function removeAurora() {
+            stopAuroraAnimation();
+
+            auroraEntities.forEach(aurora => {
+                if (aurora.entity && viewer && !viewer.isDestroyed()) {
+                    viewer.entities.remove(aurora.entity);
+                }
+            });
+
+            auroraEntities = [];
+            auroraTime = 0;
+
+            console.log('Aurora Borealis removed');
         }
 
         // UI Help
