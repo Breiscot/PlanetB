@@ -31,6 +31,7 @@
         let auroraEntities = [];
         let auroraAnimationHandler = null;
         let auroraTime = 0;
+        let auroraLayer = null;
 
         // Database Planets
         const PLANETS = {
@@ -4015,23 +4016,23 @@
         }
 
         function generateAuroraTexture() {
-            canvas.width = 1024;
-            canvas.height = 512;
+            const auroraWidth = 1024;
+            const auroraHeight = 512;
 
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
+            const auroraCanvas = document.createElement('canvas');
+            auroraCanvas.width = auroraWidth;
+            auroraCanvas.height = auroraHeight;
+            const auroraCtx = auroraCanvas.getContext('2d');
 
-            ctx.clearRect(0, 0, width, height);
+            auroraCtx.clearRect(0, 0, auroraWidth, auroraHeight);
 
             // Aurora Nord
-            drawAuroraBand(ctx, width, height, 'north');
+            drawAuroraBand(auroraCtx, auroraWidth, auroraHeight, 'north');
 
             // Aurora Sud
-            drawAuroraBand(ctx, width, height, 'south');
+            drawAuroraBand(auroraCtx, auroraWidth, auroraHeight, 'south');
 
-            return canvas;
+            return auroraCanvas;
         }
 
         function drawAuroraBand(ctx, width, height, pole) {
@@ -4141,30 +4142,40 @@
             if (auroraAnimationHandler) return;
 
             auroraTime = 0;
+            let lastUpdate = 0;
 
             auroraAnimationHandler = function () {
-                if (!auroraEnabled || !viewer || viewer.isDestroyed()) return;
+                if (!auroraEnabled || !viewer || viewer.isDestroyed() || !auroraLayer) return;
 
                 auroraTime += 0.016;
 
-                auroraEntities.forEach(aurora => {
-                    if (!aurora.entity || !aurora.entity.wall) return;
+                // Pulse of opacity
+                const pulse = Math.sin(auroraTime * 0.4) * 0.15 + 0.7;
+                const breathe = Math.sin(auroraTime * 0.15) * 0.1 + 0.9;
 
-                    // Pulse of opacity
-                    const pulse = Math.sin(auroraTime * aurora.speed + aurora.phase) * 0.5 + 0.5;
-                    const breathe = Math.sin(auroraTime * 0.2 + aurora.phase * 0.5) * 0.3 + 0.7;
+                auroraLayer.alpha = pulse * breathe;
+                auroraLayer.brightness = 1.8 + Math.sin(auroraTime * 0.3) * 0.4;
 
-                    const newAlpha = aurora.baseColor.alpha * pulse * breathe;
+                if (auroraTime - lastUpdate > 8) {
+                    lastUpdate = auroraTime;
 
-                    const newColor = new Cesium.Color(
-                        aurora.baseColor.red,
-                        Math.min(1, aurora.baseColor.green + Math.sin(auroraTime * 0.5 + aurora.phase) * 0.1),
-                        aurora.baseColor.blue,
-                        Math.max(0.02, Math.min(0.35, newAlpha))
-                    );
+                    const newCanvas = generateAuroraTexture();
+                    const newDataUrl = newCanvas.toDataURL('image/png');
 
-                    aurora.entity.wall.material = new Cesium.ColorMaterialProperty(newColor);
-                });
+                    const currentAlpha = auroraLayer.alpha;
+                    const currentBrightness = auroraLayer.brightness;
+
+                    viewer.imageryLayers.remove(auroraLayer);
+
+                    const newProvider = new Cesium.SingleTileImageryProvider({
+                        url: newDataUrl,
+                        rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
+                    });
+
+                    auroraLayer = viewer.imageryLayers.addImageryProvider(newProvider);
+                    auroraLayer.alpha = currentAlpha;
+                    auroraLayer.brightness = currentBrightness;
+                }
             };
 
             viewer.clock.onTick.addEventListener(auroraAnimationHandler);
@@ -4181,6 +4192,11 @@
 
         function removeAurora() {
             stopAuroraAnimation();
+
+            if (auroraLayer && viewer && !viewer.isDestroyed()) {
+                viewer.imageryLayers.remove(auroraLayer);
+                auroraLayer = null;
+            }
 
             auroraEntities.forEach(aurora => {
                 if (aurora.entity && viewer && !viewer.isDestroyed()) {
