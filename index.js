@@ -32,6 +32,9 @@
         let auroraAnimationHandler = null;
         let auroraTime = 0;
         let auroraLayer = null;
+        let solarSystemActive = false;
+        let solarSystemObjects = {};
+        let solarSystemAnimId = null;
 
         // Database Planets
         const PLANETS = {
@@ -4208,6 +4211,115 @@
             auroraTime = 0;
 
             console.log('Aurora Borealis removed');
+        }
+
+        // Solar System View
+
+        async function openSolarSystem() {
+            if (solarSystemActive) return;
+            if (window._switchingPlanet) return;
+
+            solarSystemActive = true;
+
+            // Transition
+            showPlanetTransition({
+                emoji: '☀️',
+                name: 'Solar System',
+                distance: 'Overview'
+            });
+
+            await sleep(2000);
+
+            stopAutoRotate();
+
+            if (cloudsEnabled) {
+                removeCloudsLayer();
+                cloudsEnabled = false;
+                const btnClouds = document.getElementById('btnClouds');
+                if (btnClouds) btnClouds.classList.remove('active');
+            }
+
+            if (auroraEnabled) {
+                removeAurora();
+                auroraEnabled = false;
+                const btnAurora = document.getElementById('btnAurora');
+                if (btnAurora) btnAurora.classList.remove('active');
+            }
+
+            destroyThreeJS();
+            if (viewer && !viewer.isDestroyed()) {
+                viewer.destroy();
+                viewer = null;
+            }
+
+            document.getElementById('cesiumContainer').style.display = 'none';
+            document.getElementById('threejsContainer').style.display = 'block';
+
+            await createSolarSystemScene();
+
+            document.getElementById('controlPanel').classList.add('collapsed');
+            document.getElementById('togglePanelBtn').style.display = 'none';
+            document.getElementById('solarSystemBack').classList.add('visible');
+
+            document.getElementById('locationName').textContent = 'Solar System';
+            document.getElementById('latValue').textContent = '-';
+            document.getElementById('lonValue').textContent = '-';
+            document.getElementById('altValue').textContent = '-';
+
+            hidePlanetTransition();
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        async function closeSolarSystem() {
+            if (!solarSystemActive) return;
+
+            solarSystemActive = false;
+
+            document.getElementById('solarSystemBack').classList.remove('visible');
+            document.getElementById('solarSystemTooltip').classList.remove('visible');
+
+            await switchPlanet('earth');
+
+            document.getElementById('togglePanelBtn').style.display = 'flex';
+        }
+
+        function goToPlanetFromSolarSystem(planetId) {
+            if (!solarSystemActive) return;
+            
+            solarSystemActive = false;
+
+            document.getElementById('solarSystemBack').classList.remove('visible');
+            document.getElementById('solarSystemTooltip').classList.remove('visible');
+            document.getElementById('togglePanelBtn').style.display = 'flex';
+
+            currentPlanet = 'earth';
+            switchPlanet(planetId);
+        }
+
+        async function createSolarSystemScene() {
+            const container = document.getElementById('threejsContainer');
+            container.style.display = 'block';
+            container.innerHTML = '';
+
+            threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            threeRenderer.setSize(window.innerWidth, window.innerHeight);
+            threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            threeRenderer.setClearColor(0x000000);
+            container.appendChild(threeRenderer.domElement);
+
+            threeScene = new THREE.Scene();
+
+            threeCamera = new THREE.PerspectiveCamera(
+                55,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                100000
+            );
+            threeCamera.position.set(0, 800, 500);
+            threeCamera.lookAt(0, 0, 0);
         }
 
         // UI Help

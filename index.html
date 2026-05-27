@@ -111,9 +111,15 @@
             </div>
         </div>
 
-        <!-- SYSTEM SOLAR | Planets Selection -->
+        <!-- SOLAR SYSTEM -->
 
-        <div class="section-title"><i data-lucide="orbit" style="width:14px;height:14px;"></i> Solar System Planets</div>
+        <div class="section-title"><i data-lucide="orbit" style="width:14px;height:14px;"></i> Solar System</div>
+
+        <button class="btn btn-solar-system" id="btnSolarSystem" onclick="openSolarSystem()">
+            <i data-lucide="sun" style="width:18px;height:18px;"></i>
+            <span>View Solar System</span>
+        </button>
+
         <div class="places-grid planets-grid">
             <button class="place-btn planet-btn active" id="planet-earth" onclick="switchPlanet('earth')">
                 <span class="emoji">🌍</span> Earth
@@ -366,6 +372,19 @@
         <i data-lucide="x" style="width:20px;height:20px;"></i>
         <span>Close Street View</span>
     </button>
+
+    <button class="solar-system-back" id="solarSystemBack" onclick="closeSolarSystem()">
+        <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+        <span>Back</span>
+    </button>
+
+    <!-- Solar System Tooltip -->
+    <div class="solar-system-tooltip" id="solarSystemTooltip">
+        <h3 id="ssTooltipName"></h3>
+        <p id="ssTooltipDiameter"></p>
+        <p id="ssTooltipDistance"></p>
+        <p style="color: rgba(79,195,247,0.8); margin-top:4px;">Click to visit</p>
+    </div>
 
       <script src="index.js"></script>
 </body>
