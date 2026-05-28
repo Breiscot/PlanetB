@@ -4473,8 +4473,101 @@
                 const planetOrbitGroup = new THREE.Group();
 
                 // Initial Random Angle
-                const startAngle
-            })
+                const startAngle = Math.random() * Math.PI * 2;
+                planetOrbitGroup.userData = {
+                    orbitRadius: p.orbit,
+                    speed: p.speed,
+                    startAngle: startAngle,
+                    planetId: p.id,
+                };
+
+                // Sphere of planet
+                const planetGeo = new THREE.SphereGeometry(p.size, 24, 24);
+                const planetMat = new THREE.MeshPhongMaterial({
+                    color: p.color,
+                    shininess: 20,
+                    emissive: p.color,
+                    emissiveIntensity: 0.1,
+                });
+                const planetMesh = new THREE.Mesh(planetGeo, planetMat);
+                planetMesh.position.set(p.orbit, 0, 0);
+                planetMesh.name = `planet_${p.id}`;
+
+                // Glow around the planet
+                const planetGlowGeo = new THREE.SphereGeometry(p.size * 1.4, 16, 16);
+                const planetGlowMat = new THREE.MeshBasicMaterial({
+                    color: p.color,
+                    transparent: true,
+                    opacity: 0.15,
+                    side: THREE.BackSide,
+                });
+                const planetGlow = new THREE.Mesh(planetGlowGeo, planetGlowMat);
+                planetGlow.position.copy(planetMesh.position);
+                planetOrbitGroup.add(planetGlow);
+
+                planetOrbitGroup.add(planetMesh);
+
+                // Label
+                const label = createSolarSystemLabel(p.name, p.emoji);
+                label.position.set(p.orbit, p.size + 6, 0);
+                planetOrbitGroup.add(label);
+
+                // Rings for Saturn
+                if (p.id === 'saturn'); {
+                    const ringGeo = new THREE.RingGeometry(p.size * 1.4, p.size * 2.2, 64);
+                    const ringMat = new THREE.MeshBasicMaterial({
+                        color: 0xe8d5a3,
+                        transparent: true,
+                        opacity: 0.5,
+                        side: THREE.DoubleSide,
+                    });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.position.copy(planetMesh.position);
+                    ring.rotation.x = Math.PI / 2.5;
+                    planetOrbitGroup.add(ring);
+                }
+
+                // Rings for Uranus
+                if (p.id === 'uranus') {
+                    const ringGeo = new THREE.RingGeometry(p.size * 1.3, p.size * 1.8, 64);
+                    const ringMat = new THREE.MeshBasicMaterial({
+                        color: 0x88bbdd,
+                        transparent: true,
+                        opacity: 0.3,
+                        side: THREE.DoubleSide,
+                    });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.position.copy(planetMesh.position);
+                    ring.rotation.z = Math.PI / 2.2;
+                    planetOrbitGroup.add(ring);
+                }
+
+                // Moon for the Earth
+                if (p.id === 'earth') {
+                    const moonGeo = new THREE.SphereGeometry(1, 16, 16);
+                    const moonMat = new THREE.MeshPhongMaterial({
+                        color: 0xaaaaaa,
+                        emissive: 0xaaaaaa,
+                        emissiveIntensity: 0.05,
+                    });
+                    const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+                    moonMesh.position.set(p.orbit + 8, 0, 0);
+                    planetOrbitGroup.add(moonMesh);
+
+                    planetOrbitGroup.userData.moonMesh = moonMesh;
+                    planetOrbitGroup.userData.moonOrbitRadius = 8;
+                }
+
+                threeScene.add(planetOrbitGroup);
+
+                solarSystemObjects[p.id] = {
+                    group: planetOrbitGroup,
+                    mesh: planetMesh,
+                    glow: planetGlow,
+                    orbit: orbitMesh,
+                    data: p,
+                };
+            });
         }
 
         // UI Help
