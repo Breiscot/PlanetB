@@ -4312,6 +4312,7 @@
 
             threeScene = new THREE.Scene();
 
+            // Camera
             threeCamera = new THREE.PerspectiveCamera(
                 55,
                 window.innerWidth / window.innerHeight,
@@ -4320,6 +4321,160 @@
             );
             threeCamera.position.set(0, 800, 500);
             threeCamera.lookAt(0, 0, 0);
+
+            // Controls
+            threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+            threeControls.enableDamping = true;
+            threeControls.dampingFactor = 0.05;
+            threeControls.minDistance = 200;
+            threeControls.maxDistance = 3000;
+            threeControls.maxPolarAngle = Math.PI * 0.85;
+            threeControls.rotateSpeed = 0.5;
+
+            // Stars
+            createStarField(5000);
+
+            // Ambient Light
+            const ambientLight = new THREE.AmbientLight(0x333344, 0.5);
+            threeScene.add(ambientLight);
+
+            buildSolarSystemObjects();
+
+            setupSolarSystemInteraction();
+
+            isThreeJSActive = true;
+
+            // Render loop
+            const clock = new THREE.Clock();
+
+            function animate() {
+                if (!isThreeJSActive || !solarSystemActive) return;
+                solarSystemAnimId = requestAnimationFrame(animate);
+
+                const elapsed = clock.getElapsedTime();
+
+                updateSolarSystemOrbits(elapsed);
+
+                threeControls.update();
+                threeRenderer.render(threeScene, threeCamera);
+            }
+            animate();
+
+            // Resize
+            window._threeResizeHandler = function () {
+                if (!isThreeJSActive) return;
+                threeCamera.aspect = window.innerWidth / window.innerHeight;
+                threeCamera.updateProjectionMatrix();
+                threeRenderer.setSize(window.innerWidth, window.innerHeight);
+            };
+            window.addEventListener('resize', window._threeResizeHandler);
+        }
+
+        function buildSolarSystemObjects() {
+            solarSystemObjects = {};
+
+            // Sun
+            const sunGroup = new THREE.Group();
+            sunGroup.name = 'sun';
+
+            // Core
+            const sunCoreGeo = new THREE.SphereGeometry(25, 32, 32);
+            const sunCoreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const sunCore = new THREE.Mesh(sunCoreGeo, sunCoreMat);
+            sunGroup.add(sunCore);
+
+            // Glow 1
+            const sunGlow1Geo = new THREE.SphereGeometry(30, 32, 32);
+            const sunGlow1Mat = new THREE.MeshBasicMaterial({
+                color: 0xfff0c0,
+                transparent: true,
+                opacity: 0.7,
+            });
+            sunGroup.add(new THREE.Mesh(sunGlow1Geo, sunGlow1Mat));
+
+            // Glow 2
+            const sunGlow2Geo = new THREE.SphereGeometry(38, 32, 32);
+            const sunGlow2Mat = new THREE.MeshBasicMaterial({
+                color: 0xffcc33,
+                transparent: true,
+                opacity: 0.35,
+                side: THREE.BackSide,
+            });
+            sunGroup.add(new THREE.Mesh(sunGlow2Geo, sunGlow2Mat));
+
+            // Glow 3
+            const sunGlow3Geo = new THREE.SphereGeometry(50, 32, 32);
+            const sunGlow3Mat = new THREE.MeshBasicMaterial({
+                color: 0xff8800,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.BackSide,
+            });
+            sunGroup.add(new THREE.Mesh(sunGlow3Geo, sunGlow3Mat));
+
+            // Sprite glow
+            const sunSpriteCanvas = document.createElement('canvas');
+            sunSpriteCanvas.width = 256;
+            sunSpriteCanvas.height = 256;
+            const sunSpriteCtx = sunSpriteCanvas.getContext('2d');
+            const sunGrad = sunSpriteCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
+            sunGrad.addColorStop(0, 'rgba(255, 240, 200, 0.6)');
+            sunGrad.addColorStop(0.2, 'rgba(255, 200, 100, 0.3)');
+            sunGrad.addColorStop(0.5, 'rgba(255, 150, 50, 0.1)');
+            sunGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
+            sunSpriteCtx.fillStyle = sunGrad;
+            sunSpriteCtx.fillRect(0, 0, 256, 256);
+
+            const sunSpriteTex = new THREE.CanvasTexture(sunSpriteCanvas);
+            const sunSpriteMat = new THREE.SpriteMaterial({
+                map: sunSpriteTex,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+            });
+            const sunSprite = new THREE.Sprite(sunSpriteMat);
+            sunSprite.scale.set(150, 150, 1);
+            sunGroup.add(sunSprite);
+
+            // Point light of Sun
+            const sunLight = new THREE.PointLight(0xffeedd, 2, 3000);
+            sunGroup.add(sunLight);
+
+            threeScene.add(sunGroup);
+            solarSystemObjects.sun = { group: sunGroup, core: sunCore };
+
+            // Planets
+            const planetData = [
+                { id: 'mercury', name: 'Mercury', color: 0x8c7e6d, size: 2.0, orbit: 60, speed: 4.15, emoji: '⚪' },
+                { id: 'venus', name: 'Venus', color: 0xe8a84c, size: 3.5, orbit: 90, speed: 4.15, emoji: '🟠' },
+                { id: 'earth', name: 'Earth', color: 0x4fc3f7, size: 3.8, orbit: 120, speed: 1.0, emoji: '🌍' },
+                { id: 'mars', name: 'Mars', color: 0xc1440e, size: 2.5, orbit: 160, speed: 0.53, emoji: '🔴' },
+                { id: 'jupiter', name: 'Jupiter', color: 0xc88b3a, size: 10, orbit: 250, speed: 0.084, emoji: '🟠' },
+                { id: 'saturn', name: 'Saturn', color: 0xe8d5a3, size: 8.5, orbit: 340, speed: 0.034, emoji: '🪐' },
+                { id: 'uranus', name: 'Uranus', color: 0x4fc1e9, size: 5.5, orbit: 440, speed: 0.012, emoji: '🔵' },
+                { id: 'neptune', name: 'Neptune', color: 0x3498db, size: 5.2, orbit: 530, speed: 0.006, emoji: '🔵' },
+                { id: 'pluto', name: 'Pluto', color: 0x8e735b, size: 1.5, orbit: 600, speed: 0.004, emoji: '⚪' },
+            ];
+
+            planetData.forEach(p => {
+                // Orbit
+                const orbitGeo = new THREE.RingGeometry(p.orbit - 0.3, p.orbit + 0.3, 128);
+                const orbitMat = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.12,
+                    side: THREE.DoubleSide,
+                });
+                const orbitMesh = new THREE.Mesh(orbitGeo, orbitMat);
+                orbitMesh.rotation.x = -Math.PI / 2;
+                threeScene.add(orbitMesh);
+
+                // Planet Group for orbit
+                const planetOrbitGroup = new THREE.Group();
+
+                // Initial Random Angle
+                const startAngle
+            })
         }
 
         // UI Help
