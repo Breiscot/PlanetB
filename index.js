@@ -4570,6 +4570,152 @@
             });
         }
 
+        function createSolarSystemLabel(name, emoji) {
+            const labelCanvas = document.createElement('canvas');
+            labelCanvas.width = 256;
+            labelCanvas.height = 64;
+            const ctx = labelCanvas.getContext('2d');
+
+            ctx.clearRect(0, 0, 256, 64);
+
+            // Semitransparent Bg
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.beginPath();
+            ctx.roundRect(20, 8, 216, 48, 8);
+            ctx.fill();
+
+            // Border
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(20, 8, 216, 48, 8);
+            ctx.stroke();
+
+            // Text
+            ctx.font = 'bold 22px Arial, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${emoji} ${name}`, 128, 34);
+
+            const texture = new THREE.CanvasTexture(labelCanvas);
+            texture.minFilter = THREE.LinearFilter;
+
+            const spriteMat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthTest: false,
+                depthWrite: false,
+            });
+
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(30, 8, 1);
+
+            return sprite;
+        }
+
+        function updateSolarSystemOrbits(elapsed) {
+            // Pulse of the Sun
+            if (solarSystemObjects.sun) {
+                const sunPulse = 1.0 + Math.sin(elapsed * 0.8) * 0.03;
+                solarSystemObjects.sun.core.scale.setScalar(sunPulse);
+            }
+
+            // Orbits of Planets
+            Object.keys(solarSystemObjects).forEach(key => {
+                if (key === 'sun') return;
+
+                const obj = solarSystemObjects[key];
+                if (!obj || !obj.group || !obj.group.userData) return;
+
+                const ud = obj.group.userData;
+                const angle = ud.startAngle + elapsed * ud.speed * 0.5;
+
+                obj.group.rotation.y = angle;
+
+                if (obj.mesh) {
+                    obj.mesh.rotation.y = elapsed * 0.5;
+                }
+
+                // Moon of the Earth
+                if (ud.moonMesh && ud.moonOrbitRadius) {
+                    const moonAngle = elapsed * 2;
+                    ud.moonMesh.position.set(
+                        ud.orbitRadius + Math.cos(moonAngle) * ud.moonOrbitRadius,
+                        0,
+                        Math.sin(moonAngle) * ud.moonOrbitRadius
+                    );
+                }
+            });
+        }
+
+        function setupSolarSystemInteraction() {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            let hoveredPlanet = null;
+
+            const tooltip = document.getElementById('solarSystemTooltip');
+
+            threeRenderer.domElement.addEventListener('mousemove', function (event) {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, threeCamera);
+
+                const planetMeshes = [];
+                Object.keys(solarSystemObjects).forEach(key => {
+                    if (key === 'sun') return;
+                    const obj = solarSystemObjects[key];
+                    if (obj && obj.mesh) {
+                        const worldPos = new THREE.Vector3();
+                        obj.mesh.getWorldPosition(worldPos);
+
+                        planetMeshes.push({
+                            id: key,
+                            mesh: obj.mesh,
+                            worldPos: worldPos,
+                            data: obj.data,
+                        });
+                    }
+                });
+
+                let closest = null;
+                let closestDist = Infinity;
+
+                planetMeshes.forEach(pm => {
+                    const dist = raycaster.ray.distanceToPoint(pm.worldPos);
+                    const threshold = pm.data.size * 2.5;
+
+                    if (dist < threshold && dist < closestDist) {
+                        closest = pm;
+                        closestDist = dist;
+                    }
+                });
+
+                if (closest) {
+                    hoveredPlanet = closest.id;
+                    threeRenderer.domElement.style.cursor = 'pointer';
+
+                    const planetInfo = PLANETS[closest.id];
+                    if (planetInfo && tooltip) {
+                        document.getElementById('ssTooltipName').textContent = `${planetInfo.emoji} ${planetInfo.name}`;
+                        document.getElementById('ssTooltipDiameter').textContent = `Diameter: ${planetInfo.diameter}`;
+                        document.getElementById('ssTooltipDistance').textContent = `Distance: ${planetInfo.distance}`;
+
+                        tooltip.style.left = (event.clientX + 15) + 'px';
+                        tooltip.style.top = (event.clientY - 10) + 'px';
+                        tooltip.classList.add('visible');
+                    }
+
+                    if (closest.mesh) {
+                        closest.mesh.material.emissiveIntensity = 0.4;
+                    }
+
+                    
+                }
+            })
+        }
+
         // UI Help
 
         function togglePanel() {
