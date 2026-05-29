@@ -2077,6 +2077,12 @@
                 removeSunFromScene(threeScene);
             }
 
+            solarSystemObjects = {};
+            if (solarSystemAnimId) {
+                cancelAnimationFrame(solarSystemAnimId);
+                solarSystemAnimId = null;
+            }
+
             if (threeAnimationId) {
                 cancelAnimationFrame(threeAnimationId);
                 threeAnimationId = null;
@@ -4281,9 +4287,10 @@
             document.getElementById('solarSystemBack').classList.remove('visible');
             document.getElementById('solarSystemTooltip').classList.remove('visible');
 
-            await switchPlanet('earth');
-
             document.getElementById('togglePanelBtn').style.display = 'flex';
+            document.getElementById('controlPanel').classList.remove('collapsed');
+
+            await switchPlanet('earth');
         }
 
         function goToPlanetFromSolarSystem(planetId) {
@@ -4293,9 +4300,11 @@
 
             document.getElementById('solarSystemBack').classList.remove('visible');
             document.getElementById('solarSystemTooltip').classList.remove('visible');
-            document.getElementById('togglePanelBtn').style.display = 'flex';
 
-            currentPlanet = 'earth';
+            document.getElementById('togglePanelBtn').style.display = 'flex';
+            document.getElementById('controlPanel').classList.remove('collapsed');
+
+            currentPlanet = '__solar_system__';
             switchPlanet(planetId);
         }
 
@@ -4513,7 +4522,7 @@
                 planetOrbitGroup.add(label);
 
                 // Rings for Saturn
-                if (p.id === 'saturn'); {
+                if (p.id === 'saturn') {
                     const ringGeo = new THREE.RingGeometry(p.size * 1.4, p.size * 2.2, 64);
                     const ringMat = new THREE.MeshBasicMaterial({
                         color: 0xe8d5a3,
@@ -4711,9 +4720,42 @@
                         closest.mesh.material.emissiveIntensity = 0.4;
                     }
 
+                    planetMeshes.forEach(pm => {
+                        if (pm.id !== closest.id && pm.mesh) {
+                            pm.mesh.material.emissiveIntensity = 0.1;
+                        }
+                    });
                     
+                } else {
+                    hoveredPlanet = null;
+                    threeRenderer.domElement.style.cursor = 'default';
+
+                    if (tooltip) {
+                        tooltip.classList.remove('visible');
+                    }
+
+                    // Reset all
+                    planetMeshes.forEach(pm => {
+                        if (pm.mesh) {
+                            pm.mesh.material.emissiveIntensity = 0.1;
+                        }
+                    });
                 }
-            })
+            });
+
+            threeRenderer.domElement.addEventListener('click', function () {
+                if (hoveredPlanet) {
+                    const targetPlanet = hoveredPlanet;
+                    console.log('Navigation to:', targetPlanet);
+
+                    // Hide tooltip
+                    if (tooltip) {
+                        tooltip.classList.remove('visible');
+                    }
+
+                    goToPlanetFromSolarSystem(targetPlanet);
+                }
+            });
         }
 
         // UI Help
