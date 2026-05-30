@@ -4290,6 +4290,7 @@
             document.getElementById('togglePanelBtn').style.display = 'flex';
             document.getElementById('controlPanel').classList.remove('collapsed');
 
+            currentPlanet = '__solar_system__';
             await switchPlanet('earth');
         }
 
