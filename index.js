@@ -15,7 +15,7 @@
             };
         })();
 
-        const WEATHER_API_KEY = 'REMOVED_kEY_FOR_SECURITY'
+        const WEATHER_API_KEY = ''
         let viewer;
         let autoRotateEnabled = false;
         let nightMode = false;
@@ -4926,6 +4926,20 @@
             }
         }
         
+        function displayForecast(data) {
+            const forecastDiv = document.getElementById('weatherForecast');
+            const grid = document.getElementById('forecastGrid');
+
+            forecastDiv.style.display = 'block';
+            grid.innerHTML = '';
+
+            const dailyData = [];
+            const seenDays = new Set();
+
+            data.list.forEach(item => {
+                const date = new Date
+            })
+        }
 
         // UI Help
 
