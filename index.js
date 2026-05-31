@@ -15,7 +15,7 @@
             };
         })();
 
-        const WEATHER_API_KEY = ''
+        const WEATHER_API_KEY = '';
         let viewer;
         let autoRotateEnabled = false;
         let nightMode = false;
