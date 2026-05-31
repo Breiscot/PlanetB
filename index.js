@@ -15,6 +15,7 @@
             };
         })();
 
+        const WEATHER_API_KEY = 'REMOVED_kEY_FOR_SECURITY'
         let viewer;
         let autoRotateEnabled = false;
         let nightMode = false;
@@ -35,6 +36,8 @@
         let solarSystemActive = false;
         let solarSystemObjects = {};
         let solarSystemAnimId = null;
+        let weatherCursorMode = false;
+        let weatherClickHandler = null;
 
         // Database Planets
         const PLANETS = {
@@ -4758,6 +4761,171 @@
                 }
             });
         }
+
+        // Weather System
+
+        function toggleWeatherCursor() {
+            if (currentPlanet !== 'earth') {
+                alert('Weather is only available on Earth');
+                return;
+            }
+
+            weatherCursorMode = !weatherCursorMode;
+            document.getElementById('btnWeatherCursor').classList.toggle('active');
+
+            if (weatherCursorMode) {
+                enableWeatherClickMode();
+            } else {
+                disableWeatherClickMode();
+            }
+        }
+
+        function enableWeatherClickMode() {
+            if (!viewer || viewer.isDestroyed()) return;
+
+            weatherClickHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+
+            weatherClickHandler.setInputAction(function (click) {
+                if (!weatherCursorMode) return;
+
+                const cartesian = viewer.camera.pickEllipsoid(
+                    click.position,
+                    viewer.scene.globe.ellipsoid
+                );
+
+                if (cartesian) {
+                    const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                    const lat = Cesium.Math.toDegrees(cartographic.latitude);
+                    const lon = Cesium.Math.toDegrees(cartographic.longitude);
+
+                    fetchWeatherByCoords(lat, lon);
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        }
+
+        function disableWeatherClickMode() {
+            if (weatherClickHandler) {
+                weatherClickHandler.destroy();
+                weatherClickHandler = null;
+            }
+        }
+
+        async function handleWeatherSearch(event) {
+            if (event.key !== 'Enter') return;
+            if (currentPlanet !== 'earth') {
+                alert('Weather is only available on Earth');
+                return;
+            }
+
+            const query = document.getElementById('weatherSearchInput').value.trim();
+            if (!query) return;
+
+            await fetchWeatherByCity(query);
+        }
+
+        async function fetchWeatherByCity(city) {
+            showWeatherLoading();
+
+            try {
+                const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${WEATHER_API_KEY}`;
+                const response = await fetch(url);
+
+                if(!response.ok) {
+                    throw new Error('City not found');
+                }
+
+                const data = await response.json();
+                displayWeather(data);
+
+                flyTo(data.coord.lat, data.coord.lon, 500000, data.name);
+
+                fetchForecast(data.coord.lat, data.coord.lon);
+
+            } catch (error) {
+                console.error('Weather error:', error);
+                hideWeatherLoading();
+                alert('City not found. Try another name.');
+            }
+        }
+
+        async function fetchWeatherByCoords(lat, lon) {
+            showWeatherLoading();
+
+            try {
+                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`;
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error('Weather data not available');
+                }
+
+                const data = await response.json();
+                displayWeather(data);
+
+                fetchForecast(lat, lon);
+                
+            } catch (error) {
+                console.error('Weather error:', error);
+                hideWeatherLoading();
+            }
+        }
+
+        async function fetchForecast(lat, lon) {
+            try {
+                const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`;
+                const response = await fetch(url);
+
+                if (!response.ok) return;
+
+                const data = await response.json();
+                displayForecast(data);
+
+            } catch (error) {
+                console.error('Forecast error:', error);
+            }
+        }
+
+        function displayWeather(data) {
+            const card = document.getElementById('weatherCard');
+            card.style.display = 'block';
+
+            // City and country
+            const country = data.sys.country || '';
+            document.getElementById('weatherCity').textContent = `${data.name}, ${country}`;
+
+            // Icon emoji
+            const emoji = getWeatherEmoji(data.weather[0].id, data.weather[0].icon);
+            document.getElementById('weatherIconEmoji').textContent = emoji;
+
+            // Temp
+            document.getElementById('weatherTemp').textContent = `${Math.round(data.main.temp)}°C`;
+
+            // Desc
+            document.getElementById('weatherDesc').textContent = data.weather[0].description;
+
+            // Details
+            document.getElementById('weatherFeelsLike').textContent = `${Math.round(data.main.feels_like)}°C`;
+            document.getElementById('weatherHumidity').textContent = `${data.main.humidity}%`;
+            document.getElementById('weatherWind').textContent = `${(data.wind.speed * 3.6).toFixed(1)} km/h`;
+            document.getElementById('weatherPressure').textContent = `${data.main.pressure} hPa`;
+
+            const visibilityKm = data.visibility ? (data.visibility / 1000).toFixed(1) : '-';
+            document.getElementById('weatherVisibility').textContent = `${visibilityKm} km`;
+
+            document.getElementById('weatherCloudsPercent').textContent = `${data.clouds.all}%`;
+
+            // Sunrise / Sunset
+            const sunrise = new Date(data.sys.sunrise * 1000);
+            const sunset = new Date(data.sys.sunset * 1000);
+            document.getElementById('weatherSunrise').textContent = formatTime(sunrise);
+            document.getElementById('weatherSunset').textContent = formatTime(sunset);
+
+            // Lucide
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+        
 
         // UI Help
 
