@@ -86,7 +86,7 @@
             </div>
         </div>
 
-        <div class="weather-card" id="weatherCard" style="display:none;">
+        <div class="earth-only" id="earthOnlyWeather">
             <div class="section-title"><i data-lucide="cloud-rain" style="width:14px;height:14px;"></i> Weather</div>
 
             <div class="weather-search-box">
@@ -96,6 +96,9 @@
 
             <button class="btn btn-view" id="btnWeatherCursor" onclick="toggleWeatherCursor()">
                 <i data-lucide="mouse-pointer-click"></i> Click on map for weather
+            </button>
+            <button class="btn btn-view" id="btnWeatherKey" onclick="resetWeatherKey()" style="font-size:11px;">
+                <i data-lucide="key"></i> Change API Key
             </button>
 
             <!-- Weather Card -->

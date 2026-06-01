@@ -15,7 +15,7 @@
             };
         })();
 
-        const WEATHER_API_KEY = localStorage.getItem('weatherApiKey') || '';
+        let WEATHER_API_KEY = localStorage.getItem('weatherApiKey') || '';
         let viewer;
         let autoRotateEnabled = false;
         let nightMode = false;
@@ -4832,11 +4832,25 @@
         }
 
         async function fetchWeatherByCity(city) {
+            const apiKey = getWeatherApiKey();
+            if (!apiKey) {
+                alert('Weather API key is required. Click the weather button again to enter it.');
+                return;
+            }
+
             showWeatherLoading();
 
             try {
-                const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${WEATHER_API_KEY}`;
+                const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`;
                 const response = await fetch(url);
+
+                if (response.status === 401) {
+                    localStorage.removeItem('weatherApiKey');
+                    WEATHER_API_KEY = '';
+                    alert('Invalid API key. Please try again with a valid key.');
+                    hideWeatherLoading();
+                    return;
+                }
 
                 if(!response.ok) {
                     throw new Error('City not found');
@@ -4857,11 +4871,22 @@
         }
 
         async function fetchWeatherByCoords(lat, lon) {
+            const apiKey = getWeatherApiKey();
+            if (!apiKey) return;
+
             showWeatherLoading();
 
             try {
-                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`;
+                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
                 const response = await fetch(url);
+
+                if (response.status === 401) {
+                    localStorage.removeItem('weatherApiKey');
+                    WEATHER_API_KEY = '';
+                    alert('Invalid API key. Please try again.');
+                    hideWeatherLoading();
+                    return;
+                }
 
                 if (!response.ok) {
                     throw new Error('Weather data not available');
@@ -4879,8 +4904,11 @@
         }
 
         async function fetchForecast(lat, lon) {
+            const apiKey = getWeatherApiKey();
+            if (!apiKey) return;
+
             try {
-                const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`;
+                const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
                 const response = await fetch(url);
 
                 if (!response.ok) return;
@@ -5014,6 +5042,38 @@
 
         function hideWeatherLoading() {
             // It doesn't clean the Card
+        }
+
+        function getWeatherApiKey() {
+            if (WEATHER_API_KEY) return WEATHER_API_KEY;
+
+            const key = prompt(
+                '🌤️ Weather API Key Required\n\n' +
+                'To use weather features, you need a free OpenWeatherMap API key.\n\n' +
+                '1. Go to openweathermap.org/api\n' +
+                '2. Sign up for free\n' +
+                '3. Copy your API key\n' +
+                '4. Paste it here:\n\n' +
+                '(Your key will be saved locally in your browser)'
+            );
+
+            if (key && key.trim().length > 10) {
+                WEATHER_API_KEY = key.trim();
+                localStorage.setItem('weatherApiKey', WEATHER_API_KEY);
+                return WEATHER_API_KEY;
+            }
+
+            return null;
+        }
+
+        function resetWeatherKey() {
+            localStorage.removeItem('weatherApiKey');
+            WEATHER_API_KEY = '';
+
+            document.getElementById('weatherCard').style.display = 'none';
+            document.getElementById('weatherForecast').style.display = 'none';
+
+            alert('API key removed.');
         }
 
         // UI Help
