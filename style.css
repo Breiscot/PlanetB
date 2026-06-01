@@ -929,3 +929,113 @@
             color: rgba(255, 255, 255, 0.5);
             font-size: 12px;
         }
+
+        .ss-toolbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .ss-toolbar.visible {
+            display: flex;
+        }
+
+        .ss-toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .ss-toolbar-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-right: 4px;
+            font-weight: 500;
+        }
+
+        .ss-toolbar-divider {
+            width: 1px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.12);
+            margin: 0 6px;
+        }
+
+        .ss-speed-btn {
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .ss-speed-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .ss-toggle-btn.active {
+            background: rgba(79, 195, 247, 0.2);
+            border-color: rgba(79, 195, 247, 0.4);
+            color: #4fc3f7;
+        }
+
+        .ss-info-panel {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: 400px;
+            height: 100vh;
+            z-index: 2100;
+            background: rgba(5, 10, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            overflow-y: auto;
+            transition: right 0.4s ease;
+            box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .ss-info-panel.visible {
+            right: 0;
+        }
+
+        .ss-info-panel::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .ss-info-panel::-webkit-scrollbar-thumb {
+            background: rgba(79, 195, 247, 0.3);
+            border-radius: 3px;
+        }
+
+        .ss-info-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }

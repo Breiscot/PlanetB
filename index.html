@@ -456,6 +456,71 @@
         <p style="color: rgba(79,195,247,0.8); margin-top:4px;">Click to visit</p>
     </div>
 
-      <script src="index.js"></script>
+    <!-- Solar System Top Toolbar -->
+    <div class="ss-toolbar" id="ssToolbar">
+        <div class="ss-toolbar-group">
+            <i data-lucide="gauge" style="width:14px;height:14px;color:rgba(255,255,255,0.5);"></i>
+            <span class="ss-toolbar-label">Speed</span>
+            <button class="ss-speed-btn" onclick="setSolarSpeed(0.1)" id="ssSpeed01">0.1x</button>
+            <button class="ss-speed-btn" onclick="setSolarSpeed(0.5)" id="ssSpeed05">0.5x</button>
+            <button class="ss-speed-btn active" onclick="setSolarSpeed(1)" id="ssSpeed1">1x</button>
+            <button class="ss-speed-btn" onclick="setSolarSpeed(2)" id="ssSpeed2">2x</button>
+            <button class="ss-speed-btn" onclick="setSolarSpeed(5)" id="ssSpeed5">5x</button>
+            <button class="ss-speed-btn" onclick="setSolarSpeed(10)" id="ssSpeed10">10x</button>
+        </div>
+
+        <div class="ss-toolbar-divider"></div>
+
+        <div class="ss-toolbar-group">
+            <button class="ss-toggle-btn active" id="ssToggleLabels" onclick="toggleSolarLabels()">
+                <i data-lucide="tag" style="width:14px;height:14px;"></i>
+                Labels
+            </button>
+            <button class="ss-toggle-btn active" id="ssToggleOrbits" onclick="toggleSolarOrbits()">
+                <i data-lucide="circle" style="width:14px;height:14px;"></i>
+                Orbits
+            </button>
+            <button class="ss-toggle-btn" id="ssTogglePause" onclick="toggleSolarPause()">
+                <i data-lucide="pause" style="width:14px;height:14px;"></i>
+                Pause
+            </button>
+        </div>
+    </div>
+
+    <!-- Solar System Planet Info Panel -->
+    <div class="ss-info-panel" id="ssInfoPanel">
+        <button class="ss-info-close" onclick="closeSSInfoPanel()">
+            <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+
+        <div class="ss-info-image-container">
+            <img class="ss-info-image" id="ssInfoImage" src="" alt="">
+            <div class="ss-info-image-overlay" id="ssInfoImageOverlay"></div>
+        </div>
+
+        <div class="ss-info-content">
+            <h2 class="ss-info-name" id="ssInfoName"></h2>
+            <p class="ss-info-subtitle" id="ssInfoSubtitle"></p>
+
+            <div class="ss-info-stats" id="ssInfoStats"></div>
+
+            <div class="ss-info-section">
+                <h3><i data-lucide="info" style="width:14px;height:14px;"></i> About</h3>
+                <p id="ssInfoAbout"></p>
+            </div>
+
+            <div class="ss-info-section">
+                <h3><i data-lucide="rocket" style="width:14px;height:14px;"></i> Missions</h3>
+                <ul id="ssInfoMissions"></ul>
+            </div>
+
+            <button class="btn btn-fly ss-info-visit" onclick="visitPlanetFromInfo()">
+                <i data-lucide="navigation" style="width:16px;height:16px;"></i>
+                Visit Planet
+            </button>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
 </body>
 </html>
