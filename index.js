@@ -15,7 +15,7 @@
             };
         })();
 
-        const WEATHER_API_KEY = '';
+        const WEATHER_API_KEY = localStorage.getItem('weatherApiKey') || '';
         let viewer;
         let autoRotateEnabled = false;
         let nightMode = false;
@@ -571,6 +571,14 @@
                     auroraEnabled = false;
                     const btnAurora = document.getElementById('btnAurora');
                     if (btnAurora) btnAurora.classList.remove('active');
+                }
+
+                // Remove weather cursor
+                if (weatherCursorMode) {
+                    disableWeatherClickMode();
+                    weatherCursorMode = false;
+                    const btnWeather = document.getElementById('btnWeatherCursor');
+                    if (btnWeather) btnWeather.classList.remove('active');
                 }
 
                 destroyThreeJS();
@@ -4937,8 +4945,75 @@
             const seenDays = new Set();
 
             data.list.forEach(item => {
-                const date = new Date
-            })
+                const date = new Date(item.dt * 1000);
+                const dayKey = date.toLocaleDateString('en', { weekday: 'short' });
+
+                const hour = date.getHours();
+                if (!seenDays.has(dayKey) && hour >= 11 && hour <= 14) {
+                    seenDays.add(dayKey);
+                    dailyData.push({
+                        day: dayKey,
+                        temp: Math.round(item.main.temp),
+                        tempMin: Math.round(item.main.temp_min),
+                        icon: item.weather[0].id,
+                        iconCode: item.weather[0].icon,
+                        desc: item.weather[0].description
+                    });
+                }
+            });
+
+            dailyData.slice(0, 5).forEach(day => {
+                const emoji = getWeatherEmoji(day.icon, day.iconCode);
+
+                const item = document.createElement('div');
+                item.className = 'forecast-item';
+                item.innerHTML = `
+                    <div class="forecast-day">${day.day}</div>
+                    <span class="forecast-icon">${emoji}</span>
+                    <div class="forecast-temp">${day.temp}°</div>
+                    <div class="forecast-temp-min">${day.tempMin}°</div>
+                `;
+                grid.appendChild(item);
+            });
+        }
+
+        function getWeatherEmoji(weatherId, iconCode) {
+            const isNight = iconCode && iconCode.includes('n');
+
+            if (weatherId >= 200 && weatherId < 300) return '⛈️';
+            if (weatherId >= 300 && weatherId < 400) return '🌧️';
+            if (weatherId >= 500 && weatherId < 510) return '🌧️';
+            if (weatherId === 511) return '🧊';
+            if (weatherId >= 520 && weatherId < 600) return '🌧️';
+            if (weatherId >= 600 && weatherId < 700) return '❄️';
+            if (weatherId >= 700 && weatherId < 800) return '🌫️';
+            if (weatherId === 800) return isNight ? '🌙' : '☀️';
+            if (weatherId === 801) return isNight ? '🌙' : '⛅';
+            if (weatherId === 802) return '⛅';
+            if (weatherId >= 803) return '☁️';
+
+            return '🌡️';
+        }
+        
+        function formatTime(date) {
+            return date.toLocaleTimeString('en', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        }
+
+        function showWeatherLoading() {
+            const card = document.getElementById('weatherCard');
+            card.style.display = 'block';
+            document.getElementById('weatherCity').textContent = 'Loading...';
+            document.getElementById('weatherIconEmoji').textContent = '⏳';
+            document.getElementById('weatherTemp').textContent = '-';
+            document.getElementById('weatherDesc').textContent = 'Fetching weather data...';
+        }
+
+        function hideWeatherLoading() {
+            // It doesn't clean the Card
         }
 
         // UI Help
