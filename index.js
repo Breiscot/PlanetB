@@ -38,6 +38,11 @@
         let solarSystemAnimId = null;
         let weatherCursorMode = false;
         let weatherClickHandler = null;
+        let solarSpeed = 1.0;
+        let solarLabelsVisible = true;
+        let solarOrbitsVisible = true;
+        let solarPaused = false;
+        let selectedSSPlanet = null;
 
         // Database Planets
         const PLANETS = {
@@ -377,6 +382,168 @@
                 hasAtmosphere: true,
                 scale: 1.0,
                 isHalo: true
+            }
+        };
+
+        // SOLAR SYSTEM DATA
+
+        const SOLAR_SYSTEM_DATA = {
+            mercury: {
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Mercury_in_true_color.jpg/1024px-Mercury_in_true_color.jpg',
+                subtitle: 'The Swift Planet — Closest to the Sun',
+                about: 'Mercury is the smallest and innermost planet in the Solar System. It has no atmosphere to retain heat, causing extreme temperature swings from -180°C at night to 430°C during the day. Despite being closest to the Sun, it is not the hottest planet, that title belongs to Venus.',
+                curiosities : [
+                    'A year on Mercury lasts only 88 Earth days, but a single day lasts 59 Earth days',
+                    'Mercury has ice in permanently shadowed creters near its poles',
+                    'It is shrinking! Mercury has contracted about 7 km in radius over billions of years',
+                    'Mercury has the most eccentric orbit of any planet in our solar system',
+                    'Its surface looks remarkably similar to our Moon'
+                ],
+                missions: [
+                    'Mariner 10 (1974-1975) — First spacecraft to visit Mercury, mapped 45% of surface',
+                    'MESSENGER (2011-2015) — Orbited Mercury, discovered water ice at poles',
+                    'BepiColombo (2018-2025) — ESA/JAXA mission currently en route'
+                ]
+            },
+            venus: {
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Venus_from_Mariner_10.jpg/1024px-Venus_from_Mariner_10.jpg',
+                subtitle: 'Earth\'s Evil Twin — The hottest Planet',
+                about: 'Venus is often called Earth\'s twin due to its similar size, but its conditions are hellish. A thick CO₂ atmosphere creates a runaway greenhouse effect, making it the hottest planet at 464°C. Its surface pressure is 90 times Earth\'s — equivalent to being 1 km underwater.',
+                curiosities: [
+                    'Venus rotates backwards (retrograde) compared to most planets',
+                    'A day on Venus (243 Earth days) is longer than its year (225 Earth days)',
+                    'It rains sulfuric acid in the upper atmosphere',
+                    'Venus has over 1,600 major volcanoes — more than any other planet',
+                    'Soviet Venera probes survived on the surface for only about 2 hours'
+                ],
+                missions: [
+                    'Venera 7 (1970) — First successful landing on another planet',
+                    'Magellan (1990-1994) — Mapped 98% of Venus surface with radar',
+                    'Venus Express (2006-2014) — ESA orbiter studying atmosphere',
+                    'DAVINCI+ & VERITAS — Upcoming NASA missions planned for 2030s'
+                ]
+            },
+            earth: {
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/The_Blue_Marble_%28remastered%29.jpg/1024px-The_Blue_Marble_%28remastered%29.jpg',
+                subtitle: 'The Blue Marble — Our Home',
+                about: 'Earth is the only known planet to harbon life. With 71% of its surface covered in water, a protective magnetic field, and a nitrogen-oxygen atmosphere, it provides the perfect conditions for a diverse biosphere. Earth is approximately 4.54 billion years old.',
+                curiosities: [
+                    'Earth is the densest planet in the Solar System',
+                    'The planet\'s rotation is gradually slowing — days are getting longer by 1.4 milliseconds per century',
+                    '99% of Earth\'s gold is in its core, enough to coat the surface in 1.5 feet of gold',
+                    'Earth is the only planet not named after a god',
+                    'Lightning strikes Earth about 8.6 million times per day'
+                ],
+                missions: [
+                    'Apollo 8 (1968) — First humans to orbit another world and see Earthrise',
+                    'Apollo 17 (1972) — Took the famous Blue Marble photo',
+                    'ISS (1998-present) — Continuous human presence in orbit since 2000',
+                    'DSCOVR (2015-present) — Monitors Earth from Lagrange point L1'
+                ]
+            },
+            mars: {
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Mars_-_August_30_2021_-_Flickr_-_Kevin_M._Gill.png/1024px-Mars_-_August_30_2021_-_Flickr_-_Kevin_M._Gill.png',
+                subtitle: 'The Red Planet — Future Human Frontier',
+                about: 'Mars is the most explored planet besides Earth. Its red color comes from iron oxide (rust) on its surface. Mars has the largest volcano (Olympus Mons, 21.9 km tall) and the longest canyon (Valles Marineris, 4.000 km) in the Solar System. Evidence suggests it once had rivers and lakes.',
+                curiosities: [
+                    'Olympus Mons is nearly 3 times the height of Mount Everest',
+                    'Mars has two tiny moons: Phobos and Deimos, likely captured asteroids',
+                    'A Mars day (sol) is 24 hours and 37 minutes — very close to Earth\'s',
+                    'Mars sunsets appear blue due to fine dust in the atmosphere',
+                    'The Curiosity rover sings "Happy Birthday" to itself every year on its anniversary'
+                ],
+                missions: [
+                    'Viking 1 & 2 (1976) — First successful Mars landers',
+                    'Spirit & Opportunity (2004) — Rovers that far exceeded their 90-day missions',
+                    'Curiosity (2012-present) — Car-sized rover exploring Gale Crater',
+                    'Perseverance & Ingenuity (2021-present) — Collecting samples and first Mars helicopter',
+                    'Mars Sample Return — Planned mission to bring Perseverance samples to Earth'
+                ]
+            },
+            jupiter: {
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Jupiter_and_its_shrunken_Great_Red_Spot.jpg/1024px-Jupiter_and_its_shrunken_Great_Red_Spot.jpg',
+                subtitle: 'King of the Planets — The Gas Giant',
+                about: 'Jupiter is the largest planet in our Solar System — so massive that over 1,300 Earths could fit inside it. Its Great Red Spot is a storm larger than Earth that has been raging for at least 400 years. Jupiter acts as a cosmic vacuum cleaner, protecting inner planets from asteroid impacts.',
+                curiosities: [
+                    'Jupiter has the shortest day of any planet — just 9 hours 55 minutes',
+                    'The Great Red Spot is shrinking but is still larger than Earth',
+                    'Jupiter has 95 known moons, including the four Galilean moons',
+                    'Europa likely has a subsurface ocean with more water than all of Earth\'s oceans',
+                    'Jupiter\'s magnetic field is 20,000 times stronger than Earth\'s'
+                ],
+                missions: [
+                    'Pioneer 10 & 11 (1973-74) — First spacecraft to fly by Jupiter',
+                    'Voyager 1 & 2 (1979) — Detailed images and discovery of Jupiter\'s rings',
+                    'Galileo (1995-2003) — First orbiter, dropped probe into atmosphere',
+                    'Juno (2016-present) — Studying Jupiter\'s interior and magnetic field',
+                    'Europa Clipper (2024) — Mission to study Europa\'s ocean'
+                ]
+            },
+            saturn: {
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Saturn_during_Equinox.jpg/1024px-Saturn_during_Equinox.jpg',
+                subtitle: 'The Ringed Beauty — Jewel of the Solar System',
+                about: 'Saturn is famous for its stunning ring system, made of billions of particles of ice and rock ranging from tiny grains to house-sized chunks. Despite being the second-largest planet, Saturn is the least dense — it would float in a bathtub large enough to hold it.',
+                curiosities: [
+                    'Saturn\'s rings are only about 10 meters thick but extend 282,000 km from the planet',
+                    'Saturn has a hexagonal storm at its north pole — unique in the Solar System',
+                    'Titan, Saturn\'s largest moon, has lakes of liquid methane and a thick atmosphere',
+                    'Enceladus shoots geysers of water ice into space from its south pole',
+                    'Saturn\'s density is 0.687 g/cm³ — less dense than water'
+                ],
+                missions: [
+                    'Pioneer 11 (1979) — First flyby of Saturn',
+                    'Voyager 1 & 2 (1980-81) — Detailed study of rings and moons',
+                    'Cassini-Huygens (2004-2017) — 13 years orbiting Saturn, Huygens landed on Titan',
+                    'Dragonfly (planned 2027) — Drone mission to explore Titan\'s surface'
+                ]
+            },
+            uranus: {
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Uranus_as_seen_by_NASA%27s_Voyager_2_%28remastered%29.png/1024px-Uranus_as_seen_by_NASA%27s_Voyager_2_%28remastered%29.png',
+                subtitle: 'The Tilted Ice Giant — Rolling Through Space',
+                about: 'Uranus is unique among planets because it rotates on its side, with an axial tilt of 98°. This means it essentially rolls around the Sun like a ball. It\'s classified as an ice giant, with its blue-green color coming from methane in its atmosphere.',
+                curiosities: [
+                    'Uranus rotates on its side — likely due to a massive ancient collision',
+                    'It takes 84 Earth years to orbit the Sun once',
+                    'Uranus has 13 known rings, discovered in 1977',
+                    'Winds on Uranus can reach speeds of 900 km/h',
+                    'Its interior is thought to contain a "diamond rain" from compressed carbon'
+                ],
+                missions: [
+                    'Voyager 2 (1986) — The only spacecraft to visit Uranus',
+                    'Uranus Orbiter — Proposed flagship mission recommended by Planetary Science Decadal Survey 2023-2032'
+                ]
+            },
+            neptune: {
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Neptune_-_Voyager_2_%2829347980845%29_flatten_crop.jpg/1024px-Neptune_-_Voyager_2_%2829347980845%29_flatten_crop.jpg',
+                subtitle: 'The Windiest Planet — Deep Blue World',
+                about: 'Neptune is the most distant planet from the Sun and the windiest world in our Solar System, with wind speeds reaching 2,100 km/h. Its deep blue color comes from methane absorbing red light. Neptune was the first planet found through mathematical prediction rather than observation.',
+                curiosities: [
+                    'Neptune has the strongest sustained winds of any planet — up to 2,100 km/h',
+                    'It was discovered in 1846 after mathematical predictions by Le Verrier',
+                    'Neptune\'s moon Triton orbits backwards — likely a captured Kuiper Belt object',
+                    'A year on Neptune lasts 164.8 Earth years',
+                    'Neptune has completed only one orbit since its discovery in 1846 (completed 2011)'
+                ],
+                missions: [
+                    'Voyager 2 (1989) — The only spacecraft to visit Neptune',
+                    'Various Neptune orbiter concepts are being studied for future decades'
+                ]
+            },
+            pluto: {
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Pluto_in_True_Color_-_High-Res.jpg/1024px-Pluto_in_True_Color_-_High-Res.jpg',
+                subtitle: 'The Dwarf Planet — Heart of the Kuiper Belt',
+                about: 'Pluto was reclassified as a dwarf planet in 2006 but remains one of the most fascinating worlds. The New Horizons flyby in 2015 revealed a geologically active world with nitrogen glaciers, a thin atmosphere, and a heart-shaped feature named Tombaugh Regio.',
+                curiosities: [
+                    'Pluto\'s heart-shaped region (Tombaugh Regio) is larger than Texas',
+                    'Pluto and its moon Charon are tidally locked — they always show the same face to each other',
+                    'Pluto has blue skies and red water ice on its surface',
+                    'It takes 248 Earth years for Pluto to orbit the Sun once',
+                    'Pluto is smaller than Earth\'s Moon'
+                ],
+                missions: [
+                    'New Horizons (2015) — First and only flyby, revealed stunning detail',
+                    'New Horizons then continued to fly by Arrokoth (2019) in the Kuiper Belt'
+                ]
             }
         };
 
@@ -1501,8 +1668,6 @@
                     group.add(new THREE.Mesh(geo, mat));
                 }
             );
-
-            addAtmosphereGlow(group, 1, 0x4488ff, 0.15);
         }
 
         function addAtmosphereGlow(group, radius, color, opacity) {
