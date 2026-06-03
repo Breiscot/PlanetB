@@ -4935,6 +4935,136 @@
             });
         }
 
+        // Solar System Toolbar functions
+
+        function setSolarSpeed(speed) {
+            solarSpeed = speed;
+
+            document.querySelectorAll('.ss-speed-btn').forEach(btn => btn.classList.remove('active'));
+            const btnId = 'ssSpeed' + String(speed).replace('.', '');
+            const btn = document.getElementById(btnId);
+            if (btn) btn.classList.add('active');
+        }
+
+        function toggleSolarLabels() {
+            solarLabelsVisible = !solarLabelsVisible;
+            document.getElementById('ssToggleLabels').classList.toggle('active');
+
+            Object.keys(solarSystemObjects).forEach(key => {
+                if (key === 'sun') return;
+                const obj = solarSystemObjects[key];
+                if (obj && obj.group) {
+                    obj.group.children.forEach(child => {
+                        if (child.isSprite && child.material && child.material.map) {
+                            child.visible = solarLabelsVisible;
+                        }
+                    });
+                }
+            });
+        }
+
+        function toggleSolarOrbits() {
+            solarOrbitsVisible = !solarOrbitsVisible;
+            document.getElementById('ssToggleOrbits').classList.toggle('active');
+
+            Object.keys(solarSystemObjects).forEach(key => {
+                if (key === 'sun') return;
+                const obj = solarSystemObjects[key];
+                if (obj && obj.orbit) {
+                    obj.orbit.visible = solarOrbitsVisible;
+                }
+            });
+        }
+
+        function toggleSolarPause() {
+            solarPaused = !solarPaused;
+            document.getElementById('ssTogglePause').classList.toggle('active');
+        }
+
+        function showSSInfoPanel(planetId) {
+            const planet = PLANETS[planetId];
+            const data = SOLAR_SYSTEM_DATA[planetId];
+            if (!planet || !data) return;
+
+            selectedSSPlanet = planetId;
+
+            // Image
+            document.getElementById('ssInfoImage').src = data.image;
+            document.getElementById('ssInfoImage').alt = planet.name;
+
+            // Name / Subtitle
+            document.getElementById('ssInfoName').textContent = `${planet.emoji} ${planet.name}`;
+            document.getElementById('ssInfoSubtitle').textContent = data.subtitle;
+
+            // Stats
+            const statsHtml = `
+                <div class="ss-info-stat">
+                    <div class="ss-info-stat-label">Diameter</div>
+                    <div class="ss-info-stat-value">${planet.diameter}</div>
+                </div>
+                <div class="ss-info-stat">
+                    <div class="ss-info-stat-label">Gravity</div>
+                    <div class="ss-info-stat-value">${planet.gravity}</div>
+                </div>
+                <div class="ss-info-stat">
+                    <div class="ss-info-stat-label">Temperature</div>
+                    <div class="ss-info-stat-value">${planet.temperature}</div>
+                </div>
+                <div class="ss-info-stat">
+                    <div class="ss-info-stat-label">Moons</div>
+                    <div class="ss-info-stat-value">${planet.moons}</div>
+                </div>
+                <div class="ss-info-stat">
+                    <div class="ss-info-stat-label">Day Length</div>
+                    <div class="ss-info-stat-value">${planet.dayLength}</div>
+                </div>
+                <div class="ss-info-stat">
+                    <div class="ss-info-stat-label">Year Length</div>
+                    <div class="ss-info-stat-value">${planet.yearLength}</div>
+                </div>
+                <div class="ss-info-stat">
+                    <div class="ss-info-stat-label">Distance</div>
+                    <div class="ss-info-stat-value">${planet.distance}</div>
+                </div>
+                <div class="ss-info-stat">
+                    <div class="ss-info-stat-label">Atmosphere</div>
+                    <div class="ss-info-stat-value">${planet.atmosphere}</div>
+                </div>
+            `;
+            document.getElementById('ssInfoStats').innerHTML = statsHtml;
+
+            // About
+            document.getElementById('ssInfoAbout').textContent = data.about;
+
+            // Curiosities
+            const curiositiesHtml = data.curiosities.map(c => `<li>${c}</li>`).join('');
+            document.getElementById('ssInfoCuriosities').innerHTML = curiositiesHtml;
+
+            // Missions
+            const missionsHtml = data.missions.map(m => `<li>${m}</li>`).join('');
+            document.getElementById('ssInfoMissions').innerHTML = missionsHtml;
+
+            // View Panel
+            document.getElementById('ssInfoPanel').classList.add('visible');
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function closeSSInfoPanel() {
+            document.getElementById('ssInfoPanel').classList.remove('visible');
+            selectedSSPlanet = null;
+        }
+
+        function visitPlanetFromInfo() {
+            if (!selectedSSPlanet) return;
+
+            const planetId = selectedSSPlanet;
+            closeSSInfoPanel();
+            goToPlanetFromSolarSystem(planetId);
+        }
+
         // Weather System
 
         function toggleWeatherCursor() {
