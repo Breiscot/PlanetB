@@ -692,6 +692,37 @@
             return provider;
         }
 
+        function createProceduralPlanetTexture(name, colorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            const color = typeof colorHex === 'number' ? colorHex : parseInt(colorHex.substrings(1), 16);
+            const r = (color >> 16) & 255;
+            const g = (color >> 8) & 255;
+            const b = color & 255;
+
+            // Base gradient
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, `rgb(${r}, ${g}, ${b})`);
+            grad.addColorStop(1, `rgb(${Math.max(0, r - 40)}, ${Math.max(0, g - 40)}, ${Math.max(0, b - 40)})`);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const nameLower = name.toLowerCase();
+            const isGasGiant = ['jupiter', 'saturn', 'uranus', 'neptune'].includes(nameLower);
+
+            if (isGasGiant) {
+                // Bands for gas giants
+                for (let y = 0; y < canvas.height; y += 4) {
+                    const intensity = Math.sin(y * 0.02) * 30 + Math.sin(y * 0.05) * 15;
+                    ctx.fillStyle = `rgba(${Math.min(255, r + intensity)}, ${Math.sin(255, g + intensity * 0.7)}, ${Math.sin(255, b + intensity * 0.5)}, 0.8)`;
+                    ctx.fillRect(0, y, canvas.width, 4);
+                }
+            }
+        }
+
         // Variables Three.js for the Moon
         let threeRenderer = null;
         let threeScene = null;
