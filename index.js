@@ -4450,6 +4450,8 @@
 
             hidePlanetTransition();
 
+            document.getElementById('ssToolbar').classList.add('visible');
+
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
@@ -4467,6 +4469,10 @@
             document.getElementById('controlPanel').classList.remove('collapsed');
 
             currentPlanet = '__solar_system__';
+
+            document.getElementById('ssToolbar').classList.remove('visible');
+            closeSSInfoPanel();
+
             await switchPlanet('earth');
         }
 
@@ -4480,6 +4486,9 @@
 
             document.getElementById('togglePanelBtn').style.display = 'flex';
             document.getElementById('controlPanel').classList.remove('collapsed');
+
+            document.getElementById('ssToolbar').classList.remove('visible');
+            closeSSInfoPanel();
 
             currentPlanet = '__solar_system__';
             switchPlanet(planetId);
@@ -4801,6 +4810,8 @@
         }
 
         function updateSolarSystemOrbits(elapsed) {
+            if (solarPaused) return;
+
             // Pulse of the Sun
             if (solarSystemObjects.sun) {
                 const sunPulse = 1.0 + Math.sin(elapsed * 0.8) * 0.03;
@@ -4815,21 +4826,27 @@
                 if (!obj || !obj.group || !obj.group.userData) return;
 
                 const ud = obj.group.userData;
-                const angle = ud.startAngle + elapsed * ud.speed * 0.5;
 
-                obj.group.rotation.y = angle;
+                if (ud.currentAngle === undefined) {
+                    ud.currentAngle = ud.startAngle || 0;
+                }
+
+                ud.currentAngle += ud.speed * 0.5 * solarSpeed * 0.016;
+
+                obj.group.rotation.y = ud.currentAngle;
 
                 if (obj.mesh) {
-                    obj.mesh.rotation.y = elapsed * 0.5;
+                    obj.mesh.rotation.y += 0.01 * solarSpeed;
                 }
 
                 // Moon of the Earth
                 if (ud.moonMesh && ud.moonOrbitRadius) {
-                    const moonAngle = elapsed * 2;
+                    if (ud.moonAngle === undefined) ud.moonAngle = 0;
+                    ud.moonAngle += 2 * solarSpeed * 0.016;
                     ud.moonMesh.position.set(
-                        ud.orbitRadius + Math.cos(moonAngle) * ud.moonOrbitRadius,
+                        ud.orbitRadius + Math.cos(ud.moonAngle) * ud.moonOrbitRadius,
                         0,
-                        Math.sin(moonAngle) * ud.moonOrbitRadius
+                        Math.sin(ud.moonAngle) * ud.moonOrbitRadius
                     );
                 }
             });
@@ -4922,15 +4939,7 @@
 
             threeRenderer.domElement.addEventListener('click', function () {
                 if (hoveredPlanet) {
-                    const targetPlanet = hoveredPlanet;
-                    console.log('Navigation to:', targetPlanet);
-
-                    // Hide tooltip
-                    if (tooltip) {
-                        tooltip.classList.remove('visible');
-                    }
-
-                    goToPlanetFromSolarSystem(targetPlanet);
+                    showSSInfoPanel(hoveredPlanet);
                 }
             });
         }
@@ -4984,17 +4993,27 @@
         function showSSInfoPanel(planetId) {
             const planet = PLANETS[planetId];
             const data = SOLAR_SYSTEM_DATA[planetId];
-            if (!planet || !data) return;
+            if (!planet || !data) {
+                console.error('Planet data missing:', planetId);
+                return;
+            }
 
             selectedSSPlanet = planetId;
 
             // Image
-            document.getElementById('ssInfoImage').src = data.image;
-            document.getElementById('ssInfoImage').alt = planet.name;
+            const imgEl = document.getElementById('ssInfoImage');
+            if (imgEl) {
+                imgEl.src = data.image;
+                imgEl.alt = planet.name;
+            }
 
             // Name / Subtitle
-            document.getElementById('ssInfoName').textContent = `${planet.emoji} ${planet.name}`;
-            document.getElementById('ssInfoSubtitle').textContent = data.subtitle;
+            const nameEl = document.getElementById('ssInfoName');
+            if (nameEl) nameEl.textContent = `${planet.emoji || ''} ${planet.name}`;
+            
+            
+            const subtitleEl = document.getElementById('ssInfoSubtitle');
+            if (subtitleEl) subtitleEl.textContent = data.subtitle;
 
             // Stats
             const statsHtml = `
@@ -5031,10 +5050,12 @@
                     <div class="ss-info-stat-value">${planet.atmosphere}</div>
                 </div>
             `;
-            document.getElementById('ssInfoStats').innerHTML = statsHtml;
+            const statsEl = document.getElementById('ssInfoStats');
+            if (statsEl) statsEl.innerHTML = statsHtml;
 
             // About
-            document.getElementById('ssInfoAbout').textContent = data.about;
+            const aboutEl = document.getElementById('ssInfoAbout');
+            if (aboutEl) aboutEl.textContent = data.about || 'No information available.';
 
             // Curiosities
             const curiositiesHtml = data.curiosities.map(c => `<li>${c}</li>`).join('');
