@@ -4573,8 +4573,14 @@
             sunGroup.name = 'sun';
 
             // Core
-            const sunCoreGeo = new THREE.SphereGeometry(25, 32, 32);
-            const sunCoreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const sunCoreGeo = new THREE.SphereGeometry(25, 64, 64);
+            const sunCoreMat = new THREE.MeshStandardMaterial({
+                color: 0xffaa66,
+                emissive: 0xff4422,
+                emissiveIntensity: 0.8,
+                metalness: 0.1,
+                roughness: 0.5
+            });
             const sunCore = new THREE.Mesh(sunCoreGeo, sunCoreMat);
             sunGroup.add(sunCore);
 
@@ -4608,161 +4614,131 @@
             sunGroup.add(new THREE.Mesh(sunGlow3Geo, sunGlow3Mat));
 
             // Sprite glow
-            const sunSpriteCanvas = document.createElement('canvas');
-            sunSpriteCanvas.width = 256;
-            sunSpriteCanvas.height = 256;
-            const sunSpriteCtx = sunSpriteCanvas.getContext('2d');
-            const sunGrad = sunSpriteCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
-            sunGrad.addColorStop(0, 'rgba(255, 240, 200, 0.6)');
-            sunGrad.addColorStop(0.2, 'rgba(255, 200, 100, 0.3)');
-            sunGrad.addColorStop(0.5, 'rgba(255, 150, 50, 0.1)');
-            sunGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
-            sunSpriteCtx.fillStyle = sunGrad;
-            sunSpriteCtx.fillRect(0, 0, 256, 256);
+//            const sunSpriteCanvas = document.createElement('canvas');
+//            sunSpriteCanvas.width = 256;
+//            sunSpriteCanvas.height = 256;
+//            const sunSpriteCtx = sunSpriteCanvas.getContext('2d');
+//            const sunGrad = sunSpriteCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
+//            sunGrad.addColorStop(0, 'rgba(255, 240, 200, 0.6)');
+//            sunGrad.addColorStop(0.2, 'rgba(255, 200, 100, 0.3)');
+//            sunGrad.addColorStop(0.5, 'rgba(255, 150, 50, 0.1)');
+//            sunGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
+//            sunSpriteCtx.fillStyle = sunGrad;
+//            sunSpriteCtx.fillRect(0, 0, 256, 256);
 
-            const sunSpriteTex = new THREE.CanvasTexture(sunSpriteCanvas);
-            const sunSpriteMat = new THREE.SpriteMaterial({
-                map: sunSpriteTex,
-                transparent: true,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false,
-            });
-            const sunSprite = new THREE.Sprite(sunSpriteMat);
-            sunSprite.scale.set(150, 150, 1);
-            sunGroup.add(sunSprite);
+//            const sunSpriteTex = new THREE.CanvasTexture(sunSpriteCanvas);
+//            const sunSpriteMat = new THREE.SpriteMaterial({
+//                map: sunSpriteTex,
+//                transparent: true,
+//                blending: THREE.AdditiveBlending,
+//                depthWrite: false,
+//            });
+//            const sunSprite = new THREE.Sprite(sunSpriteMat);
+//            sunSprite.scale.set(150, 150, 1);
+//            sunGroup.add(sunSprite);
 
             // Point light of Sun
-            const sunLight = new THREE.PointLight(0xffeedd, 2, 3000);
+            const sunLight = new THREE.PointLight(0xffeedd, 2.5, 3000);
+            sunLight.position.set(0, 0, 0);
             sunGroup.add(sunLight);
+
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x222222, 0.4);
+            threeScene.add(ambientLight);
+
+            // Directional light for shadows
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(100, 100, 50);
+            threeScene.add(dirLight);
 
             threeScene.add(sunGroup);
             solarSystemObjects.sun = { group: sunGroup, core: sunCore };
 
             // Planets
             const planetData = [
-                { id: 'mercury', name: 'Mercury', color: 0x8c7e6d, size: 2.0, orbit: 60, speed: 4.15, emoji: '⚪' },
-                { id: 'venus', name: 'Venus', color: 0xe8a84c, size: 3.5, orbit: 90, speed: 4.15, emoji: '🟠' },
-                { id: 'earth', name: 'Earth', color: 0x4fc3f7, size: 3.8, orbit: 120, speed: 1.0, emoji: '🌍' },
-                { id: 'mars', name: 'Mars', color: 0xc1440e, size: 2.5, orbit: 160, speed: 0.53, emoji: '🔴' },
-                { id: 'jupiter', name: 'Jupiter', color: 0xc88b3a, size: 10, orbit: 250, speed: 0.084, emoji: '🟠' },
-                { id: 'saturn', name: 'Saturn', color: 0xe8d5a3, size: 8.5, orbit: 340, speed: 0.034, emoji: '🪐' },
-                { id: 'uranus', name: 'Uranus', color: 0x4fc1e9, size: 5.5, orbit: 440, speed: 0.012, emoji: '🔵' },
-                { id: 'neptune', name: 'Neptune', color: 0x3498db, size: 5.2, orbit: 530, speed: 0.006, emoji: '🔵' },
-                { id: 'pluto', name: 'Pluto', color: 0x8e735b, size: 1.5, orbit: 600, speed: 0.004, emoji: '⚪' },
+                { id: 'mercury', name: 'Mercury', color: 0x8c7e6d, size: 2.0, orbit: 60, speed: 4.15, rotationSpeed: 0.008, emoji: '⚪', textureUrl: 'textures/planets/mercury.jpg' },
+                { id: 'venus', name: 'Venus', color: 0xe8a84c, size: 3.5, orbit: 90, speed: 4.15, rotationSpeed: 0.004, emoji: '🟠', textureUrl: 'textures/planets/venus.jpg' },
+                { id: 'earth', name: 'Earth', color: 0x4fc3f7, size: 3.8, orbit: 120, speed: 1.0, rotationSpeed: 0.01, emoji: '🌍', textureUrl: 'textures/planets/earth.jpg' },
+                { id: 'mars', name: 'Mars', color: 0xc1440e, size: 2.5, orbit: 160, speed: 0.53, rotationSpeed: 0.009, emoji: '🔴', textureUrl: 'textures/planets/mars.jpg' },
+                { id: 'jupiter', name: 'Jupiter', color: 0xc88b3a, size: 10, orbit: 250, speed: 0.084, rotationSpeed: 0.02, emoji: '🟠', textureUrl: 'textures/planets/jupiter.jpg' },
+                { id: 'saturn', name: 'Saturn', color: 0xe8d5a3, size: 8.5, orbit: 340, speed: 0.034, rotationSpeed: 0.018, emoji: '🪐', textureUrl: 'textures/planets/saturn.jpg' },
+                { id: 'uranus', name: 'Uranus', color: 0x4fc1e9, size: 5.5, orbit: 440, speed: 0.012, rotationSpeed: 0.015, emoji: '🔵', textureUrl: 'textures/planets/uranus.jpg' },
+                { id: 'neptune', name: 'Neptune', color: 0x3498db, size: 5.2, orbit: 530, speed: 0.006, rotationSpeed: 0.014, emoji: '🔵', textureUrl: 'textures/planets/neptune.jpg' },
+                { id: 'pluto', name: 'Pluto', color: 0x8e735b, size: 1.5, orbit: 600, speed: 0.004, rotationSpeed: 0.006, emoji: '⚪', textureUrl: 'textures/planets/pluto.jpg' },
             ];
+
+            const textureLoader = new THREE.TextureLoader();
+            const textures = {};
+
+            planetData.forEach(p => {
+                if (p.textureUrl) {
+                    textureLoader.load(p.textureUrl,
+                        (texture) => {
+                            textures[p.id] = texture;
+                            console.log(`Loaded texture for ${p.name}`);
+                        },
+                        undefined,
+                        (err) => {
+                            console.warn(`Could not load texture for ${p.name}, using color fallback`, err);
+                            textures[p.id] = null;
+                        }
+                    );
+                }
+            });
 
             planetData.forEach(p => {
                 // Orbit
-                const orbitGeo = new THREE.RingGeometry(p.orbit - 0.3, p.orbit + 0.3, 128);
+                const orbitGeo = new THREE.RingGeometry(p.orbit - 0.5, p.orbit + 0.5, 128);
                 const orbitMat = new THREE.MeshBasicMaterial({
                     color: 0xffffff,
                     transparent: true,
-                    opacity: 0.12,
+                    opacity: 0.15,
                     side: THREE.DoubleSide,
                 });
                 const orbitMesh = new THREE.Mesh(orbitGeo, orbitMat);
                 orbitMesh.rotation.x = -Math.PI / 2;
                 threeScene.add(orbitMesh);
 
-                // Planet Group for orbit
+                // Planet Group
                 const planetOrbitGroup = new THREE.Group();
-
-                // Initial Random Angle
                 const startAngle = Math.random() * Math.PI * 2;
                 planetOrbitGroup.userData = {
                     orbitRadius: p.orbit,
                     speed: p.speed,
                     startAngle: startAngle,
+                    currentAngle: startAngle,
                     planetId: p.id,
+                    rotationSpeed: p.rotationSpeed,
+                    currentRotation: 0
                 };
 
-                // Sphere of planet
-                const planetGeo = new THREE.SphereGeometry(p.size, 24, 24);
-                const planetMat = new THREE.MeshPhongMaterial({
-                    color: p.color,
-                    shininess: 20,
-                    emissive: p.color,
-                    emissiveIntensity: 0.1,
-                });
-                const planetMesh = new THREE.Mesh(planetGeo, planetMat);
+                let planetMaterial;
+                if (textures[p.id]) {
+                    planetMaterial = new THREE.MeshStandardMaterial({
+                        map: textures[p.id],
+                        roughness: 0.6,
+                        metalness: 0.1,
+                        emissive: 0x000000,
+                    });
+                } else {
+                    // Procedural texture fallback
+                    const proceduralCanvas = createProceduralPlanetTexture(p.name, p.color);
+                    const proceduralTexture = new THREE.CanvasTexture(proceduralCanvas);
+
+                    planetMaterial = new THREE.MeshStandardMaterial({
+                        map: proceduralTexture,
+                        color: p.color,
+                        roughness: 0.7,
+                        metalness: 0.1,
+                    });
+                }
+
+                const planetMesh = new THREE.Mesh(new THREE.SphereGeometry(p.size, 64, 64), planetMaterial);
                 planetMesh.position.set(p.orbit, 0, 0);
-                planetMesh.name = `planet_${p.id}`;
-
-                // Glow around the planet
-                const planetGlowGeo = new THREE.SphereGeometry(p.size * 1.4, 16, 16);
-                const planetGlowMat = new THREE.MeshBasicMaterial({
-                    color: p.color,
-                    transparent: true,
-                    opacity: 0.15,
-                    side: THREE.BackSide,
-                });
-                const planetGlow = new THREE.Mesh(planetGlowGeo, planetGlowMat);
-                planetGlow.position.copy(planetMesh.position);
-                planetOrbitGroup.add(planetGlow);
-
-                planetOrbitGroup.add(planetMesh);
-
-                // Label
-                const label = createSolarSystemLabel(p.name, p.emoji);
-                label.position.set(p.orbit, p.size + 6, 0);
-                planetOrbitGroup.add(label);
-
-                // Rings for Saturn
-                if (p.id === 'saturn') {
-                    const ringGeo = new THREE.RingGeometry(p.size * 1.4, p.size * 2.2, 64);
-                    const ringMat = new THREE.MeshBasicMaterial({
-                        color: 0xe8d5a3,
-                        transparent: true,
-                        opacity: 0.5,
-                        side: THREE.DoubleSide,
-                    });
-                    const ring = new THREE.Mesh(ringGeo, ringMat);
-                    ring.position.copy(planetMesh.position);
-                    ring.rotation.x = Math.PI / 2.5;
-                    planetOrbitGroup.add(ring);
-                }
-
-                // Rings for Uranus
-                if (p.id === 'uranus') {
-                    const ringGeo = new THREE.RingGeometry(p.size * 1.3, p.size * 1.8, 64);
-                    const ringMat = new THREE.MeshBasicMaterial({
-                        color: 0x88bbdd,
-                        transparent: true,
-                        opacity: 0.3,
-                        side: THREE.DoubleSide,
-                    });
-                    const ring = new THREE.Mesh(ringGeo, ringMat);
-                    ring.position.copy(planetMesh.position);
-                    ring.rotation.z = Math.PI / 2.2;
-                    planetOrbitGroup.add(ring);
-                }
-
-                // Moon for the Earth
-                if (p.id === 'earth') {
-                    const moonGeo = new THREE.SphereGeometry(1, 16, 16);
-                    const moonMat = new THREE.MeshPhongMaterial({
-                        color: 0xaaaaaa,
-                        emissive: 0xaaaaaa,
-                        emissiveIntensity: 0.05,
-                    });
-                    const moonMesh = new THREE.Mesh(moonGeo, moonMat);
-                    moonMesh.position.set(p.orbit + 8, 0, 0);
-                    planetOrbitGroup.add(moonMesh);
-
-                    planetOrbitGroup.userData.moonMesh = moonMesh;
-                    planetOrbitGroup.userData.moonOrbitRadius = 8;
-                }
-
-                threeScene.add(planetOrbitGroup);
-
-                solarSystemObjects[p.id] = {
-                    group: planetOrbitGroup,
-                    mesh: planetMesh,
-                    glow: planetGlow,
-                    orbit: orbitMesh,
-                    data: p,
-                };
-            });
+                planetMesh.castShadow = true;
+                planetMesh.receiveShadow = false;
+                planetMesh.userData = { planetId: p.id };
+            })
         }
 
         function createSolarSystemLabel(name, emoji) {
