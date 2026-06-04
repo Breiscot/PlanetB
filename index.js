@@ -4738,7 +4738,82 @@
                 planetMesh.castShadow = true;
                 planetMesh.receiveShadow = false;
                 planetMesh.userData = { planetId: p.id };
-            })
+
+                // Atmosphere glow
+                const atmosphereGeo = new THREE.SphereGeometry(p.size * 1.02, 32, 32);
+                const atmosphereMat = new THREE.MeshPhongMaterial({
+                    color: p.color,
+                    transparent: true,
+                    opacity: 0.08,
+                    side: THREE.BackSide,
+                });
+                const atmosphere = new THREE.Mesh(atmosphereGeo, atmosphereMat);
+                planetOrbitGroup.add(atmosphere);
+
+                planetOrbitGroup.add(planetMesh);
+
+                // Label
+                const label = createSolarSystemLabel(p.name, p.emoji);
+                label.position.set(p.orbit, p.size + 5, 0);
+                planetOrbitGroup.add(label);
+
+                // Saturn rings
+                if (p.id === 'saturn') {
+                    const ringTexture = createSaturnRingTextureForThree();
+                    const ringGeo = new THREE.TorusGeometry(p.size * 1.5, p.size * 0.8, 64, 128);
+                    const ringMat = new THREE.MeshStandardMaterial({
+                        map: ringTexture,
+                        transparent: true,
+                        opacity: 0.7,
+                        side: THREE.DoubleSide,
+                    });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.rotation.x = Math.PI / 2.2;
+                    ring.position.copy(planetMesh.position);
+                    planetOrbitGroup.add(ring);
+                }
+
+                // Uranus rings
+                if (p.id === 'uranus') {
+                    const ringGeo = new THREE.TorusGeometry(p.size * 1.3, p.size * 0.3, 32, 96);
+                    const ringMat = new THREE.MeshStandardMaterial({
+                        color: 0xaaccff,
+                        transparent: true,
+                        opacity: 0.4,
+                        side: THREE.DoubleSide,
+                    });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.rotation.x = Math.PI / 2;
+                    ring.rotation.z = Math.PI / 2.5;
+                    ring.position.copy(planetMesh.position);
+                    planetOrbitGroup.add(ring);
+                }
+
+                // Earth's Moon
+                if (p.id === 'earth') {
+                    const moonTexture = textureLoader.load('textures/planets/moon.jpg', undefined, undefined, () => {});
+                    const moonMat = new THREE.MeshStandardMaterial({
+                        map: moonTexture,
+                        color: 0xaaaaaa,
+                        roughness: 0.8,
+                    });
+                    const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), moonMat);
+                    moonMesh.position.set(p.orbit + 10, 0, 0);
+                    planetOrbitGroup.add(moonMesh);
+                    planetOrbitGroup.userData.moonMesh = moonMesh;
+                    planetOrbitGroup.userData.moonOrbitRadius = 10;
+                    planetOrbitGroup.userData.moonAngle = 0;
+                }
+
+                threeScene.add(planetOrbitGroup);
+
+                solarSystemObjects[p.id] = {
+                    group: planetOrbitGroup,
+                    mesh: planetMesh,
+                    orbit: orbitMesh,
+                    data: p,
+                };
+            });
         }
 
         function createSolarSystemLabel(name, emoji) {
