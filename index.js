@@ -3118,37 +3118,107 @@
 
         function createSaturnRingTextureForThree() {
             const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 512;
+            canvas.width = 1024;
+            canvas.height = 256;
             const ctx = canvas.getContext('2d');
 
-            const centerX = 256;
-            const centerY = 256;
+            ctx.clearRect(0, 0, 1024, 256);
 
-            for (let r = 50; r < 250; r++) {
-                const t = (r - 50) / 200;
-                const alpha = 0.3 * (1 - Math.abs(t - 0.5) * 1.5);
+            const bands = [
+                { start: 0.00, end: 0.08, r: 120, g: 105, b: 85, alpha: 0.12 },
+                { start: 0.08, end: 0.20, r: 155, g: 135, b: 105, alpha: 0.25 },
+                { start: 0.20, end: 0.35, r: 220, g: 200, b: 170, alpha: 0.70 },
+                { start: 0.35, end: 0.48, r: 235, g: 215, b: 180, alpha: 0.85 },
+                { start: 0.48, end: 0.54, r: 25, g: 20, b: 15, alpha: 0.05 }, // Cassini
+                { start: 0.54, end: 0.68, r: 195, g: 175, b: 145, alpha: 0.60 },
+                { start: 0.68, end: 0.72, r: 15, g: 12, b: 8, alpha: 0.03 }, // Encke
+                { start: 0.72, end: 0.82, r: 185, g: 165, b: 135, alpha: 0.50 },
+                { start: 0.82, end: 0.88, r: 180, g: 160, b: 130, alpha: 0.35 },
+                { start: 0.88, end: 1.00, r: 120, g: 105, b: 85, alpha: 0.08 },
+            ];
 
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
-                ctx.strokeStyle = `rgba(210, 180, 140, ${alpha})`;
-                ctx.lineWidth = 3;
-                ctx.stroke();
-            }
+            bands.forEach(band => {
+                const x1 = Math.floor(band.start * 1024);
+                const x2 = Math.floor(band.end * 1024);
+
+                for (let x = x1; x < x2; x++) {
+                    const noise = Math.sin(x * 0.3) * 12 + Math.sin(x * 1.1) * 7;
+                    const r = Math.max(0, Math.min(255, band.r + noise));
+                    const g = Math.max(0, Math.min(255, band.g + noise * 0.85));
+                    const b = Math.max(0, Math.min(255, band.b + noise * 0.7));
+                    const a = band.alpha + (Math.random() - 0.5) * 0.05;
+
+                    for (let y = 0; y < 256; y++) {
+                        const yFade = Math.sin((y / 256) * Math.PI);
+                        const finalAlpha = a * yFade;
+                        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${finalAlpha})`;
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            });
 
             // Add noise
-            for (let i = 0; i < 5000; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const radius = 50 + Math.random() * 200;
-                const x = centerX + Math.cos(angle) * radius;
-                const y = centerY + Math.sin(angle) * radius;
-                ctx.fillStyle = `rgba(255, 240, 180, ${Math.random() * 0.3})`;
+            for (let i = 0; i < 8000; i++) {
+                const x = Math.random() * 1024; 
+                const y = Math.random() * 256;
+                const bright = Math.random() > 0.6;
+                const alpha = Math.random() * 0.15;
+                ctx.fillStyle = bright ? `rgba(255, 240, 200, ${alpha})`: `rgba(100, 80, 60, ${alpha * 0.5})`;
                 ctx.fillRect(x, y, 1, 1);
             }
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(4, 1);
+            return texture;
+        }
+
+        function createUranusRingTextureForThree() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, 1024, 128);
+
+            const rings = [
+                { start: 0.00, end: 0.06, r: 130, g: 140, b: 160, alpha: 0.04 },
+                { start: 0.10, end: 0.16, r: 140, g: 150, b: 170, alpha: 0.12 },
+                { start: 0.20, end: 0.28, r: 150, g: 160, b: 180, alpha: 0.20 },
+                { start: 0.32, end: 0.42, r: 155, g: 165, b: 185, alpha: 0.25 },
+                { start: 0.46, end: 0.58, r: 170, g: 180, b: 280, alpha: 0.40 },
+                { start: 0.62, end: 0.72, r: 120, g: 135, b: 165, alpha: 0.06 },
+                { start: 0.76, end: 0.86, r: 110, g: 125, b: 155, alpha: 0.03 },
+                { start: 0.90, end: 1.00, r: 100, g: 115, b: 145, alpha: 0.02 },
+            ];
+
+            rings.forEach(ring => {
+                const x1 = Math.floor(ring.start * 1024);
+                const x2 = Math.floor(ring.end * 1024);
+
+                for (let x = x1; x < x2; x++) {
+                    const noise = Math.sin(x * 0.8) * 8 + Math.sin(x * 2.5) * 4;
+                    const r = Math.max(0, Math.min(255, ring.r + noise));
+                    const g = Math.max(0, Math.min(255, ring.g + noise * 0.9));
+                    const b = Math.max(0, Math.min(255, ring.b + noise * 0.8));
+
+                    const bandT = (x - x1) / Math.max(1, x2 - x1);
+                    const radialFade = Math.sin(bandT * Math.PI);
+                    const a = ring.alpha * radialFade;
+
+                    for (let y = 0; y < 128; y++) {
+                        const yFade = Math.sin((y / 128) * Math.PI);
+                        const finalAlpha = a * yFade;
+                        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${finalAlpha})`;
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            });
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.repeat.set(3, 1);
             return texture;
         }
 
@@ -4825,31 +4895,50 @@
 
                 // Saturn rings
                 if (p.id === 'saturn') {
-                    const ringGeo = new THREE.TorusGeometry(p.size * 1.5, p.size * 0.8, 64, 128);
+                    const ringTexture = createSaturnRingTextureForThree();
+
+                    const ringGeo = new THREE.RingGeometry(p.size * 1.2, p.size * 2.1, 12, 8);
                     const ringMat = new THREE.MeshStandardMaterial({
-                        color: 0xd4c4a8,
+                        map: ringTexture,
                         transparent: true,
-                        opacity: 0.6,
+                        opacity: 0.65,
                         side: THREE.DoubleSide,
+                        emissive: 0x332200,
+                        emissiveIntensity: 0.1
                     });
                     const ring = new THREE.Mesh(ringGeo, ringMat);
                     ring.rotation.x = Math.PI / 2.2;
                     ring.position.copy(planetMesh.position);
                     planetOrbitGroup.add(ring);
+
+                    const ringOuterGeo = new THREE.RingGeometry(p.size * 2.0, p.size * 2.4, 128);
+                    const ringOuterMat = new THREE.MeshStandardMaterial({
+                        map: ringTexture,
+                        transparent: true,
+                        opacity: 0.25,
+                        side: THREE.DoubleSide,
+                    });
+                    const ringOuter = new THREE.Mesh(ringOuterGeo, ringOuterMat);
+                    ringOuter.rotation.x = Math.PI / 2.2;
+                    ringOuter.position.copy(planetMesh.position);
+                    planetOrbitGroup.add(ringOuter);
                 }
 
                 // Uranus rings
                 if (p.id === 'uranus') {
-                    const ringGeo = new THREE.TorusGeometry(p.size * 1.3, p.size * 0.3, 32, 96);
+                    const ringTexture = createUranusRingTextureForThree();
+
+                    const ringGeo = new THREE.RingGeometry(p.size * 1.15, p.size * 1.9, 12, 8);
                     const ringMat = new THREE.MeshStandardMaterial({
-                        color: 0xaaccff,
+                        map: ringTexture,
                         transparent: true,
-                        opacity: 0.4,
+                        opacity: 0.35,
                         side: THREE.DoubleSide,
+                        color: 0x88aaff,
                     });
                     const ring = new THREE.Mesh(ringGeo, ringMat);
                     ring.rotation.x = Math.PI / 2;
-                    ring.rotation.z = Math.PI / 2.5;
+                    ring.rotation.z = 0.3;
                     ring.position.copy(planetMesh.position);
                     planetOrbitGroup.add(ring);
                 }
