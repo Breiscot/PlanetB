@@ -717,10 +717,37 @@
                 // Bands for gas giants
                 for (let y = 0; y < canvas.height; y += 4) {
                     const intensity = Math.sin(y * 0.02) * 30 + Math.sin(y * 0.05) * 15;
-                    ctx.fillStyle = `rgba(${Math.min(255, r + intensity)}, ${Math.sin(255, g + intensity * 0.7)}, ${Math.sin(255, b + intensity * 0.5)}, 0.8)`;
+                    ctx.fillStyle = `rgba(${Math.min(255, r + intensity)}, ${Math.min(255, g + intensity * 0.7)}, ${Math.min(255, b + intensity * 0.5)}, 0.8)`;
                     ctx.fillRect(0, y, canvas.width, 4);
                 }
+
+                // Storms for Jupiter
+                if (nameLower === 'jupiter') {
+                    ctx.beginPath();
+                    ctx.ellipse(700, 500, 100, 50, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(180, 70, 40, 0.5)';
+                    ctx.fill();
+                }
+            } else {
+                // Craters for rocky planets
+                for (let i = 0; i < 400; i++) {
+                    const cx = Math.random() * canvas.width;
+                    const cy = Math.random() * canvas.height;
+                    const rad = Math.random() * 20 + 3;
+
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.3})`;
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(cx - rad * 0.3, cy - rad * 0.3, rad * 0.4, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.2})`;
+                    ctx.fill();
+                }
             }
+
+            return canvas;
         }
 
         // Variables Three.js for the Moon
@@ -3088,7 +3115,42 @@
 
             return canvas;
         }
-        
+
+        function createSaturnRingTextureForThree() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            const centerX = 256;
+            const centerY = 256;
+
+            for (let r = 50; r < 250; r++) {
+                const t = (r - 50) / 200;
+                const alpha = 0.3 * (1 - Math.abs(t - 0.5) * 1.5);
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(210, 180, 140, ${alpha})`;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            // Add noise
+            for (let i = 0; i < 5000; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 50 + Math.random() * 200;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                ctx.fillStyle = `rgba(255, 240, 180, ${Math.random() * 0.3})`;
+                ctx.fillRect(x, y, 1, 1);
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            return texture;
+        }
 
         function createSkyBox() {
             return new Cesium.SkyBox({
@@ -4539,12 +4601,7 @@
             threeScene = new THREE.Scene();
 
             // Camera
-            threeCamera = new THREE.PerspectiveCamera(
-                55,
-                window.innerWidth / window.innerHeight,
-                0.1,
-                100000
-            );
+            threeCamera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100000);
             threeCamera.position.set(0, 800, 500);
             threeCamera.lookAt(0, 0, 0);
 
@@ -4560,11 +4617,7 @@
             // Stars
             createStarField(5000);
 
-            // Ambient Light
-            const ambientLight = new THREE.AmbientLight(0x333344, 0.5);
-            threeScene.add(ambientLight);
-
-            buildSolarSystemObjects();
+            await buildSolarSystemObjects();
 
             setupSolarSystemInteraction();
 
@@ -4572,15 +4625,11 @@
 
             // Render loop
             const clock = new THREE.Clock();
-
             function animate() {
                 if (!isThreeJSActive || !solarSystemActive) return;
                 solarSystemAnimId = requestAnimationFrame(animate);
-
                 const elapsed = clock.getElapsedTime();
-
                 updateSolarSystemOrbits(elapsed);
-
                 threeControls.update();
                 threeRenderer.render(threeScene, threeCamera);
             }
@@ -4596,7 +4645,7 @@
             window.addEventListener('resize', window._threeResizeHandler);
         }
 
-        function buildSolarSystemObjects() {
+        async function buildSolarSystemObjects() {
             solarSystemObjects = {};
 
             // Sun
@@ -4644,30 +4693,6 @@
             });
             sunGroup.add(new THREE.Mesh(sunGlow3Geo, sunGlow3Mat));
 
-            // Sprite glow
-//            const sunSpriteCanvas = document.createElement('canvas');
-//            sunSpriteCanvas.width = 256;
-//            sunSpriteCanvas.height = 256;
-//            const sunSpriteCtx = sunSpriteCanvas.getContext('2d');
-//            const sunGrad = sunSpriteCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
-//            sunGrad.addColorStop(0, 'rgba(255, 240, 200, 0.6)');
-//            sunGrad.addColorStop(0.2, 'rgba(255, 200, 100, 0.3)');
-//            sunGrad.addColorStop(0.5, 'rgba(255, 150, 50, 0.1)');
-//            sunGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
-//            sunSpriteCtx.fillStyle = sunGrad;
-//            sunSpriteCtx.fillRect(0, 0, 256, 256);
-
-//            const sunSpriteTex = new THREE.CanvasTexture(sunSpriteCanvas);
-//            const sunSpriteMat = new THREE.SpriteMaterial({
-//                map: sunSpriteTex,
-//                transparent: true,
-//                blending: THREE.AdditiveBlending,
-//                depthWrite: false,
-//            });
-//            const sunSprite = new THREE.Sprite(sunSpriteMat);
-//            sunSprite.scale.set(150, 150, 1);
-//            sunGroup.add(sunSprite);
-
             // Point light of Sun
             const sunLight = new THREE.PointLight(0xffeedd, 2.5, 3000);
             sunLight.position.set(0, 0, 0);
@@ -4701,21 +4726,31 @@
             const textureLoader = new THREE.TextureLoader();
             const textures = {};
 
-            planetData.forEach(p => {
-                if (p.textureUrl) {
-                    textureLoader.load(p.textureUrl,
-                        (texture) => {
-                            textures[p.id] = texture;
-                            console.log(`Loaded texture for ${p.name}`);
-                        },
-                        undefined,
-                        (err) => {
-                            console.warn(`Could not load texture for ${p.name}, using color fallback`, err);
-                            textures[p.id] = null;
-                        }
-                    );
-                }
+            const texturePromises = planetData.map(p => {
+                return new Promise((resolve) => {
+                    if (p.textureUrl) {
+                        textureLoader.load(p.textureUrl,
+                            (texture) => {
+                                textures[p.id] = texture;
+                                console.log(`Loaded texture for ${p.name}`);
+                                resolve();
+                            },
+                            undefined,
+                            (err) => {
+                                console.warn(`Could not load texture for ${p.name}`, err);
+                                textures[p.id] = null;
+                                resolve();
+                            }
+                        );
+                    } else {
+                        textures[p.id] = null;
+                        resolve();
+                    }
+                });
             });
+
+            await Promise.all(texturePromises);
+            console.log('All textures loaded, creating planets...');
 
             planetData.forEach(p => {
                 // Orbit
@@ -4745,13 +4780,14 @@
 
                 let planetMaterial;
                 if (textures[p.id]) {
+                    console.log(`Using texture for ${p.name}`);
                     planetMaterial = new THREE.MeshStandardMaterial({
                         map: textures[p.id],
                         roughness: 0.6,
                         metalness: 0.1,
-                        emissive: 0x000000,
                     });
                 } else {
+                    console.log(`Using procedural fallback for ${p.name}`);
                     // Procedural texture fallback
                     const proceduralCanvas = createProceduralPlanetTexture(p.name, p.color);
                     const proceduralTexture = new THREE.CanvasTexture(proceduralCanvas);
@@ -4767,7 +4803,6 @@
                 const planetMesh = new THREE.Mesh(new THREE.SphereGeometry(p.size, 64, 64), planetMaterial);
                 planetMesh.position.set(p.orbit, 0, 0);
                 planetMesh.castShadow = true;
-                planetMesh.receiveShadow = false;
                 planetMesh.userData = { planetId: p.id };
 
                 // Atmosphere glow
@@ -4790,12 +4825,11 @@
 
                 // Saturn rings
                 if (p.id === 'saturn') {
-                    const ringTexture = createSaturnRingTextureForThree();
                     const ringGeo = new THREE.TorusGeometry(p.size * 1.5, p.size * 0.8, 64, 128);
                     const ringMat = new THREE.MeshStandardMaterial({
-                        map: ringTexture,
+                        color: 0xd4c4a8,
                         transparent: true,
-                        opacity: 0.7,
+                        opacity: 0.6,
                         side: THREE.DoubleSide,
                     });
                     const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -4822,7 +4856,7 @@
 
                 // Earth's Moon
                 if (p.id === 'earth') {
-                    const moonTexture = textureLoader.load('textures/planets/moon.jpg', undefined, undefined, () => {});
+                    const moonTexture = textureLoader.load('textures/planets/moon.jpg');
                     const moonMat = new THREE.MeshStandardMaterial({
                         map: moonTexture,
                         color: 0xaaaaaa,
@@ -4845,6 +4879,8 @@
                     data: p,
                 };
             });
+
+            console.log('Solar system creation complete.');
         }
 
         function createSolarSystemLabel(name, emoji) {
@@ -4900,6 +4936,9 @@
                 solarSystemObjects.sun.core.scale.setScalar(sunPulse);
             }
 
+            const deltaTime = 0.016; // 60fps
+            const effectiveSpeed = solarSpeed;
+
             // Orbits of Planets
             Object.keys(solarSystemObjects).forEach(key => {
                 if (key === 'sun') return;
@@ -4909,27 +4948,28 @@
 
                 const ud = obj.group.userData;
 
-                if (ud.currentAngle === undefined) {
-                    ud.currentAngle = ud.startAngle || 0;
-                }
+                if (ud.currentAngle === undefined) ud.currentAngle = ud.startAngle || 0;
 
-                ud.currentAngle += ud.speed * 0.5 * solarSpeed * 0.016;
-
+                ud.currentAngle += ud.speed * 0.5 * effectiveSpeed * deltaTime;
                 obj.group.rotation.y = ud.currentAngle;
 
                 if (obj.mesh) {
-                    obj.mesh.rotation.y += 0.01 * solarSpeed;
+                    if (ud.currentRotation === undefined) ud.currentRotation = 0;
+                    ud.currentRotation += (ud.rotationSpeed || 0.01) * effectiveSpeed;
+                    obj.mesh.rotation.y = ud.currentRotation;
                 }
 
                 // Moon of the Earth
                 if (ud.moonMesh && ud.moonOrbitRadius) {
                     if (ud.moonAngle === undefined) ud.moonAngle = 0;
-                    ud.moonAngle += 2 * solarSpeed * 0.016;
+                    ud.moonAngle += 2 * effectiveSpeed * deltaTime;
                     ud.moonMesh.position.set(
                         ud.orbitRadius + Math.cos(ud.moonAngle) * ud.moonOrbitRadius,
                         0,
                         Math.sin(ud.moonAngle) * ud.moonOrbitRadius
                     );
+                    // Moon rotation
+                    ud.moonMesh.rotation.y += 0.02 * effectiveSpeed;
                 }
             });
         }
@@ -5446,7 +5486,7 @@
             if (WEATHER_API_KEY) return WEATHER_API_KEY;
 
             const key = prompt(
-                '🌤️ Weather API Key Required\n\n' +
+                '• Weather API Key Required\n\n' +
                 'To use weather features, you need a free OpenWeatherMap API key.\n\n' +
                 '1. Go to openweathermap.org/api\n' +
                 '2. Sign up for free\n' +
