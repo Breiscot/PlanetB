@@ -389,7 +389,7 @@
 
         const SOLAR_SYSTEM_DATA = {
             mercury: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Mercury_in_true_color.jpg/1024px-Mercury_in_true_color.jpg',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/Mercury_in_true_color.jpg',
                 subtitle: 'The Swift Planet — Closest to the Sun',
                 about: 'Mercury is the smallest and innermost planet in the Solar System. It has no atmosphere to retain heat, causing extreme temperature swings from -180°C at night to 430°C during the day. Despite being closest to the Sun, it is not the hottest planet, that title belongs to Venus.',
                 curiosities : [
@@ -406,7 +406,7 @@
                 ]
             },
             venus: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Venus_from_Mariner_10.jpg/1024px-Venus_from_Mariner_10.jpg',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Venus_from_Mariner_10.jpg',
                 subtitle: 'Earth\'s Evil Twin — The hottest Planet',
                 about: 'Venus is often called Earth\'s twin due to its similar size, but its conditions are hellish. A thick CO₂ atmosphere creates a runaway greenhouse effect, making it the hottest planet at 464°C. Its surface pressure is 90 times Earth\'s — equivalent to being 1 km underwater.',
                 curiosities: [
@@ -424,7 +424,7 @@
                 ]
             },
             earth: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/The_Blue_Marble_%28remastered%29.jpg/1024px-The_Blue_Marble_%28remastered%29.jpg',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/960px-The_Earth_seen_from_Apollo_17.jpg',
                 subtitle: 'The Blue Marble — Our Home',
                 about: 'Earth is the only known planet to harbon life. With 71% of its surface covered in water, a protective magnetic field, and a nitrogen-oxygen atmosphere, it provides the perfect conditions for a diverse biosphere. Earth is approximately 4.54 billion years old.',
                 curiosities: [
@@ -442,7 +442,7 @@
                 ]
             },
             mars: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Mars_-_August_30_2021_-_Flickr_-_Kevin_M._Gill.png/1024px-Mars_-_August_30_2021_-_Flickr_-_Kevin_M._Gill.png',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/0/0c/Mars_-_August_30_2021_-_Flickr_-_Kevin_M._Gill.png',
                 subtitle: 'The Red Planet — Future Human Frontier',
                 about: 'Mars is the most explored planet besides Earth. Its red color comes from iron oxide (rust) on its surface. Mars has the largest volcano (Olympus Mons, 21.9 km tall) and the longest canyon (Valles Marineris, 4.000 km) in the Solar System. Evidence suggests it once had rivers and lakes.',
                 curiosities: [
@@ -461,7 +461,7 @@
                 ]
             },
             jupiter: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Jupiter_and_its_shrunken_Great_Red_Spot.jpg/1024px-Jupiter_and_its_shrunken_Great_Red_Spot.jpg',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e2/Jupiter.jpg',
                 subtitle: 'King of the Planets — The Gas Giant',
                 about: 'Jupiter is the largest planet in our Solar System — so massive that over 1,300 Earths could fit inside it. Its Great Red Spot is a storm larger than Earth that has been raging for at least 400 years. Jupiter acts as a cosmic vacuum cleaner, protecting inner planets from asteroid impacts.',
                 curiosities: [
@@ -480,7 +480,7 @@
                 ]
             },
             saturn: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Saturn_during_Equinox.jpg/1024px-Saturn_during_Equinox.jpg',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Saturn_during_Equinox.jpg',
                 subtitle: 'The Ringed Beauty — Jewel of the Solar System',
                 about: 'Saturn is famous for its stunning ring system, made of billions of particles of ice and rock ranging from tiny grains to house-sized chunks. Despite being the second-largest planet, Saturn is the least dense — it would float in a bathtub large enough to hold it.',
                 curiosities: [
@@ -498,7 +498,7 @@
                 ]
             },
             uranus: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Uranus_as_seen_by_NASA%27s_Voyager_2_%28remastered%29.png/1024px-Uranus_as_seen_by_NASA%27s_Voyager_2_%28remastered%29.png',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/3/3d/Uranus2.jpg',
                 subtitle: 'The Tilted Ice Giant — Rolling Through Space',
                 about: 'Uranus is unique among planets because it rotates on its side, with an axial tilt of 98°. This means it essentially rolls around the Sun like a ball. It\'s classified as an ice giant, with its blue-green color coming from methane in its atmosphere.',
                 curiosities: [
@@ -514,7 +514,7 @@
                 ]
             },
             neptune: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Neptune_-_Voyager_2_%2829347980845%29_flatten_crop.jpg/1024px-Neptune_-_Voyager_2_%2829347980845%29_flatten_crop.jpg',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Neptune_Full.jpg/960px-Neptune_Full.jpg',
                 subtitle: 'The Windiest Planet — Deep Blue World',
                 about: 'Neptune is the most distant planet from the Sun and the windiest world in our Solar System, with wind speeds reaching 2,100 km/h. Its deep blue color comes from methane absorbing red light. Neptune was the first planet found through mathematical prediction rather than observation.',
                 curiosities: [
@@ -530,7 +530,7 @@
                 ]
             },
             pluto: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Pluto_in_True_Color_-_High-Res.jpg/1024px-Pluto_in_True_Color_-_High-Res.jpg',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Pluto_in_True_Color_-_High-Res.jpg',
                 subtitle: 'The Dwarf Planet — Heart of the Kuiper Belt',
                 about: 'Pluto was reclassified as a dwarf planet in 2006 but remains one of the most fascinating worlds. The New Horizons flyby in 2015 revealed a geologically active world with nitrogen glaciers, a thin atmosphere, and a heart-shaped feature named Tombaugh Regio.',
                 curiosities: [
@@ -4897,7 +4897,7 @@
                 if (p.id === 'saturn') {
                     const ringTexture = createSaturnRingTextureForThree();
 
-                    const ringGeo = new THREE.RingGeometry(p.size * 1.2, p.size * 2.1, 12, 8);
+                    const ringGeo = new THREE.RingGeometry(p.size * 1.2, p.size * 2.1, 128);
                     const ringMat = new THREE.MeshStandardMaterial({
                         map: ringTexture,
                         transparent: true,
@@ -4928,7 +4928,7 @@
                 if (p.id === 'uranus') {
                     const ringTexture = createUranusRingTextureForThree();
 
-                    const ringGeo = new THREE.RingGeometry(p.size * 1.15, p.size * 1.9, 12, 8);
+                    const ringGeo = new THREE.RingGeometry(p.size * 1.15, p.size * 1.9, 128);
                     const ringMat = new THREE.MeshStandardMaterial({
                         map: ringTexture,
                         transparent: true,
