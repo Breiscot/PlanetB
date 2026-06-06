@@ -43,6 +43,13 @@
         let solarOrbitsVisible = true;
         let solarPaused = false;
         let selectedSSPlanet = null;
+        let distanceMeasurementActive = false;
+        let measurePoints = [];
+        let measureEntities = [];
+        let measureLines = [];
+        let measureLabels = [];
+        let measureClickHandler = null;
+        let measureTooltip = null;
 
         // Database Planets
         const PLANETS = {
@@ -4556,6 +4563,195 @@
             auroraTime = 0;
 
             console.log('Aurora Borealis removed');
+        }
+
+        // Measurement System
+
+        function toggleDistanceMeasurement() {
+            if (currentPlanet !== 'earth') {
+                alert('Distance measurement is only available on Earth');
+                return;
+            }
+
+            distanceMeasurementActive = !distanceMeasurementActive;
+            const btn = document.getElementById('btnDistanceMeasure');
+
+            if (distanceMeasurementActive) {
+                // Active mode
+                btn.classList.add('active');
+                clearAllMeasurements();
+                enableDistanceMeasurement();
+                showMeasureTooltip('Click on two points on the map to measure distance', 3000);
+            } else {
+                // Deactive mode
+                btn.classList.remove('active');
+                disableDistanceMeasurement();
+                clearAllMeasurements();
+                hideMeasureTooltip();
+            }
+        }
+
+        function enableDistanceMeasurement() {
+            if (!viewer || viewer.isDestroyed()) return;
+
+            // Change cursor
+            viewer.canvas.style.cursor = 'crosshair';
+
+            // Add event handler
+            measureClickHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+
+            measureClickHandler.setInputAction(function(click) {
+                if (!distanceMeasurementActive) return;
+
+                const cartesian = viewer.camera.pickEllipsoid(
+                    click.position,
+                    viewer.scene.globe.ellipsoid
+                );
+
+                if (cartesian) {
+                    const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                    const lat = Cesium.Math.toDegrees(cartographic.latitude);
+                    const lon = Cesium.Math.toDegrees(cartographic.longitude);
+
+                    addMeasurePoint(lat, lon, cartesian);
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+            // Button ESC for cancel
+            document.addEventListener('keydown', measureKeyHandler);
+        }
+
+        function disableDistanceMeasurement() {
+            if (measureClickHandler) {
+                measureClickHandler.destroy();
+                measureClickHandler = null;
+            }
+            document.removeEventListener('keydown', measureKeyHandler);
+            if (viewer && !viewer.isDestroyed()) {
+                viewer.canvas.style.cursor = 'default';
+            }
+        }
+
+        function measureKeyHandler(e) {
+            if (e.key === 'Escape' && distanceMeasurementActive) {
+                clearAllMeasurements();
+            }
+        }
+
+        function addMeasurePoint(lat, lon, position) {
+            if (measurePoints.length >= 2) {
+                clearAllMeasurements();
+            }
+
+            const pointNumber = measurePoints.length + 1;
+            const color = measurePoints.length === 0 ? Cesium.Color.LIME : Cesium.Color.YELLOW;
+
+            // Add point
+            const pointEntity = viewer.entities.add({
+                name: `Measure Point ${pointNumber}`,
+                position: position,
+                point: {
+                    pixelSize: 14,
+                    color: color,
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 2,
+                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                },
+                label: {
+                    text: `${pointNumber}`,
+                    font: 'bold 16px sans-serif',
+                    fillColor: Cesium.Color.WHITE,
+                    outlineColor: Cesium.Color.BLACK,
+                    outlineWidth: 2,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    pixelOffset: new Cesium.Cartesian2(0, -15),
+                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                }
+            });
+
+            measureEntities.push(pointEntity);
+            measurePoints.push({ lat, lon, position, entity: pointEntity });
+
+            // Tooltip with coordinates
+            showMeasureTooltip(`Point ${pointNumber}: ${lat.toFixed(4)}°, ${lon.toFixed(4)}°`, 2000);
+
+            if (measurePoints.length === 2) {
+                calculateAndShowDistance();
+            }
+        }
+
+        function calculateAndShowDistance() {
+            if (measurePoints.length !== 2) return;
+
+            const p1 = measurePoints[0];
+            const p2 = measurePoints[1];
+
+            const distance = Cesium.Cartesian3.distance(p1.position, p2.position);
+
+            const distanceKm = distance / 1000;
+
+            const greatCircleDistance = calculateGreatCircleDistance(p1.lat, p1.lon, p2.lat, p2.lon);
+
+            let distanceText;
+            if (distanceKm < 1) {
+                distanceText = `${(distanceKm * 1000).toFixed(0)} m`;
+            } else if (distanceKm < 100) {
+                distanceText = `${distanceKm.toFixed(2)} km`;
+            } else {
+                distanceText = `${distanceKm.toFixed(1)} km`;
+            }
+
+            const linePositions = [p1.position, p2.position];
+            const lineEntity = viewer.entities.add({
+                name: 'Distance Line',
+                polyline: {
+                    positions: linePositions,
+                    width: 3,
+                    material: new Cesium.PolylineGlowMaterialProperty({
+                        glowPower: 0.2,
+                        color: Cesium.Color.CYAN
+                    }),
+                    arcType: Cesium.ArcType.GEODESIC,
+                }
+            });
+            measureLines.push(lineEntity);
+
+            const centerPoint = Cesium.Cartesian3.midpoint(p1.position, p2.position, new Cesium.Cartesian3());
+            const centerCartographic = Cesium.Cartographic.fromCartesian(centerPoint);
+            const labelEntity = viewer.entities.add({
+                name: 'Distance Label',
+                position: centerPoint,
+                label: {
+                    text: `📏 ${distanceText}`,
+                    font: 'bold 14px sans-serif',
+                    fillColor: Cesium.Color.CYAN,
+                    outlineColor: Cesium.Color.BLACK,
+                    outlineWidth: 3,
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                    pixelOffset: new Cesium.Cartesian2(0, -20),
+                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                    scaleByDistance: new Cesium.NearFarScalar(1e3, 1.0, 1e7, 0.3),
+                }
+            });
+            measureLabels.push(labelEntity);
+
+            const greatCircleText = greatCircleDistance < 1000 ?
+                `${greatCircleDistance.toFixed(1)} km` :
+                `${(greatCircleDistance / 1000).toFixed(1)} km`;
+
+            showMeasureTooltip(
+                `- Distance: ${distanceText}\n` +
+                `- Great-circle: ${greatCircleText}\n` +
+                `- From: ${p1.lat.toFixed(4)}°, ${p1.lon.toFixed(4)}°\n` +
+                `- To: ${p2.lat.toFixed(4)}°, ${p2.lon.toFixed(4)}°`,
+                5000
+            );
+
+            updateMeasurementPanel(p1, p2, distanceKm, greatCircleDistance);
+
+            console.log(`Distance: ${distanceKm.toFixed(2)} km | Great-circle: ${greatCircleDistance.toFixed(1)} km`);
         }
 
         // Solar System View
