@@ -4579,14 +4579,14 @@
             if (distanceMeasurementActive) {
                 // Active mode
                 btn.classList.add('active');
-                clearAllMeasurements();
+                clearAllMeasurement();
                 enableDistanceMeasurement();
                 showMeasureTooltip('Click on two points on the map to measure distance', 3000);
             } else {
                 // Deactive mode
                 btn.classList.remove('active');
                 disableDistanceMeasurement();
-                clearAllMeasurements();
+                clearAllMeasurement();
                 hideMeasureTooltip();
             }
         }
@@ -4634,13 +4634,13 @@
 
         function measureKeyHandler(e) {
             if (e.key === 'Escape' && distanceMeasurementActive) {
-                clearAllMeasurements();
+                clearAllMeasurement();
             }
         }
 
         function addMeasurePoint(lat, lon, position) {
             if (measurePoints.length >= 2) {
-                clearAllMeasurements();
+                clearAllMeasurement();
             }
 
             const pointNumber = measurePoints.length + 1;
@@ -4842,12 +4842,12 @@
                 panel.innerHTML = `
                     <div class="measurement-header">
                         <span>📏 Distance Measurement</span>
-                        <button onclick="clearAllMeasurements()" class="measurement-clear">x</button>
+                        <button onclick="clearAllMeasurement()" class="measurement-clear">x</button>
                     </div>
                     <div class="measurement-content">
                         <div class="measurement-points">
-                            <div><span class="point-badge point-1">1</span> <span id="measurePoint1">-</span></div>
-                            <div><span class="point-badge point-2">2</span> <span id="measurePoint2">-</span></div>
+                            <div><span class="point-badge point-1">1</span> <span id="measurePoint1" style="color: white;">-</span></div>
+                            <div><span class="point-badge point-2">2</span> <span id="measurePoint2" style="color: white;">-</span></div>
                         </div>
                         <div class="measurement-result">
                             <div class="result-line">📏 <span id="measureDistance">-</span></div>
@@ -4936,12 +4936,36 @@
                         font-size: 10px;
                         color: rgba(255,255,255,0.4);
                         text-align: center;
-                        margin-top: 8px;    
+                        margin-top: 8px;
                     }
                 `;
                 document.head.appendChild(style);
             }
             
+            document.getElementById('measurePoint1').textContent = `${p1.lat.toFixed(4)}°, ${p1.lon.toFixed(4)}°`;
+            document.getElementById('measurePoint2').textContent = `${p2.lat.toFixed(4)}°, ${p2.lon.toFixed(4)}°`;
+
+            let distText;
+            if (distanceKm < 1) {
+                distText = `${(distanceKm * 1000).toFixed(0)} m`;
+            } else if (distanceKm < 100) {
+                distText = `${distanceKm.toFixed(2)} km`;
+            } else {
+                distText = `${distanceKm.toFixed(1)} km`;
+            }
+            document.getElementById('measureDistance').textContent = distText;
+
+            let greatText
+            if (greatCircleDistance < 1) {
+                greatText = `${(greatCircleDistance * 1000).toFixed(0)} m`;
+            } else if (greatCircleDistance < 100) {
+                greatText = `${greatCircleDistance.toFixed(2)} km`;
+            } else {
+                greatText = `${greatCircleDistance.toFixed(1)} km`;
+            }
+            document.getElementById('measureGreatCircle').textContent = greatText;
+
+            panel.style.display = 'block';
         }
 
         // Solar System View
