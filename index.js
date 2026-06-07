@@ -4754,6 +4754,196 @@
             console.log(`Distance: ${distanceKm.toFixed(2)} km | Great-circle: ${greatCircleDistance.toFixed(1)} km`);
         }
 
+        function calculateGreatCircleDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function clearAllMeasurement() {
+            measureEntities.forEach(entity => {
+                if (entity && viewer && !viewer.isDestroyed()) viewer.entities.remove(entity);
+            });
+            measureLines.forEach(entity => {
+                if (entity && viewer && !viewer.isDestroyed()) viewer.entities.remove(entity);
+            });
+            measureLabels.forEach(entity => {
+                if (entity && viewer && !viewer.isDestroyed()) viewer.entities.remove(entity);
+            });
+
+            measureEntities = [];
+            measureLines = [];
+            measureLabels = [];
+            measurePoints = [];
+
+            const panel = document.getElementById('measurementPanel');
+            if (panel) panel.style.display = 'none';
+        }
+
+        function showMeasureTooltip(message, duration) {
+            let tooltip = document.getElementById('measureTooltip');
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.id = 'measureTooltip';
+                tooltip.style.cssText = `
+                    position: fixed;
+                    bottom: 100px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background rgba(0, 0, 0, 0.85);
+                    backdrop-filter: blur(10px);
+                    color: #4fc3f7;
+                    padding: 10px 20px;
+                    border-radius: 12px;
+                    font-size: 13px;
+                    font-family: monospace;
+                    z-index: 2000;
+                    border: 1px solid rgba(79, 195, 247, 0.3);
+                    white-space: pre-line;
+                    text-align: center;
+                    pointer-events: none;
+                    transition: opacity 0.3s;    
+                `;
+                document.body.appendChild(tooltip);
+            }
+
+            tooltip.textContent = message;
+            tooltip.style.opacity = '1';
+            tooltip.style.display = 'block';
+
+            clearTimeout(window.measureTooltipTimeout);
+            window.measureTooltipTimeout = setTimeout(() => {
+                if (tooltip) tooltip.style.opacity = '0';
+                setTimeout(() => {
+                    if (tooltip) tooltip.style.display = 'none';
+                }, 300);
+            }, duration);
+        }
+
+        function hideMeasureTooltip() {
+            const tooltip = document.getElementById('measureTooltip');
+            if (tooltip) {
+                tooltip.style.opacity = '0';
+                setTimeout(() => {
+                    if (tooltip) tooltip.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        function updateMeasurementPanel(p1, p2, distanceKm, greatCircleDistance) {
+            let panel = document.getElementById('measurementPanel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'measurementPanel';
+                panel.className = 'measurement-panel';
+                panel.innerHTML = `
+                    <div class="measurement-header">
+                        <span>📏 Distance Measurement</span>
+                        <button onclick="clearAllMeasurements()" class="measurement-clear">x</button>
+                    </div>
+                    <div class="measurement-content">
+                        <div class="measurement-points">
+                            <div><span class="point-badge point-1">1</span> <span id="measurePoint1">-</span></div>
+                            <div><span class="point-badge point-2">2</span> <span id="measurePoint2">-</span></div>
+                        </div>
+                        <div class="measurement-result">
+                            <div class="result-line">📏 <span id="measureDistance">-</span></div>
+                            <div class="result-line">🔄 <span id="measureGreatCircle">-</span></div>
+                    </div>
+                `;
+                document.body.appendChild(panel);
+
+                // CSS
+                const style = document.createElement('style');
+                style.textContent = `
+                    .measurement-panel {
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        width: 260px;
+                        background: rgba(0, 0, 0, 0.85);
+                        backdrop-filter: blur(15px);
+                        border: 1px solid rgba(79, 195, 247, 0.3);
+                        border-radius: 12px;
+                        z-index: 1500;
+                        font-family: 'Segoe UI', sans-serif;
+                        overflow: hidden;
+                    }
+                    .measurement-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 10px 15px;
+                        background: rgba(79, 195, 247, 0.15);
+                        color: #4fc3f7;
+                        font-size: 13px;
+                        font-weight: 600;
+                        border-bottom: 1px solid rgba(255,255,255,0.1);
+                    }
+                    .measurement-clear {
+                        background: none;
+                        border: none;
+                        color: rgba(255,255,255,0.6);
+                        cursor: pointer;
+                        font-size: 16px;
+                        padding: 0 5px;
+                    }
+                    .measurement-clear:hover {
+                        color: #ff5555;
+                    }
+                    .measurement-content {
+                        padding: 12px 15px;
+                        font-size: 12px;
+                    }
+                    .measurement-points {
+                        margin-bottom: 12px;
+                        padding-bottom: 10px;
+                        border-bottom: 1px solid rgba(255,255,255,0.1);
+                    }
+                    .measurement-points > div {
+                        margin: 5px 0;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .point-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 20px;
+                        height: 20px;
+                        border-radius: -50%;
+                        font-size: 11px;
+                        font-weight: bold;
+                        color: white;
+                    }
+                    .point-badge.point-1 { background: #4caf50; }
+                    .point-badge.point-2 { background: #ffc107; color: #332; }
+                    .measurement-result {
+                        background: rgba(79, 195, 247, 0.08);
+                        border-radius: 8px;
+                        padding: 8px 10px;
+                        margin-bottom: 10px;
+                    }
+                    .result-line {
+                        margin: 4px 0;
+                        color: rgba(255,255,255,0.8);
+                    }
+                    .measurement-hint {
+                        font-size: 10px;
+                        color: rgba(255,255,255,0.4);
+                        text-align: center;
+                        margin-top: 8px;    
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+        }
+
         // Solar System View
 
         async function openSolarSystem() {
