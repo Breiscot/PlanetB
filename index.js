@@ -5194,6 +5194,177 @@
             });
         }
 
+        function updateISSOrbitSimulated() {
+            const time = Date.now() / 1000;
+            const speed = 0.0007; // Orbit velocity simulated
+            const angle = time * speed;
+
+            const lat = Math.sin(angle) * 51.6;
+            const lon = (angle * 180 / Math.PI) % 360;
+            const alt = 408;
+
+            const position = Cesium.Cartesian3.fromDegrees(lon, lat, alt * 1000);
+
+            if (!issEntity) {
+                issEntity = viewer.entities.add({
+                    name: 'International Space Station',
+                    position: position,
+                    point: {
+                        pixelSize: 10,
+                        color: Cesium.Color.YELLOW,
+                        outlineColor: Cesium.Color.WHITE,
+                        outerWidth: 2,
+                        scaleByDistance: new Cesium.NearFarScalar(1e3, 1.0, 1e8, 0.1),
+                    },
+                    label: {
+                        text: '🛰️ ISS (Simulated)',
+                        font: 'bold 12px sans-serif',
+                        fillColor: Cesium.Color.YELLOW,
+                        outlineColor: Cesium.Color.BLACK,
+                        outlineWidth: 2,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        pixelOffset: new Cesium.Cartesian2(0, -15),
+                    }
+                });
+            } else {
+                issEntity.position = position;
+            }
+
+            updateISSInfoPanel(lat, lon, alt, 7.66);
+        }
+
+        function updateISSInfoPanel(lat, lon, alt, velocity) {
+            let panel = document.getElementById('issInfoPanel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'issInfoPanel';
+                panel.className = 'iss-info-panel';
+                panel.innerHTML = `
+                    <div class="iss-header">🛰️ ISS Tracker</div>
+                    <div class="iss-content">
+                        <div class="iss-row"><span class="iss-label">Latitude:</span> <span id="issLat">-</span></div>
+                        <div class="iss-row"><span class="iss-label">Longitude:</span> <span id="issLon">-</span></div>
+                        <div class="iss-row"><span class="iss-label">Altitude:</span> <span id="issAlt">-</span></div>
+                        <div class="iss-row"><span class="iss-label">Velocity:</span> <span id="issVel">-</span></div>
+                        <div class="iss-row"><span class="iss-label">Status:</span> <span id="issStatus">● Online</span></div>
+                    </div>
+                    <div class="iss-actions">
+                        <button class="iss-btn" id="issViewBtn" onclick="toggleISSView()">- View from Earth</button>
+                        <button class="iss-btn" id="issCloseBtn" onclick="toggleISS()">- Stop Tracking</button>
+                    </div>
+                `;
+                document.body.appendChild(panel);
+
+                // CSS
+                const style = document.createElement('style');
+                style.textContent = `
+                    .iss-info-panel {
+                        position: fixed;
+                        bottom: 20px;
+                        right: 300px;
+                        width: 220px;
+                        background: rgba(0, 0, 0, 0.85);
+                        backdrop-filter: blur(15px);
+                        border: 1px solid rgba(255, 215, 0, 0.3);
+                        border-radius: 12px;
+                        z-index: 1500;
+                        font-family: 'Segoe UI', sans-serif;
+                        font-size: 12px;
+                    }
+                    .iss-header {
+                        padding: 10px 15px;
+                        background: rgba(255, 215, 0, 0.15);
+                        color: #ffd700;
+                        font-weight: bold;
+                        border-bottom: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 12px 12px 0 0;
+                    }
+                    .iss-content {
+                        padding: 12px 15px;
+                    }
+                    .iss-row {
+                        display: flex;
+                        justify-content: space-between;
+                        margin: 5px 0;
+                        color: rgba(255,255,255,0.8);
+                    }
+                    .iss-label {
+                        color: rgba(255,215,0,0.7);
+                    }
+                    .iss-actions {
+                        display: flex;
+                        gap: 8px;
+                        padding: 10px 15px;
+                        border-top: 1px solid rgba(255,255,255,0.1);
+                    }
+                    .iss-btn {
+                        flex: 1;
+                        padding: 6px 10px;
+                        background: rgba(255,215,0,0.15);
+                        border: 1px solid rgba(255,215,0,0.3);
+                        border-radius: 8px;
+                        color: #ffd700;
+                        cursor: pointer;
+                        font-size: 11px;
+                        transition: all 0.2s;
+                    }
+                    .iss-btn:hover {
+                        background: rgba(255,215,0,0.3);
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // Update values
+            document.getElementById('issLat').textContent = lat.toFixed(4) + '°';
+            document.getElementById('issLon').textContent = lon.toFixed(4) + '°';
+            document.getElementById('issAlt').textContent = alt.toFixed(0) + ' km';
+            document.getElementById('issVel').textContent = (velocity || 7.66).toFixed(2) + ' km/s';
+        }
+
+        function createTargetTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, 64, 64);
+
+            // External Circle
+            ctx.beginPath();
+            ctx.arc(32, 32, 28, 0, Math.PI * 2);
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Internal Circle
+            ctx.beginPath();
+            ctx.arc(32, 32, 20, 0, Math.PI * 2);
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Cross Lines
+            ctx.beginPath();
+            ctx.moveTo(32, 4);
+            ctx.lineTo(32, 12);
+            ctx.moveTo(32, 52);
+            ctx.lineTo(32, 60);
+            ctx.moveTo(4, 32);
+            ctx.lineTo(12, 32);
+            ctx.moveTo(52, 32);
+            ctx.lineTo(60, 32);
+            ctx.stroke();
+
+            // Central Point
+            ctx.beginPath();
+            ctx.arc(32, 32, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffd700';
+            ctx.fill();
+
+            return canvas.toDataURL();
+        }
+
 
 
         // Solar System View
