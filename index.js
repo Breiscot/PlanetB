@@ -50,6 +50,17 @@
         let measureLabels = [];
         let measureClickHandler = null;
         let measureTooltip = null;
+        let issTrackingActive = false;
+        let issEntity = null;
+        let issPathEntity = null;
+        let issPositionHistory = [];
+        let issTrackingInterval = null;
+        let issModel = null;
+        let issCameraViewActive = false;
+        let originalCameraPosition = null;
+        let originalCameraOrientation = null;
+        let issMarkerEntity = null;
+        let issGlowEntity = null;
 
         // Database Planets
         const PLANETS = {
@@ -4967,6 +4978,223 @@
 
             panel.style.display = 'block';
         }
+
+        // ISS System
+
+        async function toggleISS() {
+            if (currentPlanet !== 'earth') {
+                alert('ISS tracking is only available on Earth');
+                return;
+            }
+
+            issTrackingActive = !issTrackingActive;
+            const btn = document.getElementById('btnISS');
+
+            if (issTrackingActive) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i data-lucide="satellite"></i> ISS: ON';
+                await startISSTracking();
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i data-lucide="satellite"></i> Track ISS';
+                stopISSTracking();
+            }
+            
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function startISSTracking() {
+            showMeasureTooltip('🛰️ Connecting to ISS...', 1500);
+
+            // Take initial position
+            await updateISSPosition();
+
+            // Update every 2 seconds
+            issTrackingInterval = setInterval(updateISSPosition, 5000);
+
+            // Draw orbit
+            drawISSOrbit();
+        }
+
+        function stopISSTracking() {
+            if (issTrackingInterval) {
+                clearInterval(issTrackingInterval);
+                issTrackingInterval = null;
+            }
+
+            if (issEntity && viewer && !viewer.isDestroyed()) {
+                viewer.entities.remove(issEntity);
+                issEntity = null;
+            }
+
+            if (issPathEntity && viewer && !viewer.isDestroyed()) {
+                viewer.entities.remove(issPathEntity);
+                issPathEntity = null;
+            }
+
+            if (issMarkerEntity && viewer && !viewer.isDestroyed()) {
+                viewer.entities.remove(issMarkerEntity);
+                issMarkerEntity = null;
+            }
+
+            if (issGlowEntity && viewer && !viewer.isDestroyed()) {
+                viewer.entities.remove(issGlowEntity);
+                issGlowEntity = null;
+            }
+
+            if (issModel && viewer && !viewer.isDestroyed()) {
+                viewer.entities.remove(issModel);
+                issModel = null;
+            }
+
+            issPositionHistory = [];
+
+            // Return with normal view if it was in ISS camera mode
+            if (issCameraViewActive) {
+                exitISSView();
+            }
+        }
+
+        async function updateISSPosition() {
+            if (!viewer || viewer.isDestroyed()) return;
+
+            try {
+                // API for position of ISS in real-time
+                const response = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
+                const data = await response.json();
+                const lat = data.latitude;
+                const lon = data.longitude;
+                const alt = data.altitude; // km
+
+                console.log(`ISS Position: ${lat.toFixed(2)}°, ${lon.toFixed(2)}°, Alt: ${alt.toFixed(0)} km`);
+
+                // Create position Cesium
+                const position = Cesium.Cartesian3.fromDegrees(lon, lat, alt * 1000);
+
+                if (!issEntity) {
+                    issEntity = viewer.entities.add({
+                        name: 'International Space Station',
+                        position: position,
+                        point: {
+                            pixelSize: 8,
+                            color: Cesium.Color.YELLOW,
+                            outlineColor: Cesium.Color.WHITE,
+                            outlineWidth: 2,
+                            scaleByDistance: new Cesium.NearFarScalar(1e3, 1.0, 1e8, 0.1),
+                        },
+                        label: {
+                            text: '🛰️ ISS',
+                            font: 'bold 12px sans-serif',
+                            fillColor: Cesium.Color.YELLOW,
+                            outlineColor: Cesium.Color.BLACK,
+                            outlineWidth: 2,
+                            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                            pixelOffset: new Cesium.Cartesian2(0, -15),
+                            scaleByDistance: new Cesium.NearFarScalar(1e3, 1.0, 1e7, 0.2),
+                        }
+                    });
+
+                    issGlowEntity = viewer.entities.add({
+                        name: 'ISS Glow',
+                        position: position,
+                        ellipse: {
+                            semiMinorAxis: 50000,
+                            semiMajorAxis: 50000,
+                            material: Cesium.Color.YELLOW.withAlpha(0.15),
+                            outline: true,
+                            outlineColor: Cesium.Color.YELLOW.withAlpha(0.5),
+                            outlineWidth: 2,
+                            height: alt * 1000,
+                            scaleByDistance: new Cesium.NearFarScalar(1e3, 1.0, 5e6, 0.0),
+                        }
+                    });
+
+                    issMarkerEntity = viewer.entities.add({
+                        name: 'ISS Marker',
+                        position: position,
+                        billboard: {
+                            image: createTargetTexture(),
+                            width: 48,
+                            height: 48,
+                            scaleByDistance: new Cesium.NearFarScalar(1e3, 1.0, 5e6, 0.15),
+                            eyeOffset: new Cesium.Cartesian3(0, 0, -1000),
+                        }
+                    });
+
+                } else {
+                    issEntity.position = position;
+                    if (issGlowEntity) issGlowEntity.position = position;
+                    if (issMarkerEntity) issMarkerEntity.position = position;
+                }
+
+                issPositionHistory.push({ lat, lon, alt, time: Date.now() });
+                if (issPositionHistory.length > 100) issPositionHistory.shift();
+
+                updateISSOrbit();
+
+                if (issCameraViewActive) {
+                    updateISSView();
+                }
+
+                updateISSInfoPanel(lat, lon, alt, data.velocity);
+
+            } catch (error) {
+                console.error('Error fetching ISS position:', error);
+                // Fallback: use simulated orbit
+                updateISSOrbitSimulated();
+            }
+        }
+
+        function drawISSOrbit() {
+            const orbitPoints = [];
+            const segments = 200;
+
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                const lat = Math.sin(angle) * 51.6;
+                const lon = angle * 180 / Math.PI;
+                const alt = 408000; // 408 km
+
+                orbitPoints.push(Cesium.Cartesian3.fromDegrees(lon, lat, alt));
+            }
+
+            issPathEntity = viewer.entities.add({
+                name: 'ISS Orbit Path',
+                polyline: {
+                    positions: orbitPoints,
+                    width: 1,
+                    material: Cesium.Color.YELLOW.withAlpha(0.3),
+                    arcType: Cesium.ArcType.NONE,
+                }
+            });
+        }
+
+        function updateISSOrbit() {
+            if (issPositionHistory.length < 2) return;
+            
+            const positions = issPositionHistory.map(p =>
+                Cesium.Cartesian3.fromDegrees(p.lon, p.lat, p.alt * 1000)
+            );
+
+            if (issPathEntity && viewer && !viewer.isDestroyed()) {
+                viewer.entities.remove(issPathEntity);
+            }
+
+            issPathEntity = viewer.entities.add({
+                name: 'ISS Orbit Path',
+                polyline: {
+                    positions: positions,
+                    width: 2,
+                    material: new Cesium.PolylineGlowMaterialProperty({
+                        glowPower: 0.2,
+                        color: Cesium.Color.YELLOW.withAlpha(0.7)
+                    }),
+                    arcType: Cesium.ArcType.GEODESIC,
+                }
+            });
+        }
+
+
 
         // Solar System View
 
