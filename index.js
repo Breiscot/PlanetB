@@ -61,6 +61,7 @@
         let originalCameraOrientation = null;
         let issMarkerEntity = null;
         let issGlowEntity = null;
+        let issLastPosition = null;
 
         // Database Planets
         const PLANETS = {
@@ -5022,6 +5023,10 @@
                 issTrackingInterval = null;
             }
 
+            if (issCameraViewActive) {
+                exitISSView();
+            }
+
             if (issEntity && viewer && !viewer.isDestroyed()) {
                 viewer.entities.remove(issEntity);
                 issEntity = null;
@@ -5048,14 +5053,19 @@
             }
 
             issPositionHistory = [];
+            issCameraViewActive = false;
 
-            // Return with normal view if it was in ISS camera mode
-            if (issCameraViewActive) {
-                exitISSView();
+            if (viewer && !viewer.isDestroyed()) {
+                viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1.0;
+                viewer.scene.screenSpaceCameraController.maximumZoomDistance = 50000000;
             }
+
+            closeISSInfoPanel();
         }
 
         async function updateISSPosition() {
+            if (issCameraViewActive) return;
+
             if (!viewer || viewer.isDestroyed()) return;
 
             try {
@@ -5066,10 +5076,9 @@
                 const lon = data.longitude;
                 const alt = data.altitude; // km
 
-                console.log(`ISS Position: ${lat.toFixed(2)}°, ${lon.toFixed(2)}°, Alt: ${alt.toFixed(0)} km`);
-
-                // Create position Cesium
                 const position = Cesium.Cartesian3.fromDegrees(lon, lat, alt * 1000);
+
+                console.log(`ISS Position: ${lat.toFixed(2)}°, ${lon.toFixed(2)}°, Alt: ${alt.toFixed(0)} km`);
 
                 if (!issEntity) {
                     issEntity = viewer.entities.add({
@@ -5090,7 +5099,6 @@
                             outlineWidth: 2,
                             verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
                             pixelOffset: new Cesium.Cartesian2(0, -15),
-                            scaleByDistance: new Cesium.NearFarScalar(1e3, 1.0, 1e7, 0.2),
                         }
                     });
 
@@ -5105,7 +5113,6 @@
                             outlineColor: Cesium.Color.YELLOW.withAlpha(0.5),
                             outlineWidth: 2,
                             height: alt * 1000,
-                            scaleByDistance: new Cesium.NearFarScalar(1e3, 1.0, 5e6, 0.0),
                         }
                     });
 
@@ -5117,10 +5124,8 @@
                             width: 48,
                             height: 48,
                             scaleByDistance: new Cesium.NearFarScalar(1e3, 1.0, 5e6, 0.15),
-                            eyeOffset: new Cesium.Cartesian3(0, 0, -1000),
                         }
                     });
-
                 } else {
                     issEntity.position = position;
                     if (issGlowEntity) issGlowEntity.position = position;
@@ -5131,17 +5136,10 @@
                 if (issPositionHistory.length > 100) issPositionHistory.shift();
 
                 updateISSOrbit();
-
-                if (issCameraViewActive) {
-                    updateISSView();
-                }
-
                 updateISSInfoPanel(lat, lon, alt, data.velocity);
 
             } catch (error) {
                 console.error('Error fetching ISS position:', error);
-                // Fallback: use simulated orbit
-                updateISSOrbitSimulated();
             }
         }
 
@@ -5240,7 +5238,10 @@
                 panel.id = 'issInfoPanel';
                 panel.className = 'iss-info-panel';
                 panel.innerHTML = `
-                    <div class="iss-header">🛰️ ISS Tracker</div>
+                    <div class="iss-header">
+                        <span>🛰️ ISS Tracker</span>
+                        <button class="iss-close-btn" onclick="closeISSInfoPanel()">X</button>
+                    </div>
                     <div class="iss-content">
                         <div class="iss-row"><span class="iss-label">Latitude:</span> <span id="issLat">-</span></div>
                         <div class="iss-row"><span class="iss-label">Longitude:</span> <span id="issLon">-</span></div>
@@ -5262,8 +5263,8 @@
                         position: fixed;
                         bottom: 20px;
                         right: 300px;
-                        width: 220px;
-                        background: rgba(0, 0, 0, 0.85);
+                        width: 240px;
+                        background: rgba(0, 0, 0, 0.9);
                         backdrop-filter: blur(15px);
                         border: 1px solid rgba(255, 215, 0, 0.3);
                         border-radius: 12px;
@@ -5272,12 +5273,27 @@
                         font-size: 12px;
                     }
                     .iss-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
                         padding: 10px 15px;
                         background: rgba(255, 215, 0, 0.15);
                         color: #ffd700;
                         font-weight: bold;
                         border-bottom: 1px solid rgba(255,255,255,0.1);
                         border-radius: 12px 12px 0 0;
+                    }
+                    .iss-close-btn {
+                        background: none;
+                        border: none;
+                        color: rgba(255,255,255,0.6);
+                        cursor: pointer;
+                        font-size: 16px;
+                        padding: 0 5px;
+                        transition: color 0.2s;
+                    }
+                    .iss-close-btn:hover {
+                        color: #ff5555;
                     }
                     .iss-content {
                         padding: 12px 15px;
@@ -5320,6 +5336,20 @@
             document.getElementById('issLon').textContent = lon.toFixed(4) + '°';
             document.getElementById('issAlt').textContent = alt.toFixed(0) + ' km';
             document.getElementById('issVel').textContent = (velocity || 7.66).toFixed(2) + ' km/s';
+        }
+
+        function closeISSInfoPanel() {
+            const panel = document.getElementById('issInfoPanel');
+            if (panel) {
+                panel.style.display = 'none';
+            }
+        }
+
+        function showISSInfoPanel() {
+            const panel = document.getElementById('issInfoPanel');
+            if (panel) {
+                panel.style.display = 'block';
+            }
         }
 
         function createTargetTexture() {
@@ -5379,6 +5409,11 @@
         }
 
         async function enterISSView() {
+            if (!issEntity) {
+                alert('ISS not found. Please wait for position update.');
+                return;
+            }
+
             issCameraViewActive = true;
 
             originalCameraPosition = viewer.camera.position.clone();
@@ -5388,7 +5423,12 @@
                 roll: viewer.camera.roll
             };
 
+            if (issGlowEntity) issGlowEntity.show = false;
+            if (issMarkerEntity) issMarkerEntity.show = false;
+            if (issEntity) issEntity.show = false;
+
             const issPosition = issEntity.position.getValue(viewer.clock.currentTime);
+            issLastPosition = issPosition.clone();
 
             if (!issModel) {
                 try {
@@ -5397,9 +5437,9 @@
                         position: issPosition,
                         model: {
                             uri: 'ISS/iss.glb', // Model 3D
-                            minimumPixelSize: 32,
+                            minimumPixelSize: 50,
                             maximumScale: 200,
-                            scale: 180 
+                            scale: 100
                         },
                         label: {
                             text: '🛰️ International Space Station',
@@ -5408,62 +5448,101 @@
                             outlineColor: Cesium.Color.BLACK,
                             outlineWidth: 2,
                             verticalOrigin: Cesium.VerticalOrigin.TOP,
-                            pixelOffset: new Cesium.Cartesian2(0, 30),
+                            pixelOffset: new Cesium.Cartesian2(0, 40),
                         }
                     });
-
-                    if (issEntity) issEntity.show = false;
-                    if (issMarkerEntity) issMarkerEntity.show = false;
-
+                    console.log('ISS Model loaded/created');
                 } catch (error) {
                     console.error('Error loading ISS model:', error);
-                    // Fallback: use only near view without model
+                    issModel = viewer.entities.add({
+                        name: 'ISS (No Model)',
+                        position: issPosition,
+                        point: {
+                            pixelSize: 20,
+                            color: Cesium.Color.YELLOW,
+                            outlineColor: Cesium.Color.WHITE,
+                            outlineWidth: 2,
+                        },
+                        label: {
+                            text: '🛰️ ISS',
+                            font: 'bold 14px sans-serif',
+                            fillColor: Cesium.Color.YELLOW,
+                            outlineColor: Cesium.Color.BLACK,
+                            outlineWidth: 2,
+                            verticalOrigin: Cesium.VerticalOrigin.TOP,
+                            pixelOffset: new Cesium.Cartesian2(0, 25),
+                        }
+                    });
                 }
             } else {
                 issModel.position = issPosition;
                 issModel.show = true;
-                if (issEntity) issEntity.show = false;
-                if (issMarkerEntity) issMarkerEntity.show = false;
             }
 
-            const offsetDistance = 500;
-            const offsetDirection = new Cesium.Cartesian3(0, -1, 0.5);
-            const scaledOffset = Cesium.Cartesian3.multiplyByScalar(offsetDirection, offsetDistance, new Cesium.Cartesian3());
-            const cameraPosition = Cesium.Cartesian3.add(issPosition, scaledOffset, new Cesium.Cartesian3());
+            if (issTrackingInterval) {
+                clearInterval(issTrackingInterval);
+                issTrackingInterval = null;
+            }
+
+            const distance = 200;
+            const cameraOffset = new Cesium.Cartesian3(distance, distance * 0.3, distance * 0.5);
+            const cameraPosition = Cesium.Cartesian3.add(issPosition, cameraOffset, new Cesium.Cartesian3());
+
+            viewer.scene.screenSpaceCameraController.minimumZoomDistance = 20;
+            viewer.scene.screenSpaceCameraController.maximumZoomDistance = 500;
 
             viewer.camera.flyTo({
                 destination: cameraPosition,
                 orientation: {
-                    heading: Cesium.Math.toRadians(180),
-                    pitch: Cesium.Math.toRadians(-15),
+                    heading: Cesium.Math.toRadians(135),
+                    pitch: Cesium.Math.toRadians(-20),
                     roll: 0
                 },
-                duration: 2
+                duration: 2,
+                complete: function() {
+                    showMeasureTooltip('🛰️ ISS View', 3000);
+                }
             });
 
-            if (issTrackingInterval) clearInterval(issTrackingInterval);
-            issTrackingInterval = setInterval(() => {
-                if (issCameraViewActive && issModel) {
-                    const newIssPos = issEntity.position.getValue(viewer.clock.currentTime);
-                    if (newIssPos) {
-                        issModel.position = newIssPos;
-                    }
-                }
-            }, 2000);
-
             document.getElementById('issViewBtn').innerHTML = '- Exit View';
-            showMeasureTooltip('🛰️ Flying to ISS...', 2000);
+        }
+
+        let issCameraTrackingInterval = null;
+
+        function startISSCameraTracking() {
+            if (issCameraTrackingInterval) clearInterval(issCameraTrackingInterval);
+
+            issCameraTrackingInterval = setInterval(() => {
+                if (!issCameraViewActive) return;
+
+                const currentIssPos = issEntity.position.getValue(viewer.clock.currentTime);
+                if (currentIssPos && window.issOrbitCenter) {
+                    window.issOrbitCenter.position = currentIssPos;
+
+                    if (issModel) issModel.position = currentIssPos;
+                }
+            }, 100);
         }
 
         function exitISSView() {
             issCameraViewActive = false;
 
-            // Restore Model
-            if (issModel) issModel.show = false;
-            if (issEntity) issEntity.show = true;
+            if (issModel) {
+                issModel.show = false;
+            }
+            
+            if (issGlowEntity) issGlowEntity.show = true;
             if (issMarkerEntity) issMarkerEntity.show = true;
+            if (issEntity) issEntity.show = true;
 
-            // Restore Camera
+            viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1.0;
+            viewer.scene.screenSpaceCameraController.maximumZoomDistance = 50000000;
+
+            if (issTrackingActive && !issTrackingInterval) {
+                issTrackingInterval = setInterval(updateISSPosition, 5000);
+                updateISSPosition();
+            }
+
             if (originalCameraPosition) {
                 viewer.camera.flyTo({
                     destination: originalCameraPosition,
