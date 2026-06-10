@@ -5365,7 +5365,135 @@
             return canvas.toDataURL();
         }
 
+        async function toggleISSView() {
+            if (!issTrackingActive || !issEntity) {
+                alert('Please activate ISS tracking first');
+                return;
+            }
 
+            if (!issCameraViewActive) {
+                await enterISSView();
+            } else {
+                exitISSView();
+            }
+        }
+
+        async function enterISSView() {
+            issCameraViewActive = true;
+
+            originalCameraPosition = viewer.camera.position.clone();
+            originalCameraOrientation = {
+                heading: viewer.camera.heading,
+                pitch: viewer.camera.pitch,
+                roll: viewer.camera.roll
+            };
+
+            const issPosition = issEntity.position.getValue(viewer.clock.currentTime);
+
+            if (!issModel) {
+                try {
+                    issModel = viewer.entities.add({
+                        name: 'ISS 3D Model',
+                        position: issPosition,
+                        model: {
+                            uri: 'ISS/iss.glb', // Model 3D
+                            minimumPixelSize: 32,
+                            maximumScale: 200,
+                            scale: 180 
+                        },
+                        label: {
+                            text: '🛰️ International Space Station',
+                            font: 'bold 14px sans-serif',
+                            fillColor: Cesium.Color.WHITE,
+                            outlineColor: Cesium.Color.BLACK,
+                            outlineWidth: 2,
+                            verticalOrigin: Cesium.VerticalOrigin.TOP,
+                            pixelOffset: new Cesium.Cartesian2(0, 30),
+                        }
+                    });
+
+                    if (issEntity) issEntity.show = false;
+                    if (issMarkerEntity) issMarkerEntity.show = false;
+
+                } catch (error) {
+                    console.error('Error loading ISS model:', error);
+                    // Fallback: use only near view without model
+                }
+            } else {
+                issModel.position = issPosition;
+                issModel.show = true;
+                if (issEntity) issEntity.show = false;
+                if (issMarkerEntity) issMarkerEntity.show = false;
+            }
+
+            const offsetDistance = 500;
+            const offsetDirection = new Cesium.Cartesian3(0, -1, 0.5);
+            const scaledOffset = Cesium.Cartesian3.multiplyByScalar(offsetDirection, offsetDistance, new Cesium.Cartesian3());
+            const cameraPosition = Cesium.Cartesian3.add(issPosition, scaledOffset, new Cesium.Cartesian3());
+
+            viewer.camera.flyTo({
+                destination: cameraPosition,
+                orientation: {
+                    heading: Cesium.Math.toRadians(180),
+                    pitch: Cesium.Math.toRadians(-15),
+                    roll: 0
+                },
+                duration: 2
+            });
+
+            if (issTrackingInterval) clearInterval(issTrackingInterval);
+            issTrackingInterval = setInterval(() => {
+                if (issCameraViewActive && issModel) {
+                    const newIssPos = issEntity.position.getValue(viewer.clock.currentTime);
+                    if (newIssPos) {
+                        issModel.position = newIssPos;
+                    }
+                }
+            }, 2000);
+
+            document.getElementById('issViewBtn').innerHTML = '- Exit View';
+            showMeasureTooltip('🛰️ Flying to ISS...', 2000);
+        }
+
+        function exitISSView() {
+            issCameraViewActive = false;
+
+            // Restore Model
+            if (issModel) issModel.show = false;
+            if (issEntity) issEntity.show = true;
+            if (issMarkerEntity) issMarkerEntity.show = true;
+
+            // Restore Camera
+            if (originalCameraPosition) {
+                viewer.camera.flyTo({
+                    destination: originalCameraPosition,
+                    orientation: originalCameraOrientation,
+                    duration: 2
+                });
+            }
+
+            document.getElementById('issViewBtn').innerHTML = '- View from Earth';
+        }
+
+        function updateISSView() {
+            if (!issCameraViewActive || !issEntity) return;
+
+            const issPosition = issEntity.position.getValue(viewer.clock.currentTime);
+            if (issModel) issModel.position = issPosition;
+
+            const offsetDistance = 400;
+            const cameraRelativePos = new Cesium.Cartesian3(offsetDistance, offsetDistance * 0.5, offsetDistance * 0.3);
+            const cameraPosition = Cesium.Cartesian3.add(issPosition, cameraRelativePos, new Cesium.Cartesian3());
+
+            viewer.camera.setView({
+                destination: cameraPosition,
+                orientation: {
+                    heading: Cesium.Math.toRadians(225),
+                    pitch: Cesium.Math.toRadians(-20),
+                    roll: 0
+                }
+            });
+        }
 
         // Solar System View
 

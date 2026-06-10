@@ -85,6 +85,27 @@
                 </button>
             </div>
         </div>
+        
+        <!-- ISS Tracking -->
+        <div class="earth-only">
+            <div class="section-title"><i data-lucide="satellite" style="width:14px;height:14px;"></i> Space
+        </div>
+            <div class="btn-group">
+                <button class="btn btn-view" id="btnISS" onclick="toggleISS()">
+                    <i data-lucide="satellite"></i> Track ISS
+                </button>
+            </div>
+        </div>
+
+        <!-- Distance Measurement Button -->
+        <div class="earth-only" id="earthOnlyMeasure">
+            <div class="section-title"><i data-lucide="ruler" style="width:14px;height:14px;"></i> Tools</div>
+            <div class="btn-group">
+                <button class="btn btn-view" id="btnDistanceMeasure" onclick="toggleDistanceMeasurement()">
+                    <i data-lucide="ruler"></i> Measure Distance
+                </button>
+            </div>
+        </div>
 
         <div class="earth-only" id="earthOnlyWeather">
             <div class="section-title"><i data-lucide="cloud-rain" style="width:14px;height:14px;"></i> Weather</div>
@@ -156,15 +177,7 @@
             </div>
         </div>
 
-        <!-- Distance Measurement Button -->
-        <div class="earth-only" id="earthOnlyMeasure">
-            <div class="section-title"><i data-lucide="ruler" style="width:14px;height:14px;"></i> Tools</div>
-            <div class="btn-group">
-                <button class="btn btn-view" id="btnDistanceMeasure" onclick="toggleDistanceMeasurement()">
-                    <i data-lucide="ruler"></i> Measure Distance
-                </button>
-            </div>
-        </div>
+        
 
         <!-- Type of Map -->
         <div class="earth-only" id="earthOnlyMaps">
