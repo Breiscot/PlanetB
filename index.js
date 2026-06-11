@@ -16,23 +16,31 @@
         })();
 
         let WEATHER_API_KEY = localStorage.getItem('weatherApiKey') || '';
+
         let viewer;
         let autoRotateEnabled = false;
+
         let nightMode = false;
+
         let gridEnabled = false;
         let gridLayer = null;
+
         let markers = [];
+
         let currentBaseLayer = 'satellite';
         let currentPlanet = 'earth';
+
         let cloudsEnabled = false;
         let cloudsLayer = null;
         let cloudsRotationHandler = null;
         let cloudsEntity = null;
+
         let auroraEnabled = false;
         let auroraEntities = [];
         let auroraAnimationHandler = null;
         let auroraTime = 0;
         let auroraLayer = null;
+
         let solarSystemActive = false;
         let solarSystemObjects = {};
         let solarSystemAnimId = null;
@@ -43,6 +51,7 @@
         let solarOrbitsVisible = true;
         let solarPaused = false;
         let selectedSSPlanet = null;
+
         let distanceMeasurementActive = false;
         let measurePoints = [];
         let measureEntities = [];
@@ -50,6 +59,7 @@
         let measureLabels = [];
         let measureClickHandler = null;
         let measureTooltip = null;
+
         let issTrackingActive = false;
         let issEntity = null;
         let issPathEntity = null;
@@ -62,6 +72,15 @@
         let issMarkerEntity = null;
         let issGlowEntity = null;
         let issLastPosition = null;
+        let issOrbitViewActive = false;
+        let issOrbitScene = null;
+        let issOrbitCamera = null;
+        let issOrbitRenderer = null;
+        let issOrbitControls = null;
+        let issOrbitModel = null;
+        let issOrbitEarthBackground = null;
+        let issOrbitStars = null;
+        let issOrbitAnimationId = null;
 
         // Database Planets
         const PLANETS = {
@@ -5572,6 +5591,260 @@
                     roll: 0
                 }
             });
+        }
+
+        function createEarthSkybox() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            const earthGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+            earthGradient.addColorStop(0, '#1a5c9e');
+            earthGradient.addColorStop(0.3, '#2a7cbe');
+            earthGradient.addColorStop(0.5, '#4fc3f7');
+            earthGradient.addColorStop(0.7, '#2a7cbe');
+            earthGradient.addColorStop(1, '#1a5c9e');
+
+            ctx.fillStyle = earthGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#90ee90';
+            // Europe/Africa
+            ctx.beginPath();
+            ctx.ellipse(canvas.width * 0.4, canvas.height * 0.45, 80, 120, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // America
+            ctx.beginPath();
+            ctx.ellipse(canvas.width * 0.2, canvas.height * 0.5, 100, 140, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            // Asia
+            ctx.beginPath();
+            ctx.ellipse(canvas.width * 0.7, canvas.height * 0.4, 120, 100, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            // Australia
+            ctx.beginPath();
+            ctx.ellipse(canvas.width * 0.85, canvas.height * 0.7, 60, 50, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Add white clouds
+            for(let i = 0; i < 200; i++) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.3})`;
+                ctx.beginPath();
+                ctx.ellipse(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height,
+                    Math.random() * 30 + 10,
+                    Math.random() * 15 + 5,
+                    0, 0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+
+            const earthTexture = new THREE.CanvasTexture(canvas);
+
+            // Create a big sphere to represent the Earth in the background
+            const earthGeometry = new THREE.SphereGeometry(500, 64, 64);
+            const earthMaterial = new THREE.MeshStandardMaterial({
+                map: earthTexture,
+                emissive: 0x112244,
+                emissiveIntensity: 0.3,
+                roughness: 0.5,
+                metalness: 0.1
+            });
+            const earthSphere = new THREE.Mesh(earthGeometry, earthMaterial);
+            earthSphere.position.set(0, 0, -800);
+
+            return earthSphere;
+        }
+
+        async function createISSOrbitView() {
+            const container = document.getElementById('threejsContainer');
+            container.style.display = 'block';
+            container.innerHTML = '';
+
+            // Hide Cesium
+            document.getElementById('cesiumContainer').style.display = 'none';
+
+            // Create Renderer
+            issOrbitRenderer = new THREE.WebGLRenderer({ antialias: true });
+            issOrbitRenderer.setSize(window.innerWidth, window.innerHeight);
+            issOrbitRenderer.setPixelRatio(window.devicePixelRatio);
+            issOrbitRenderer.setClearColor(0x000000);
+            issOrbitRenderer.shadowMap.enabled = true;
+            container.appendChild(issOrbitRenderer.domElement);
+
+            // Create Scene
+            issOrbitScene = new THREE.Scene();
+
+            // Camera
+            issOrbitCamera = new THREE.PerspectiveCamera(
+                45,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                2000
+            );
+            issOrbitCamera.position.set(5, 2, 8);
+            issOrbitCamera.lookAt(0, 0, 0);
+
+            // Controls
+            issOrbitControls = new THREE.OrbitControls(issOrbitCamera, issOrbitRenderer.domElement);
+            issOrbitControls.enableDamping = true;
+            issOrbitControls.dampingFactor = 0.05;
+            issOrbitControls.autoRotate = false;
+            issOrbitControls.enableZoom = true;
+            issOrbitControls.zoomSpeed = 1.0;
+            issOrbitControls.rotateSpeed = 1.0;
+            issOrbitControls.minDistance = 2;
+            issOrbitControls.maxDistance = 20;
+            issOrbitControls.target.set(0, 0, 0);
+
+            // Lights
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x333333, 0.5);
+            issOrbitScene.add(ambientLight);
+
+            // Directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            directionalLight.position.set(10, 20, 5);
+            directionalLight.castShadow = true;
+            directionalLight.receiveShadow = false;
+            issOrbitScene.add(directionalLight);
+
+            // Back light
+            const backLight = new THREE.PointLight(0x4466cc, 0.3);
+            backLight.position.set(-5, 0, -5);
+            issOrbitScene.add(backLight);
+
+            // Earth light
+            const earthLight = new THREE.PointLight(0xffaa66, 0.4);
+            earthLight.position.set(0, 0, -10);
+            issOrbitScene.add(earthLight);
+
+            createISSStarfield();
+
+            issOrbitEarthBackground = createEarthSkybox();
+            issOrbitScene.add(issOrbitEarthBackground);
+
+            const atmosphereGeometry = new THREE.SphereGeometry(510, 64, 64);
+            const atmosphereMaterial = new THREE.MeshPhongMaterial({
+                color: 0x88aaff,
+                transparent: true,
+                opacity: 0.08,
+                side: THREE.BackSide
+            });
+            const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+            atmosphere.position.set(0, 0, -800);
+            issOrbitScene.add(atmosphere);
+
+            await loadISSModel();
+
+            startISSOrbitAnimation();
+
+            window._issOrbitResizeHandler = function() {
+                if (!issOrbitViewActive) return;
+                issOrbitCamera.aspect = window.innerWidth / window.innerHeight;
+                issOrbitCamera.updateProjectionMatrix();
+                issOrbitRenderer.setSize(window.innerWidth, window.innerHeight);
+            };
+            window.addEventListener('resize', window._issOrbitResizeHandler);
+
+            showISSOrbitControls();
+        }
+
+        function createISSStarfield() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 3000;
+            const starPositions = new Float32Array(starCount * 3);
+
+            for (let i = 0; i < starCount; i++) {
+                const radius = 800 + Math.random() * 200;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                
+                starPositions[i*3] = radius * Math.sin(phi) * Math.cos(theta);
+                starPositions[i*3+1] = radius * Math.sin(phi) * Math.sin(theta);
+                starPositions[i*3+2] = radius * Math.cos(phi);
+            }
+
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.5,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            issOrbitScene.add(stars);
+        }
+
+        async function loadISSModel() {
+            return new Promise((resolve, reject) => {
+                const loader = new THREE.GLTFLoader();
+
+                loader.load('ISS/iss.glb',
+                    (gltf) => {
+                        issOrbitModel = gltf.scene;
+                        issOrbitModel.scale.set(0.5, 0.5, 0.5);
+                        issOrbitModel.position.set(0, 0, 0);
+                        issOrbitModel.castShadow = true;
+                        issOrbitModel.receiveShadow = false;
+
+                        // Add glow effect
+                        issOrbitScene.add(issOrbitModel);
+                        console.log('ISS Model loaded successfully');
+                        resolve();
+                    },
+                    (progress) => {
+                        console.log('Loading ISS model:', (progress.loaded / progress.total * 100) + '%');
+                    },
+                    (error) => {
+                        console.error('Error loading ISS model, using fallback:', error);
+                        createFallbackISSModel();
+                        resolve();
+                    }
+                );
+            });
+        }
+
+        function createFallbackISSModel() {
+            const group = new THREE.Group();
+
+            const bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.5, 32);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xccccdd, metalness: 0.7, roughness: 0.3 });
+
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.castShadow = true;
+            group.add(body);
+
+            const panelGeo = new THREE.BoxGeometry(1.8, 0.05, 0.8);
+            const panelMat = new THREE.MeshStandardMaterial({ color: 0x4488ff, metalness: 0.8, emissive: 0x224466 });
+            const leftPanel = new THREE.Mesh(panelGeo, panelMat);
+            leftPanel.position.set(-1.2, 0, 0);
+            leftPanel.castShadow = true;
+            group.add(leftPanel);
+
+            const rightPanel = new THREE.Mesh(panelGeo, panelMat);
+            rightPanel.position.set(1.2, 0, 0);
+            rightPanel.castShadow = true;
+            group.add(rightPanel);
+
+            const moduleGeo = new THREE.SphereGeometry(0.5, 32, 32);
+            const moduleMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.5 });
+            const module = new THREE.Mesh(moduleGeo, moduleMat);
+            module.position.set(0, 0.4, 0);
+            group.add(module);
+
+            const antennaGeo = new THREE.CylinderGeometry(0.05, 0.1, 0.6, 8);
+            const antennaMat = new THREE.MeshStandardMaterial({ color: 0xffaa66 });
+            const antenna = new THREE.Mesh(antennaGeo, antennaMat);
+            antenna.position.set(0, 0.9, 0);
+            group.add(antenna);
+
+            issOrbitModel = group;
+            issOrbitScene.add(issOrbitModel);
         }
 
         // Solar System View
