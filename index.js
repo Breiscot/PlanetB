@@ -19,6 +19,8 @@
 
         let viewer;
         let autoRotateEnabled = false;
+        let currentMinZoomDistance = 1.0;
+        let currentMaxZoomDistance = 50000000;
 
         let nightMode = false;
 
@@ -1001,7 +1003,7 @@
             threeControls.enableDamping = true;
             threeControls.dampingFactor = 0.05;
             threeControls.minDistance = 1.2;
-            threeControls.maxDistance = 10;
+            threeControls.maxDistance = 8;
             threeControls.rotateSpeed = 0.5;
 
             // Skybox
@@ -1101,7 +1103,7 @@
             threeControls.enableDamping = true;
             threeControls.dampingFactor = 0.05;
             threeControls.minDistance = 100;
-            threeControls.maxDistance = 3000;
+            threeControls.maxDistance = 2000;
             threeControls.rotateSpeed = 0.5;
 
             createStarField(2000);
@@ -1216,7 +1218,7 @@
             threeControls.enableDamping = true;
             threeControls.dampingFactor = 0.05;
             threeControls.minDistance = 50;
-            threeControls.maxDistance = 5000;
+            threeControls.maxDistance = 2500;
             threeControls.rotateSpeed = 0.5;
 
             // Stars
@@ -2538,6 +2540,8 @@
             scene.fog.enabled = true;
             scene.globe.showGroundAtmosphere = true;
 
+            setZoomLimits(500, 80000000);
+
             viewer.camera.flyTo({
                 destination: Cesium.Cartesian3.fromDegrees(12.4964, 41.9028, 15000000),
                 orientation: {
@@ -2611,6 +2615,12 @@
 
             const DISPLAY_RADIUS = 6371000;
 
+            if (planetId === 'halo_ring') {
+                setZoomLimits(DISPLAY_RADIUS * 0.3, DISPLAY_RADIUS * 3);
+            } else {
+                setZoomLimits(DISPLAY_RADIUS * 1.05, DISPLAY_RADIUS * 25);
+            }
+
             let sphereMaterial;
             if (textureDataUrl) {
                 sphereMaterial = new Cesium.ImageMaterialProperty({
@@ -2639,7 +2649,13 @@
             addSphericalShadow(viewer, DISPLAY_RADIUS, planetId);
 
             // Camera
-            const cameraDistance = DISPLAY_RADIUS * 3.5;
+            let cameraDistance;
+            if (planetId === 'halo_ring') {
+                cameraDistance = DISPLAY_RADIUS * 2.5;
+            } else {
+                cameraDistance = DISPLAY_RADIUS * 3.5;
+            }
+            
             viewer.camera.setView({
                 destination: new Cesium.Cartesian3(0, -cameraDistance, DISPLAY_RADIUS * 0.3),
                 orientation: {
@@ -2650,6 +2666,12 @@
                     up: Cesium.Cartesian3.UNIT_Z
                 }
             });
+
+            if (planetId === 'halo_ring') {
+                setZoomLimits(DISPLAY_RADIUS * 0.3, DISPLAY_RADIUS * 8);
+            } else {
+                setZoomLimits(DISPLAY_RADIUS * 1.05, DISPLAY_RADIUS * 25);
+            }
 
             viewer.scene.screenSpaceCameraController.minimumZoomDistance = DISPLAY_RADIUS * 1.05;
             viewer.scene.screenSpaceCameraController.maximumZoomDistance = DISPLAY_RADIUS * 20;
@@ -3746,8 +3768,16 @@
                     window._moonGroup.rotation.set(0, 0, 0);
                 }
             } else {
+                const planet = PLANETS[currentPlanet];
                 const DISPLAY_RADIUS = 6371000;
-                const cameraDistance = DISPLAY_RADIUS * 3.5;
+
+                let cameraDistance;
+                if (currentPlanet === 'halo_ring') {
+                    cameraDistance = DISPLAY_RADIUS * 2.5;
+                } else {
+                    cameraDistance = DISPLAY_RADIUS * 3.5;
+                }
+
                 viewer.camera.flyTo({
                     destination: new Cesium.Cartesian3(0, -cameraDistance, DISPLAY_RADIUS * 0.3),
                     orientation: { 
@@ -5165,8 +5195,7 @@
             issCameraViewActive = false;
 
             if (viewer && !viewer.isDestroyed()) {
-                viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1.0;
-                viewer.scene.screenSpaceCameraController.maximumZoomDistance = 50000000;
+                setZoomLimits(500, 80000000);
             }
 
             closeISSInfoPanel();
@@ -7243,6 +7272,18 @@
             document.removeEventListener('keydown', measureKeyHandler);
 
             console.log('All handlers cleaned up');
+        }
+
+        function setZoomLimits(minDistance, maxDistance) {
+            if (!viewer || viewer.isDestroyed()) return;
+
+            currentMinZoomDistance = minDistance;
+            currentMaxZoomDistance = maxDistance;
+
+            viewer.scene.screenSpaceCameraController.minimumZoomDistance = minDistance;
+            viewer.scene.screenSpaceCameraController.maximumZoomDistance = maxDistance;
+
+            console.log(`Zoom limits set: min=${minDistance}, max=${maxDistance}`);
         }
 
         // Initializing
