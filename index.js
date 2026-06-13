@@ -428,7 +428,7 @@
 
         const SOLAR_SYSTEM_DATA = {
             mercury: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/Mercury_in_true_color.jpg',
+                image: 'images/info-planets/mercury.jpg',
                 subtitle: 'The Swift Planet — Closest to the Sun',
                 about: 'Mercury is the smallest and innermost planet in the Solar System. It has no atmosphere to retain heat, causing extreme temperature swings from -180°C at night to 430°C during the day. Despite being closest to the Sun, it is not the hottest planet, that title belongs to Venus.',
                 curiosities : [
@@ -445,7 +445,7 @@
                 ]
             },
             venus: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Venus_from_Mariner_10.jpg',
+                image: 'images/info-planets/venus.jpg',
                 subtitle: 'Earth\'s Evil Twin — The hottest Planet',
                 about: 'Venus is often called Earth\'s twin due to its similar size, but its conditions are hellish. A thick CO₂ atmosphere creates a runaway greenhouse effect, making it the hottest planet at 464°C. Its surface pressure is 90 times Earth\'s — equivalent to being 1 km underwater.',
                 curiosities: [
@@ -463,7 +463,7 @@
                 ]
             },
             earth: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/960px-The_Earth_seen_from_Apollo_17.jpg',
+                image: 'images/info-planets/earth.jpg',
                 subtitle: 'The Blue Marble — Our Home',
                 about: 'Earth is the only known planet to harbon life. With 71% of its surface covered in water, a protective magnetic field, and a nitrogen-oxygen atmosphere, it provides the perfect conditions for a diverse biosphere. Earth is approximately 4.54 billion years old.',
                 curiosities: [
@@ -481,7 +481,7 @@
                 ]
             },
             mars: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/0/0c/Mars_-_August_30_2021_-_Flickr_-_Kevin_M._Gill.png',
+                image: 'images/info-planets/mars.jpg',
                 subtitle: 'The Red Planet — Future Human Frontier',
                 about: 'Mars is the most explored planet besides Earth. Its red color comes from iron oxide (rust) on its surface. Mars has the largest volcano (Olympus Mons, 21.9 km tall) and the longest canyon (Valles Marineris, 4.000 km) in the Solar System. Evidence suggests it once had rivers and lakes.',
                 curiosities: [
@@ -500,7 +500,7 @@
                 ]
             },
             jupiter: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/e/e2/Jupiter.jpg',
+                image: 'images/info-planets/jupiter.jpg',
                 subtitle: 'King of the Planets — The Gas Giant',
                 about: 'Jupiter is the largest planet in our Solar System — so massive that over 1,300 Earths could fit inside it. Its Great Red Spot is a storm larger than Earth that has been raging for at least 400 years. Jupiter acts as a cosmic vacuum cleaner, protecting inner planets from asteroid impacts.',
                 curiosities: [
@@ -519,7 +519,7 @@
                 ]
             },
             saturn: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Saturn_during_Equinox.jpg',
+                image: 'images/info-planets/saturn.jpg',
                 subtitle: 'The Ringed Beauty — Jewel of the Solar System',
                 about: 'Saturn is famous for its stunning ring system, made of billions of particles of ice and rock ranging from tiny grains to house-sized chunks. Despite being the second-largest planet, Saturn is the least dense — it would float in a bathtub large enough to hold it.',
                 curiosities: [
@@ -537,7 +537,7 @@
                 ]
             },
             uranus: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/3/3d/Uranus2.jpg',
+                image: 'images/info-planets/uranus.jpg',
                 subtitle: 'The Tilted Ice Giant — Rolling Through Space',
                 about: 'Uranus is unique among planets because it rotates on its side, with an axial tilt of 98°. This means it essentially rolls around the Sun like a ball. It\'s classified as an ice giant, with its blue-green color coming from methane in its atmosphere.',
                 curiosities: [
@@ -553,7 +553,7 @@
                 ]
             },
             neptune: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Neptune_Full.jpg/960px-Neptune_Full.jpg',
+                image: 'images/info-planets/neptune.jpg',
                 subtitle: 'The Windiest Planet — Deep Blue World',
                 about: 'Neptune is the most distant planet from the Sun and the windiest world in our Solar System, with wind speeds reaching 2,100 km/h. Its deep blue color comes from methane absorbing red light. Neptune was the first planet found through mathematical prediction rather than observation.',
                 curiosities: [
@@ -569,7 +569,7 @@
                 ]
             },
             pluto: {
-                image: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Pluto_in_True_Color_-_High-Res.jpg',
+                image: 'images/info-planets/pluto.jpg',
                 subtitle: 'The Dwarf Planet — Heart of the Kuiper Belt',
                 about: 'Pluto was reclassified as a dwarf planet in 2006 but remains one of the most fascinating worlds. The New Horizons flyby in 2015 revealed a geologically active world with nitrogen glaciers, a thin atmosphere, and a heart-shaped feature named Tombaugh Regio.',
                 curiosities: [
@@ -808,6 +808,47 @@
             if (!planet) {
                 window._switchingPlanet = false;
                 return;
+            }
+
+            // Clean ISS before changing planet
+            if (issTrackingActive) {
+                if (issTrackingInterval) {
+                    clearInterval(issTrackingInterval);
+                    issTrackingInterval = null;
+                }
+
+                if (issEntity && viewer && !viewer.isDestroyed()) {
+                    viewer.entities.remove(issEntity);
+                    issEntity = null;
+                }
+
+                if (issPathEntity && viewer && !viewer.isDestroyed()) {
+                    viewer.entities.remove(issPathEntity);
+                    issPathEntity = null;
+                }
+
+                if (issMarkerEntity && viewer && !viewer.isDestroyed()) {
+                    viewer.entities.remove(issMarkerEntity);
+                    issMarkerEntity = null;
+                }
+
+                if (issGlowEntity && viewer && !viewer.isDestroyed()) {
+                    viewer.entities.remove(issGlowEntity);
+                    issGlowEntity = null;
+                }
+
+                if (issModel && viewer && !viewer.isDestroyed()) {
+                    viewer.entities.remove(issModel);
+                    issModel = null;
+                }
+
+                issPositionHistory = [];
+                issCameraViewActive = false;
+
+                issTrackingActive = false;
+
+                // Hide ISS panel
+                closeISSInfoPanel();
             }
 
             // Show transition
@@ -4626,8 +4667,16 @@
         function enableDistanceMeasurement() {
             if (!viewer || viewer.isDestroyed()) return;
 
+            clearAllMeasurement();
+
             // Change cursor
             viewer.canvas.style.cursor = 'crosshair';
+
+            // Remove any previous handler
+            if (measureClickHandler) {
+                measureClickHandler.destroy();
+                measureClickHandler = null;
+            }
 
             // Add event handler
             measureClickHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
@@ -4662,6 +4711,8 @@
             if (viewer && !viewer.isDestroyed()) {
                 viewer.canvas.style.cursor = 'default';
             }
+
+            clearAllMeasurement();
         }
 
         function measureKeyHandler(e) {
@@ -4678,31 +4729,40 @@
             const pointNumber = measurePoints.length + 1;
             const color = measurePoints.length === 0 ? Cesium.Color.LIME : Cesium.Color.YELLOW;
 
+            // Use a unique ID to avoid conflicts
+            const uniqueId = `measure_point_${Date.now()}_${pointNumber}`;
+
             // Add point
             const pointEntity = viewer.entities.add({
+                id: uniqueId,
                 name: `Measure Point ${pointNumber}`,
                 position: position,
                 point: {
-                    pixelSize: 14,
+                    pixelSize: 12,
                     color: color,
                     outlineColor: Cesium.Color.WHITE,
                     outlineWidth: 2,
                     heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                    disableDepthTestDistance: Number.POSITIVE_INFINITY,
                 },
                 label: {
                     text: `${pointNumber}`,
-                    font: 'bold 16px sans-serif',
+                    font: 'bold 14px sans-serif',
                     fillColor: Cesium.Color.WHITE,
                     outlineColor: Cesium.Color.BLACK,
                     outlineWidth: 2,
                     verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
                     pixelOffset: new Cesium.Cartesian2(0, -15),
                     heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                    disableDepthTestDistance: Number.POSITIVE_INFINITY,
+                    showBackground: true,
+                    backgroundColor: Cesium.Color.BLACK.withAlpha(0.5),
+                    backgroundPadding: new Cesium.Cartesian2(6, 4),
                 }
             });
 
             measureEntities.push(pointEntity);
-            measurePoints.push({ lat, lon, position, entity: pointEntity });
+            measurePoints.push({ lat, lon, position, entity: pointEntity, id: uniqueId });
 
             // Tooltip with coordinates
             showMeasureTooltip(`Point ${pointNumber}: ${lat.toFixed(4)}°, ${lon.toFixed(4)}°`, 2000);
@@ -4733,24 +4793,27 @@
                 distanceText = `${distanceKm.toFixed(1)} km`;
             }
 
-            const linePositions = [p1.position, p2.position];
+            const lineId = `measure_line_${Date.now()}`;
             const lineEntity = viewer.entities.add({
+                id: lineId,
                 name: 'Distance Line',
                 polyline: {
-                    positions: linePositions,
+                    positions: [p1.position, p2.position],
                     width: 3,
                     material: new Cesium.PolylineGlowMaterialProperty({
                         glowPower: 0.2,
                         color: Cesium.Color.CYAN
                     }),
                     arcType: Cesium.ArcType.GEODESIC,
+                    clampToGround: false,
                 }
             });
             measureLines.push(lineEntity);
 
             const centerPoint = Cesium.Cartesian3.midpoint(p1.position, p2.position, new Cesium.Cartesian3());
-            const centerCartographic = Cesium.Cartographic.fromCartesian(centerPoint);
+            const labelId = `measure_label_${Date.now()}`;
             const labelEntity = viewer.entities.add({
+                id: labelId,
                 name: 'Distance Label',
                 position: centerPoint,
                 label: {
@@ -4764,7 +4827,10 @@
                     horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
                     pixelOffset: new Cesium.Cartesian2(0, -20),
                     heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-                    scaleByDistance: new Cesium.NearFarScalar(1e3, 1.0, 1e7, 0.3),
+                    disableDepthTestDistance: Number.POSITIVE_INFINITY,
+                    showBackground: true,
+                    backgroundColor: Cesium.Color.BLACK.withAlpha(0.5),
+                    backgroundPadding: new Cesium.Cartesian2(8, 4),
                 }
             });
             measureLabels.push(labelEntity);
@@ -4798,17 +4864,27 @@
         function clearAllMeasurement() {
             measureEntities.forEach(entity => {
                 if (entity && viewer && !viewer.isDestroyed()) {
-                    viewer.entities.remove(entity);
+                    try {
+                        viewer.entities.remove(entity);
+                    } catch(e) {
+                        console.log.warn('Could not remove entity:', e);
+                    }
                 }
             });
+
             measureLines.forEach(entity => {
                 if (entity && viewer && !viewer.isDestroyed()) {
-                    viewer.entities.remove(entity);
+                    try {
+                        viewer.entities.remove(entity);
+                    } catch(e) {}
                 }
             });
+
             measureLabels.forEach(entity => {
                 if (entity && viewer && !viewer.isDestroyed()) {
-                    viewer.entities.remove(entity);
+                    try {
+                        viewer.entities.remove(entity);
+                    } catch(e) {}
                 }
             });
 
@@ -5097,8 +5173,8 @@
         }
 
         async function updateISSPosition() {
+            if (currentPlanet !== 'earth') return;
             if (issCameraViewActive) return;
-
             if (!viewer || viewer.isDestroyed()) return;
 
             try {
@@ -7150,10 +7226,30 @@
             }
         }
 
+        function cleanupAllHandlers() {
+            if (measureClickHandler) {
+                measureClickHandler.destroy();
+                measureClickHandler = null;
+            }
+            distanceMeasurementActive = false;
+            clearAllMeasurement();
+
+            if (issTrackingInterval) {
+                clearInterval(issTrackingInterval);
+                issTrackingInterval = null;
+            }
+
+            // Remove global event listener
+            document.removeEventListener('keydown', measureKeyHandler);
+
+            console.log('All handlers cleaned up');
+        }
+
         // Initializing
 
         async function initGlobe() {
             try {
+                cleanupAllHandlers();
                 await createEarthViewer();
                 setTimeout(() => {
                     document.getElementById('loadingScreen').classList.add('hidden');

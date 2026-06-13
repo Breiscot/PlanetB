@@ -1209,3 +1209,12 @@
             width: 14px;
             height: 14px;
         }
+
+        .cesium-point-entity {
+            transform: scale(1) !important;
+        }
+
+        .cesium-label-entity {
+            font-size: 14px !important;
+            transform: scale(1) !important;
+        }
