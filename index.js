@@ -2867,6 +2867,7 @@
                 ],
                 mars: [
                     { name: 'Olympus Mons', lat: 18.65, lon: 133.8, desc: 'Tallest volcano in the Solar System (21.9 Km)'},
+                    { name: 'Valles Marineris', lat: -5.0, lon: 200.0, desc: 'Canyon large 4000 Km'},
                     { name: 'North Pole', lat: 89.5, lon: 0, desc: 'Cap Polar Ice'},
                 ],
                 jupiter: [
