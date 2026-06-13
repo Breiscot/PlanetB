@@ -81,6 +81,7 @@
         let issOrbitEarthBackground = null;
         let issOrbitStars = null;
         let issOrbitAnimationId = null;
+        let issPanelManuallyClosed = false;
 
         // Database Planets
         const PLANETS = {
@@ -4796,13 +4797,19 @@
 
         function clearAllMeasurement() {
             measureEntities.forEach(entity => {
-                if (entity && viewer && !viewer.isDestroyed()) viewer.entities.remove(entity);
+                if (entity && viewer && !viewer.isDestroyed()) {
+                    viewer.entities.remove(entity);
+                }
             });
             measureLines.forEach(entity => {
-                if (entity && viewer && !viewer.isDestroyed()) viewer.entities.remove(entity);
+                if (entity && viewer && !viewer.isDestroyed()) {
+                    viewer.entities.remove(entity);
+                }
             });
             measureLabels.forEach(entity => {
-                if (entity && viewer && !viewer.isDestroyed()) viewer.entities.remove(entity);
+                if (entity && viewer && !viewer.isDestroyed()) {
+                    viewer.entities.remove(entity);
+                }
             });
 
             measureEntities = [];
@@ -5025,6 +5032,9 @@
 
         async function startISSTracking() {
             showMeasureTooltip('🛰️ Connecting to ISS...', 1500);
+
+            // Resets the manual close flag when tracking is reactivated
+            issPanelManuallyClosed = false;
 
             // Take initial position
             await updateISSPosition();
@@ -5359,12 +5369,17 @@
             document.getElementById('issLon').textContent = lon.toFixed(4) + '°';
             document.getElementById('issAlt').textContent = alt.toFixed(0) + ' km';
             document.getElementById('issVel').textContent = (velocity || 7.66).toFixed(2) + ' km/s';
+
+            if (!issPanelManuallyClosed) {
+                panel.style.display = 'block';
+            }
         }
 
         function closeISSInfoPanel() {
             const panel = document.getElementById('issInfoPanel');
             if (panel) {
                 panel.style.display = 'none';
+                issPanelManuallyClosed = true;
             }
         }
 
@@ -5372,6 +5387,7 @@
             const panel = document.getElementById('issInfoPanel');
             if (panel) {
                 panel.style.display = 'block';
+                issPanelManuallyClosed = false;
             }
         }
 
@@ -5602,23 +5618,22 @@
             const earthTexture = textureLoader.load('textures/planets/earth.jpg');
 
             // Create a big sphere to represent the Earth in the background
-            const earthGeometry = new THREE.SphereGeometry(300, 128, 128);
+            const earthGeometry = new THREE.SphereGeometry(250, 128, 128);
             const earthMaterial = new THREE.MeshStandardMaterial({
                 map: earthTexture,
                 emissive: 0x112244,
-                emissiveIntensity: 0.15,
+                emissiveIntensity: 0.1,
                 roughness: 0.5,
-                metalness: 0.1,
-                bumpScale: 0.05
+                metalness: 0.1
             });
             const earthSphere = new THREE.Mesh(earthGeometry, earthMaterial);
-            earthSphere.position.set(0, -50, -400);
+            earthSphere.position.set(0, -30, -600);
 
-            const atmosphereGeometry = new THREE.SphereGeometry(305, 128, 128);
+            const atmosphereGeometry = new THREE.SphereGeometry(255, 128, 128);
             const atmosphereMaterial = new THREE.MeshPhongMaterial({
                 color: 0x88aaff,
                 transparent: true,
-                opacity: 0.12,
+                opacity: 0.1,
                 side: THREE.BackSide
             });
             const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
@@ -5656,8 +5671,7 @@
                 0.1,
                 2000
             );
-            issOrbitCamera.position.set(8, 3, 15);
-            issOrbitCamera.lookAt(0, 0, -100);
+            issOrbitCamera.position.set(0, 2, 8);
 
             // Controls
             issOrbitControls = new THREE.OrbitControls(issOrbitCamera, issOrbitRenderer.domElement);
@@ -5667,9 +5681,9 @@
             issOrbitControls.enableZoom = true;
             issOrbitControls.zoomSpeed = 1.2;
             issOrbitControls.rotateSpeed = 1.0;
-            issOrbitControls.minDistance = 3;
-            issOrbitControls.maxDistance = 25;
-            issOrbitControls.target.set(0, 0, -100);
+            issOrbitControls.minDistance = 2;
+            issOrbitControls.maxDistance = 30;
+            issOrbitControls.target.set(0, 0, 0);
 
             // Lights
             // Ambient light
@@ -5678,19 +5692,19 @@
 
             // Main sun light
             const sunLight = new THREE.DirectionalLight(0xffeedd, 1.8);
-            sunLight.position.set(15, 20, 10);
+            sunLight.position.set(10, 20, 5);
             sunLight.castShadow = true;
             issOrbitScene.add(sunLight);
 
-            // Earth bounce light
-            const earthBounceLight = new THREE.PointLight(0x4488aa, 0.5);
-            earthBounceLight.position.set(0, -50, -350);
-            issOrbitScene.add(earthBounceLight);
-
-            // Earth light
-            const fillLight = new THREE.PointLight(0x6688cc, 0.3);
-            fillLight.position.set(-5, 5, -10);
+            // Fill light
+            const fillLight = new THREE.PointLight(0x6688cc, 0.4);
+            fillLight.position.set(-3, 5, 5);
             issOrbitScene.add(fillLight);
+
+            // Earth bounce light
+            const earthLight = new THREE.PointLight(0x4488aa, 0.3);
+            earthLight.position.set(0, -5, -15);
+            issOrbitScene.add(earthLight);
 
             createISSStarfield();
 
@@ -5700,9 +5714,9 @@
             createOrbitalDebris();
 
             await loadISSModel();
-
             if (issOrbitModel) {
-                issOrbitModel.position.set(0, 0, -50);
+                issOrbitModel.position.set(0, 0, 0);
+                issOrbitModel.scale.set(0.5, 0.5, 0.5);
             }
 
             startISSOrbitAnimation();
@@ -5719,31 +5733,73 @@
         }
 
         function createOrbitalDebris() {
-            
+            const debrisCount = 800;
+            const debrisGeometry = new THREE.BufferGeometry();
+            const debrisPositions = new Float32Array(debrisCount * 3);
+
+            for (let i = 0; i < debrisCount; i++) {
+                const radius = 55 + Math.random() * 20;
+                const angle = Math.random() * Math.PI * 2;
+                const yOffset = (Math.random() - 0.5) * 30;
+
+                debrisPositions[i*3] = Math.cos(angle) * radius;
+                debrisPositions[i*3+1] = yOffset;
+                debrisPositions[i*3+2] = Math.sin(angle) * radius - 80;
+            }
+
+            debrisGeometry.setAttribute('position', new THREE.BufferAttribute(debrisPositions, 3));
+
+            const debrisMaterial = new THREE.PointsMaterial({
+                color: 0x88aaff,
+                size: 0.08,
+                transparent: true,
+                opacity: 0.4
+            });
+
+            const debris = new THREE.Points(debrisGeometry, debrisMaterial);
+            issOrbitScene.add(debris);
         }
 
         function createISSStarfield() {
             const starGeometry = new THREE.BufferGeometry();
             const starCount = 3000;
             const starPositions = new Float32Array(starCount * 3);
+            const starColors = new Float32Array(starCount * 3);
 
             for (let i = 0; i < starCount; i++) {
-                const radius = 800 + Math.random() * 200;
+                const radius = 800 + Math.random() * 400;
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.acos(2 * Math.random() - 1);
                 
                 starPositions[i*3] = radius * Math.sin(phi) * Math.cos(theta);
                 starPositions[i*3+1] = radius * Math.sin(phi) * Math.sin(theta);
                 starPositions[i*3+2] = radius * Math.cos(phi);
+
+                const colorType = Math.random();
+                if (colorType < 0.7) {
+                    starColors[i*3] = 1;
+                    starColors[i*3+1] = 1;
+                    starColors[i*3+2] = 1;
+                } else if (colorType < 0.85) {
+                    starColors[i*3] = 0.7;
+                    starColors[i*3+1] = 0.8;
+                    starColors[i*3+2] = 1;
+                } else {
+                    starColors[i*3] = 1;
+                    starColors[i*3+1] = 0.9;
+                    starColors[i*3+2] = 0.7;
+                }
             }
 
             starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+            starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
 
             const starMaterial = new THREE.PointsMaterial({
-                color: 0xffffff,
                 size: 0.5,
+                vertexColors: true,
                 transparent: true,
-                opacity: 0.8
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
             });
 
             const stars = new THREE.Points(starGeometry, starMaterial);
@@ -5818,14 +5874,23 @@
         }
 
         function startISSOrbitAnimation() {
+            let time = 0;
+
             function animate() {
                 if (!issOrbitViewActive) return;
                 issOrbitAnimationId = requestAnimationFrame(animate);
 
+                time += 0.005;
+
                 issOrbitControls.update();
 
                 if (issOrbitModel) {
-                    issOrbitModel.rotation.y += 0.002;
+                    issOrbitModel.rotation.y += 0.003;
+                    issOrbitModel.rotation.x = Math.sin(time) * 0.05;
+
+                    const orbitRadius = 2;
+                    issOrbitModel.position.x = Math.sin(time * 0.3) * orbitRadius * 0.3;
+                    issOrbitModel.position.y = Math.sin(time * 0.5) * orbitRadius * 0.2;
                 }
 
                 issOrbitRenderer.render(issOrbitScene, issOrbitCamera);
@@ -5861,7 +5926,7 @@
                     .iss-orbit-panel {
                         position: fixed;
                         bottom: 20px;
-                        left: 20px;
+                        right: 20px;
                         width: 260px;
                         background: rgba(0, 0, 0, 0.85);
                         backdrop-filter: blur(15px);
@@ -5932,6 +5997,13 @@
 
             issOrbitViewActive = true;
 
+            const issPanel = document.getElementById('issInfoPanel');
+            if (issPanel && issPanel.style.display !== 'none') {
+                issPanel.dataset.wasVisible = 'true';
+            }
+
+            if (issPanel) issPanel.style.display = 'none';
+
             // Show loading
             showMeasureTooltip('🛰️ Entering ISS orbit view...', 1500);
 
@@ -5944,9 +6016,6 @@
 
             const btn = document.getElementById('btnISSView');
             if (btn) btn.innerHTML = '- Exit ISS View';
-
-            const issPanel = document.getElementById('issInfoPanel');
-            if (issPanel) issPanel.style.display = 'none';
         }
 
         function closeISSOrbitView() {
@@ -5965,6 +6034,9 @@
             }
 
             if (issOrbitScene) {
+                while(issOrbitScene.children.length > 0) {
+                    issOrbitScene.remove(issOrbitScene.children[0]);
+                }
                 issOrbitScene = null;
             }
 
@@ -5972,6 +6044,9 @@
                 issOrbitControls.dispose();
                 issOrbitControls = null;
             }
+
+            issOrbitModel = null;
+            issOrbitEarthBackground = null;
 
             if (window._issOrbitResizeHandler) {
                 window.removeEventListener('resize', window._issOrbitResizeHandler);
@@ -5989,7 +6064,17 @@
             const btn = document.getElementById('btnISSView');
             if (btn) btn.innerHTML = '🛰️ View ISS';
 
-            showISSInfoPanel();
+            const issPanel = document.getElementById('issInfoPanel');
+            if (issPanel && issPanel.dataset.wasVisible === 'true') {
+                if (!issPanelManuallyClosed) {
+                    issPanel.style.display = 'block';
+                }
+                delete issPanel.dataset.wasVisible;
+            } else if (issPanel && !issPanelManuallyClosed) {
+                if (issTrackingActive) {
+                    issPanel.style.display = 'block';
+                }
+            }
 
             showMeasureTooltip('Returned to Earth view', 1500);
         }
