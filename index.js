@@ -1126,67 +1126,94 @@
 
             console.log('Building OW planet:', planetId);
 
-            // Build Planet
-            switch (planetId) {
-                case 'timber_hearth':
-                    buildTimberHearth(window._owPlanetGroup);
-                    break;
-                case 'giants_deep':
-                    buildGiantsDeep(window._owPlanetGroup);
-                    break;
-                case 'brittle_hollow':
-                    buildBrittleHollow(window._owPlanetGroup);
-                    break;
-                case 'ash_twin':
-                    buildAshTwin(window._owPlanetGroup);
-                    break;
-                case 'dark_bramble':
-                    buildDarkBramble(window._owPlanetGroup);
-                    break;
-            }
+            showModelLoading(true);
 
-            // AutoRotate 
-            window._owAutoRotate = true;
-            isThreeJSActive = true;
+            return new Promise((resolve) => {
+                let modelLoaded = false;
 
-            // Render loop with dynamic effects
-            const clock = new THREE.Clock();
-            function animate() {
-                if (!isThreeJSActive) return;
-                threeAnimationId = requestAnimationFrame(animate);
+                const onProgress = (percent, total) => {
+                    updateModelLoadingProgress(percent);
+                };
 
-                const elapsed = clock.getElapsedTime();
+                const onComplete = () => {
+                    if (modelLoaded) return;
+                    modelLoaded = true;
 
-                if (window._owAutoRotate && window._owPlanetGroup) {
-                    window._owPlanetGroup.rotation.y += 0.001;
+                    // AutoRotate 
+                    window._owAutoRotate = true;
+                    isThreeJSActive = true;
+
+                    // Render loop with dynamic effects
+                    const clock = new THREE.Clock();
+                    function animate() {
+                        if (!isThreeJSActive) return;
+                        threeAnimationId = requestAnimationFrame(animate);
+
+                        const elapsed = clock.getElapsedTime();
+
+                        if (window._owAutoRotate && window._owPlanetGroup) {
+                            window._owPlanetGroup.rotation.y += 0.001;
+                        }
+
+                        // Specific effects for planet
+                        if (planetId === 'giants_deep') {
+                            updateGiantsDeep(elapsed);
+                        } else if (planetId === 'brittle_hollow') {
+                            updateBrittleHollow(elapsed);
+                        } else if (planetId === 'dark_bramble') {
+                            updateDarkBramble(elapsed);
+                        } else if (planetId === 'ash_twin') {
+                            updateAshTwin(elapsed);
+                        }
+
+                        updateSunAnimation(elapsed);
+
+                        threeControls.update();
+                        threeRenderer.render(threeScene, threeCamera);
+                    }
+                    animate();
+
+                    // Resize
+                    window._threeResizeHandler = function () {
+                        if (!isThreeJSActive) return;
+                        threeCamera.aspect = window.innerWidth / window.innerHeight;
+                        threeCamera.updateProjectionMatrix();
+                        threeRenderer.setSize(window.innerWidth, window.innerHeight);
+                    };
+                    window.addEventListener('resize', window._threeResizeHandler);
+
+                    showModelLoading(false);
+                    resolve();
+                };
+
+                // Build Planet
+                switch (planetId) {
+                    case 'timber_hearth':
+                        buildTimberHearth(window._owPlanetGroup, onProgress, onComplete);
+                        break;
+                    case 'giants_deep':
+                        buildGiantsDeep(window._owPlanetGroup, onProgress, onComplete);
+                        break;
+                    case 'brittle_hollow':
+                        buildBrittleHollow(window._owPlanetGroup, onProgress, onComplete);
+                        break;
+                    case 'ash_twin':
+                        buildAshTwin(window._owPlanetGroup, onProgress, onComplete);
+                        break;
+                    case 'dark_bramble':
+                        buildDarkBramble(window._owPlanetGroup, onProgress, onComplete);
+                        break;
+                    default:
+                        onComplete();
+                        return;
                 }
-
-                // Specific effects for planet
-                if (planetId === 'giants_deep') {
-                    updateGiantsDeep(elapsed);
-                } else if (planetId === 'brittle_hollow') {
-                    updateBrittleHollow(elapsed);
-                } else if (planetId === 'dark_bramble') {
-                    updateDarkBramble(elapsed);
-                } else if (planetId === 'ash_twin') {
-                    updateAshTwin(elapsed);
-                }
-
-                updateSunAnimation(elapsed);
-
-                threeControls.update();
-                threeRenderer.render(threeScene, threeCamera);
-            }
-            animate();
-
-            // Resize
-            window._threeResizeHandler = function () {
-                if (!isThreeJSActive) return;
-                threeCamera.aspect = window.innerWidth / window.innerHeight;
-                threeCamera.updateProjectionMatrix();
-                threeRenderer.setSize(window.innerWidth, window.innerHeight);
-            };
-            window.addEventListener('resize', window._threeResizeHandler);
+                setTimeout(() => {
+                    if (!modelLoaded) {
+                        console.warn('Model loading timeout, forcing completion');
+                        onComplete();
+                    }
+                }, 15000);
+            });
         }
 
         async function createHaloThreeJS(planetId, planet) {
@@ -1248,58 +1275,86 @@
 
             console.log('Building Halo planet:', planetId);
 
-            // Build
-            switch (planetId) {
-                case 'halo_ring':
-                    buildHaloRing(window._haloPlanetGroup);
-                    break;
-                case 'reach':
-                    buildReach(window._haloPlanetGroup);
-                    break;
-            }
+            showModelLoading(true);
 
-            // Auto Rotate
-            window._haloAutoRotate = true;
-            isThreeJSActive = true;
+            return new Promise((resolve) => {
+                let modelLoaded = false;
 
-            // Render
-            const clock = new THREE.Clock();
-            function animate() {
-                if (!isThreeJSActive) return;
-                threeAnimationId = requestAnimationFrame(animate);
+                const onProgress = (percent, total) => {
+                    updateModelLoadingProgress(percent);
+                };
 
-                const elapsed = clock.getElapsedTime();
+                const onComplete = () => {
+                    if (modelLoaded) return;
+                    modelLoaded = true;
 
-                if (window._haloAutoRotate && window._haloPlanetGroup) {
-                    window._haloPlanetGroup.rotation.y += 0.001;
+                    // Auto Rotate
+                    window._haloAutoRotate = true;
+                    isThreeJSActive = true;
+
+                    // Render
+                    const clock = new THREE.Clock();
+                    function animate() {
+                        if (!isThreeJSActive) return;
+                        threeAnimationId = requestAnimationFrame(animate);
+
+                        const elapsed = clock.getElapsedTime();
+
+                        if (window._haloAutoRotate && window._haloPlanetGroup) {
+                            window._haloPlanetGroup.rotation.y += 0.001;
+                        }
+
+                        if (planetId === 'halo_ring') {
+                            updateHaloRing(elapsed);
+                        } else if (planetId === 'reach') {
+                            updateReach(elapsed);
+                        }
+
+                        updateSunAnimation(elapsed);
+
+                        threeControls.update();
+                        threeRenderer.render(threeScene, threeCamera);
+                    }
+                    animate();
+
+                    // Resize Handler
+                    window._threeResizeHandler = function () {
+                        if (!isThreeJSActive) return;
+                        threeCamera.aspect = window.innerWidth / window.innerHeight;
+                        threeCamera.updateProjectionMatrix();
+                        threeRenderer.setSize(window.innerWidth, window.innerHeight);
+                    };
+                    window.addEventListener('resize', window._threeResizeHandler);
+
+                    showModelLoading(false);
+                    resolve();
+                };
+
+                // Build
+                switch (planetId) {
+                    case 'halo_ring':
+                        buildHaloRing(window._haloPlanetGroup, onProgress, onComplete);
+                        break;
+                    case 'reach':
+                        buildReach(window._haloPlanetGroup, onProgress, onComplete);
+                        break;
+                    default:
+                        onComplete();
+                        break;
                 }
 
-                if (planetId === 'halo_ring') {
-                    updateHaloRing(elapsed);
-                } else if (planetId === 'reach') {
-                    updateReach(elapsed);
-                }
-
-                updateSunAnimation(elapsed);
-
-                threeControls.update();
-                threeRenderer.render(threeScene, threeCamera);
-            }
-            animate();
-
-            // Resize Handler
-            window._threeResizeHandler = function () {
-                if (!isThreeJSActive) return;
-                threeCamera.aspect = window.innerWidth / window.innerHeight;
-                threeCamera.updateProjectionMatrix();
-                threeRenderer.setSize(window.innerWidth, window.innerHeight);
-            };
-            window.addEventListener('resize', window._threeResizeHandler);
+                setTimeout(() => {
+                    if (!modelLoaded) {
+                        console.warn('Halo model loading timeout, forcing completion');
+                        onComplete();
+                    }
+                }, 15000);
+            });
         }
 
         // BUILDS OUTER WILDS
 
-        function buildTimberHearth(group) {
+        function buildTimberHearth(group, onProgress, onComplete) {
             const loader = new THREE.GLTFLoader();
 
             loader.load(
@@ -1348,11 +1403,18 @@
                         threeControls.target.set(0, 0, 0);
                         threeControls.update();
                     }
+
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 },
                 function (progress) {
-                    if (progress.total > 0) {
-                        console.log('Loading Timber Hearth: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
-                    }  
+                    if (progress.total > 0 && onProgress) {
+                        const percent = progress.loaded / progress.total;
+                        onProgress(percent, progress.total);
+                        console.log('Loading Timber Hearth: ' + Math.round(percent * 100) + '%');
+                    } else if (onProgress) {
+                        onProgress(0.5, 1);
+                    }
                 },
                 function (error) {
                     console.error('Failed to load Timber Hearth model:', error);
@@ -1360,13 +1422,15 @@
                     const geo = new THREE.SphereGeometry(1, 32, 32);
                     const mat = new THREE.MeshPhongMaterial({ color: 0x4a7c3f, flatShading: true });
                     group.add(new THREE.Mesh(geo, mat));
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 }
             );
 
             addAtmosphereGlow(group, 1, 0x88ccff, 0.15);
         }
 
-        function buildBrittleHollow(group) {
+        function buildBrittleHollow(group, onProgress, onComplete) {
             console.log('buildBrittleHollow called');
 
             const loader = new THREE.GLTFLoader();
@@ -1426,10 +1490,17 @@
                             threeControls.update();
                             console.log('Camera set at distance:', cameraDistance);
                         }
+
+                        if (onProgress) onProgress(1, 1);
+                        if (onComplete) onComplete();
                     },
                     function (progress) {
-                        if (progress.total > 0) {
-                            console.log('Loading Brittle Hollow: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                        if (progress.total > 0 && onProgress) {
+                            const percent = progress.loaded / progress.total;
+                            onProgress(percent, progress.total);
+                            console.log('Loading Brittle Hollow: ' + Math.round(percent * 100) + '%');
+                        } else if (onProgress) {
+                            onProgress(0.5, 1);
                         }
                     },
                     function (error) {
@@ -1437,16 +1508,20 @@
                         const geo = new THREE.SphereGeometry(1, 32, 32);
                         const mat = new THREE.MeshPhongMaterial({ color: 0x6b4c8a, flatShading: true });
                         group.add(new THREE.Mesh(geo, mat));
+                        if (onProgress) onProgress(1, 1);
+                        if (onComplete) onComplete();
                     }
                 );
             } catch (e) {
                 console.error('Exception in buildBrittleHollow:', e);
+                if (onProgress) onProgress(1, 1);
+                if (onComplete) onComplete();
             }
             
             console.log('loader.load() called');
         }
 
-        function buildAshTwin(group) {
+        function buildAshTwin(group, onProgress, onComplete) {
             console.log('buildAshTwin called');
             const loader = new THREE.GLTFLoader();
             const filePath = 'OW-planets/Ash-EmberTwins/TwinPlanets_Ash-Ember.glb';
@@ -1494,10 +1569,17 @@
                         threeControls.maxDistance = maxDim * 10;
                         threeControls.update();
                     }
+
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 },
                 function (progress) {
-                    if (progress.total > 0) {
-                        console.log('Loading Hourglass Twins: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    if (progress.total > 0 && onProgress) {
+                        const percent = progress.loaded / progress.total;
+                        onProgress(percent, progress.total);
+                        console.log('Loading Hourglass Twins: ' + Math.round(percent * 100) + '%');
+                    } else if (onProgress) {
+                        onProgress(0.5, 1);
                     }
                 },
                 function (error) {
@@ -1506,11 +1588,13 @@
                     const geo = new THREE.SphereGeometry(1, 32, 32);
                     const mat = new THREE.MeshPhongMaterial({ color: 0xc4956a, flatShading: true });
                     group.add(new THREE.Mesh(geo, mat));
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 }
             );
         }
 
-        function buildDarkBramble(group) {
+        function buildDarkBramble(group, onProgress, onComplete) {
             console.log('buildDarkBramble called');
             const loader = new THREE.GLTFLoader();
             const filePath = 'OW-planets/DarkBramble/DarkBramble.glb';
@@ -1565,10 +1649,17 @@
                         threeControls.maxDistance = maxDim * 8;
                         threeControls.update();
                     }
+
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 },
                 function (progress) {
-                    if (progress.total > 0) {
-                        console.log('Loading Dark Bramble: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    if (progress.total > 0 && onProgress) {
+                        const percent = progress.loaded / progress.total;
+                        onProgress(percent, progress.total);
+                        console.log('Loading Dark Bramble: ' + Math.round(percent * 100) + '%');
+                    } else if (onProgress) {
+                        onProgress(0.5, 1);
                     }
                 },
                 function (error) {
@@ -1576,11 +1667,13 @@
                     const geo = new THREE.SphereGeometry(1, 32, 32);
                     const mat = new THREE.MeshPhongMaterial({ color: 0x2a3a2a, flatShading: true });
                     group.add(new THREE.Mesh(geo, mat));
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 }
             );
         }
 
-        function buildGiantsDeep(group) {
+        function buildGiantsDeep(group, onProgress, onComplete) {
             console.log('buildGiantsDeep called');
             const loader = new THREE.GLTFLoader();
             const filePath = 'OW-planets/GiantsDeep/GiantsDeep_green.glb';
@@ -1639,10 +1732,17 @@
                         threeControls.maxDistance = scaledSize * 6;
                         threeControls.update();
                     }
+
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 },
                 function (progress) {
-                    if (progress.total > 0) {
-                        console.log("Loading Giant's Deep: " + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    if (progress.total > 0 && onProgress) {
+                        const percent = progress.loaded / progress.total;
+                        onProgress(percent, progress.total);
+                        console.log("Loading Giant's Deep: " + Math.round(percent * 100) + '%');
+                    } else if (onProgress) {
+                        onProgress(0.5, 1);
                     }
                 },
                 function (error) {
@@ -1650,13 +1750,15 @@
                     const geo = new THREE.SphereGeometry(1, 32, 32);
                     const mat = new THREE.MeshPhongMaterial({ color: 0x1a5c3a, flatShading: true });
                     group.add(new THREE.Mesh(geo, mat));
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 }
             );
         }
 
         // BUILDS HALO
 
-        function buildHaloRing(group) {
+        function buildHaloRing(group, onProgress, onComplete) {
             console.log('buildHaloRing called');
             const loader = new THREE.GLTFLoader();
             const filePath = 'Halo-planets/HaloRing/Halo.glb';
@@ -1711,10 +1813,17 @@
                         threeControls.maxDistance = maxDim * 6;
                         threeControls.update();
                     }
+
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 },
                 function (progress) {
-                    if (progress.total > 0) {
-                        console.log('Loading Halo Ring: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    if (progress.total > 0 && onProgress) {
+                        const percent = progress.loaded / progress.total;
+                        onProgress(percent, progress.total);
+                        console.log('Loading Halo Ring: ' + Math.round(percent * 100) + '%');
+                    } else if (onProgress) {
+                        onProgress(0.5, 1);
                     }
                 },
                 function (error) {
@@ -1736,11 +1845,14 @@
                         threeControls.maxDistance = 20;
                         threeControls.update();
                     }
+
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 }
             );
         }
 
-        function buildReach(group) {
+        function buildReach(group, onProgress, onComplete) {
             console.log('buildReach called');
             const loader = new THREE.GLTFLoader();
             const filePath = 'Halo-planets/Reach/Reach.glb';
@@ -1791,10 +1903,17 @@
                         threeControls.maxDistance = maxDim * 5;
                         threeControls.update();
                     }
+
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 },
                 function (progress) {
-                    if (progress.total > 0) {
-                        console.log('Loading Reach: ' + Math.round((progress.loaded / progress.total) * 100) + '%');
+                    if (progress.total > 0 && onProgress) {
+                        const percent = progress.loaded / progress.total;
+                        onProgress(percent, progress.total);
+                        console.log('Loading Reach: ' + Math.round(percent * 100) + '%');
+                    } else if (onProgress) {
+                        onProgress(0.5, 1);
                     }
                 },
                 function (error) {
@@ -1806,6 +1925,8 @@
                         flatShading: true
                     });
                     group.add(new THREE.Mesh(geo, mat));
+                    if (onProgress) onProgress(1, 1);
+                    if (onComplete) onComplete();
                 }
             );
         }
@@ -7230,7 +7351,7 @@
             alert('API key removed.');
         }
 
-        // UI Help
+        // Other settings
 
         function togglePanel() {
             const panel = document.getElementById('controlPanel');
@@ -7285,6 +7406,35 @@
             viewer.scene.screenSpaceCameraController.maximumZoomDistance = maxDistance;
 
             console.log(`Zoom limits set: min=${minDistance}, max=${maxDistance}`);
+        }
+
+        function showModelLoading(show) {
+            const container = document.getElementById('modelLoadingContainer');
+            if (container) {
+                container.style.display = show ? 'block' : 'none';
+            }
+            if (show) {
+                updateModelLoadingProgress(0);
+            }
+        }
+
+        function updateModelLoadingProgress(percent) {
+            const fillBar = document.getElementById('modelLoadingFill');
+            const textEl = document.getElementById('modelLoadingText');
+
+            if (fillBar) {
+                const percentage = Math.min(100, Math.max(0, percent * 100));
+                fillBar.style.width = percentage + '%';
+            }
+
+            if (textEl) {
+                if (percent >= 1) {
+                    textEl.textContent = 'Model loaded. Finalizing...';
+                } else {
+                    const percentInt = Math.floor(percent * 100);
+                    textEl.textContent = `Loading 3D model... ${percentInt}%`;
+                }
+            }
         }
 
         // Initializing
