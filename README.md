@@ -3,6 +3,10 @@
 
 PlanetB is an interactive web application that allows users to explore Earth, explore the Solar System, and visualize planets from video games, including Outer Wilds and Halo. The application combines Cesium.js for Earth mapping and Three.js for 3D planetary visualization.
 
+
+<img width="1727" height="947" alt="msedge_LWNcbTeOKN" src="https://github.com/user-attachments/assets/b5b171fb-9b84-472f-968c-eb68557d3c16" />
+
+
 ## Features | Earth Exploration
 
 - 3D globe with satellite imagery, terrain maps, and various map layers
@@ -24,6 +28,8 @@ PlanetB is an interactive web application that allows users to explore Earth, ex
 - Automatic camera rotation mode
 
 - ISS Track
+
+<img width="1599" height="899" alt="msedge_INor7b00WT" src="https://github.com/user-attachments/assets/f9511daf-c807-4788-9763-db629a403839" />
 
 ## Solar System
 
