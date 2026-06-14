@@ -23,6 +23,8 @@ PlanetB is an interactive web application that allows users to explore Earth, ex
 
 - Automatic camera rotation mode
 
+- ISS Track
+
 ## Solar System
 
 - All 8 planets plus Pluto with realistic textures
@@ -52,6 +54,34 @@ PlanetB is an interactive web application that allows users to explore Earth, ex
 - 3D model of the ISS
 
 <img width="1469" height="868" alt="msedge_863Q2ejz13" src="https://github.com/user-attachments/assets/1cef7c98-cded-42f3-a724-c379dde5082f" />
+
+# Installation
+
+1. Clone or download the repository to your local machine.
+
+2. Start a local web server. For example I do it with VS Code Live Server extension.
+
+3. Open your browser and navigate to your local host, for example: `http://localhost:3000`.
+
+# Configuration
+
+## Cesium Ion Token
+
+You need a free Cesium Ion access token for full functionality:
+
+1. Sign up at https://ion.cesium.com
+
+2. Replace the empty string in `Cesium.Ion.defaultAccessToken` with your token
+
+## OpenWeatherMap API Key
+
+For weather features, you need a free API key:
+
+1. Sign up at [openweathermap.org/api](https://openweathermap.org/api)
+
+2. The application will prompt you to enter the key when using weather features
+
+> The key is stored locally in your browser
 
 # Technologies Used
 - `Cesium.js 1.113` - 3D globe rendering
