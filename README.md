@@ -6,6 +6,7 @@ PlanetB is an interactive web application that allows users to explore Earth, ex
 
 <img width="1727" height="947" alt="msedge_LWNcbTeOKN" src="https://github.com/user-attachments/assets/b5b171fb-9b84-472f-968c-eb68557d3c16" />
 
+<hr>
 
 ## Features | Earth Exploration
 
@@ -31,6 +32,8 @@ PlanetB is an interactive web application that allows users to explore Earth, ex
 
 <img width="1599" height="899" alt="msedge_INor7b00WT" src="https://github.com/user-attachments/assets/f9511daf-c807-4788-9763-db629a403839" />
 
+<hr>
+
 ## Solar System
 
 - All 8 planets plus Pluto with realistic textures
@@ -47,6 +50,8 @@ PlanetB is an interactive web application that allows users to explore Earth, ex
 
 <img width="1687" height="796" alt="msedge_nX2HB5rcqd" src="https://github.com/user-attachments/assets/e8f71526-3de9-4e71-959d-437838b795b4" />
 
+<hr>
+
 ## International Space Station (ISS)
 
 - Real-time ISS position tracking using public API
@@ -60,6 +65,25 @@ PlanetB is an interactive web application that allows users to explore Earth, ex
 - 3D model of the ISS
 
 <img width="1469" height="868" alt="msedge_863Q2ejz13" src="https://github.com/user-attachments/assets/1cef7c98-cded-42f3-a724-c379dde5082f" />
+
+<hr>
+
+## Outer Wilds Planets
+
+Through asset ripping, I obtained the 3D assets of the Outer Wilds planets on Unity, I modified them on Blender to make them `.glb` models for my project, the planets are:
+- Ash & Ember
+- Timber Hearth
+- Brittle Hollow
+- Giant's Deep
+- Dark Bramble
+
+Here are two images of two planets of Outer Wilds:
+
+|                     Timber Hearth                                                                                                                |                     Giant's Deep                         |
+| :--------------------------------------------------:                                                                                             | :------------------------------------------------------: |
+| <img width="1687" height="932" alt="msedge_mJoHwPKSr6" src="https://github.com/user-attachments/assets/2b4770a3-d2ee-4ea3-957d-58f83acac309" />  | <img width="1612" height="902" alt="msedge_9hcINnLeiP" src="https://github.com/user-attachments/assets/9b6a9f58-e88e-4fac-8427-4346308f615a" /> |
+
+<hr>
 
 # Installation
 
@@ -75,7 +99,7 @@ PlanetB is an interactive web application that allows users to explore Earth, ex
 
 You need a free Cesium Ion access token for full functionality:
 
-1. Sign up at https://ion.cesium.com
+1. Sign up at [ion.cesium.com](https://ion.cesium.com)
 
 2. Replace the empty string in `Cesium.Ion.defaultAccessToken` with your token
 
