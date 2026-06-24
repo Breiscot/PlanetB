@@ -137,3 +137,6 @@ For weather features, you need a free API key:
 - `G` - Toggle grid overlay
 
 - `ESC` - Stop auto-rotation
+
+# Recommendations
+This project is hosted online on github pages, or can also be hosted elsewhere by installing the project, but I would like to point out that the performance of the project varies based on the type of computer you are using to run the demo, so it may be laggy if your computer does not support it well, otherwise the project is FULLY functional on machines with good / decent specifications.
